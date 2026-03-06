@@ -14,28 +14,34 @@ java {
 	}
 }
 
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
 repositories {
 	mavenCentral()
 }
 
 dependencies {
-	// Core Web & Data
-	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-	// Database & Migration
-	runtimeOnly 'org.postgresql:postgresql'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.flywaydb:flyway-core'
-
-	// Công cụ
+	implementation 'org.flywaydb:flyway-database-postgresql'
+	runtimeOnly 'org.postgresql:postgresql'
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
-	implementation "org.mapstruct:mapstruct:1.5.5.Final"
-	annotationProcessor "org.mapstruct:mapstruct-processor:1.5.5.Final"
 
-	// Thêm processor này để MapStruct có thể đọc được biến sinh ra từ Lombok
+	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
 tasks.named('test') {
 	useJUnitPlatform()
 }
