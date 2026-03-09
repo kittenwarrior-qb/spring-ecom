@@ -1,5 +1,7 @@
 package com.example.spring_ecom.service.user;
 
+import com.example.spring_ecom.core.exception.BaseException;
+import com.example.spring_ecom.core.exception.ErrorCode;
 import com.example.spring_ecom.domain.user.User;
 import com.example.spring_ecom.repository.database.user.UserEntityMapper;
 import com.example.spring_ecom.repository.database.user.UserRepository;
@@ -18,4 +20,5 @@ public class UserQueryService {
    protected Optional<User> findById(Long userId) {
        return repository.findById(userId).map(mapper::toDomain);
    }
+
 }

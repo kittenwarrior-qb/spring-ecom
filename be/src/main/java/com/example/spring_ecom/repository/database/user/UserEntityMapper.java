@@ -8,5 +8,9 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(config = MapStructGlobalConfig.class)
 public interface UserEntityMapper extends BaseEntityMapper<User, UserEntity> {
+
+    UserEntity toEntity(User source);
+
     void update(@MappingTarget UserEntity target, User source);
+
 }
