@@ -43,7 +43,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
           {/* Actions */}
           <div className="flex items-center space-x-4">
-            <Link to="/cart">
+            <Link to="/">
               <Button variant="ghost" size="icon">
                 <ShoppingCart className="h-5 w-5" />
               </Button>
@@ -63,18 +63,11 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                   <DropdownMenuLabel className="text-xs text-muted-foreground">
                     {user.email}
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile">Profile</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/orders">My Orders</Link>
-                  </DropdownMenuItem>
                   {user.role === 'ADMIN' && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link to="/admin">Admin Dashboard</Link>
+                        <Link to="/admin/">Admin Dashboard</Link>
                       </DropdownMenuItem>
                     </>
                   )}

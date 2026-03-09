@@ -56,22 +56,22 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'Dashboard',
-          url: '/admin',
+          url: '/admin/',
           icon: LayoutDashboard,
         },
         {
           title: 'Products',
-          url: '/admin/products',
+          url: '/admin/products/',
           icon: ShoppingBag,
         },
         {
           title: 'Categories',
-          url: '/admin/categories',
+          url: '/admin/categories/',
           icon: FolderOpen,
         },
         {
           title: 'Users',
-          url: '/admin/users',
+          url: '/admin/users/',
           icon: Users,
         },
       ],
