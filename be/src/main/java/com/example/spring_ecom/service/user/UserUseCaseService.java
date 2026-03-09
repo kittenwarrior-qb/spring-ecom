@@ -6,6 +6,8 @@ import com.example.spring_ecom.repository.database.user.UserEntityMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -23,8 +25,13 @@ public class UserUseCaseService implements UserUseCase {
         return queryService.findById(userId);
     }
 
-     @Transactional
-     public void save(User user) {
+    @Transactional
+    public Page<User> findAll(PageRequest pageRequest) {
+        return queryService.findAll(pageRequest);
+    }
+
+    @Transactional
+    public void save(User user) {
         commandService.save(user);
-     }
+    }
 }

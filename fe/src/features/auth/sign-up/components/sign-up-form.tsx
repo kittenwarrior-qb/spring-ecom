@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate } from '@tanstack/react-router'
+import { toast } from 'sonner'
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
+import { useAuth } from '@/stores/auth-store'
+import { authApi } from '@/api/auth.api'
+import { handleServerError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,14 +23,21 @@ import { PasswordInput } from '@/components/password-input'
 
 const formSchema = z
   .object({
+    username: z
+      .string()
+      .min(1, 'Please enter your username')
+      .min(3, 'Username must be at least 3 characters'),
     email: z.email({
       error: (iss) =>
         iss.input === '' ? 'Please enter your email' : undefined,
     }),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    phoneNumber: z.string().optional(),
     password: z
       .string()
       .min(1, 'Please enter your password')
-      .min(7, 'Password must be at least 7 characters long'),
+      .min(1, 'Password is required'),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -38,24 +50,48 @@ export function SignUpForm({
   ...props
 }: React.HTMLAttributes<HTMLFormElement>) {
   const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate()
+  const auth = useAuth()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      username: '',
       email: '',
+      firstName: '',
+      lastName: '',
+      phoneNumber: '',
       password: '',
       confirmPassword: '',
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
-    // eslint-disable-next-line no-console
-    console.log(data)
 
-    setTimeout(() => {
+    try {
+      const response = await authApi.register({
+        username: data.username,
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName || undefined,
+        lastName: data.lastName || undefined,
+        phoneNumber: data.phoneNumber || undefined,
+      })
+
+      // Set user and access token from API response
+      auth.setUser(response.user)
+      auth.setAccessToken(response.accessToken, response.expiresIn)
+
+      toast.success(`Account created successfully! Welcome, ${response.user.username}!`)
+
+      // Redirect to dashboard
+      navigate({ to: '/', replace: true })
+    } catch (error) {
+      handleServerError(error)
+    } finally {
       setIsLoading(false)
-    }, 3000)
+    }
   }
 
   return (
@@ -65,6 +101,47 @@ export function SignUpForm({
         className={cn('grid gap-3', className)}
         {...props}
       >
+        <div className='grid grid-cols-2 gap-3'>
+          <FormField
+            control={form.control}
+            name='firstName'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>First Name</FormLabel>
+                <FormControl>
+                  <Input placeholder='John' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name='lastName'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Last Name</FormLabel>
+                <FormControl>
+                  <Input placeholder='Doe' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+          control={form.control}
+          name='username'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input placeholder='johndoe' {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name='email'
@@ -73,6 +150,19 @@ export function SignUpForm({
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input placeholder='name@example.com' {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='phoneNumber'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number (Optional)</FormLabel>
+              <FormControl>
+                <Input placeholder='+1234567890' {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

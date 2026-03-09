@@ -18,9 +18,12 @@ public enum ResponseCode {
     UNAUTHORIZED(401, "Unauthorized"),
     FORBIDDEN(403, "Forbidden"),
     NOT_FOUND(404, "Resource not found"),
+    ENDPOINT_NOT_FOUND(404, "API endpoint not found"),
     CONFLICT(409, "Resource already exists"),
     
     // User
+    USER_GET(200, "User retrieved successfully"),
+    USER_LIST(200, "Users retrieved successfully"),
     USER_CREATED(201, "User created successfully"),
     USER_UPDATED(200, "User updated successfully"),
     USER_DELETED(200, "User deleted successfully"),

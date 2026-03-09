@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-@RequestMapping("v1/api/users/{userId}")
+@RequestMapping("v1/api/user/{userId}")
 public interface UserAPI {
 
     @GetMapping

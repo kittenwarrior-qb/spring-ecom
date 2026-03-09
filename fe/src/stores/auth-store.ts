@@ -1,53 +1,68 @@
 import { create } from 'zustand'
 import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
+import type { UserInfo, UserRole } from '@/types/api'
 
-const ACCESS_TOKEN = 'thisisjustarandomstring'
-
-interface AuthUser {
-  accountNo: string
-  email: string
-  role: string[]
-  exp: number
-}
+const ACCESS_TOKEN_KEY = 'accessToken'
 
 interface AuthState {
   auth: {
-    user: AuthUser | null
-    setUser: (user: AuthUser | null) => void
+    user: UserInfo | null
+    setUser: (user: UserInfo | null) => void
     accessToken: string
-    setAccessToken: (accessToken: string) => void
+    setAccessToken: (accessToken: string, expiresIn?: number) => void
     resetAccessToken: () => void
     reset: () => void
+    isAuthenticated: () => boolean
   }
 }
 
-export const useAuthStore = create<AuthState>()((set) => {
-  const cookieState = getCookie(ACCESS_TOKEN)
+export const useAuthStore = create<AuthState>()((set, get) => {
+  const cookieState = getCookie(ACCESS_TOKEN_KEY)
   const initToken = cookieState ? JSON.parse(cookieState) : ''
+
   return {
     auth: {
       user: null,
       setUser: (user) =>
         set((state) => ({ ...state, auth: { ...state.auth, user } })),
       accessToken: initToken,
-      setAccessToken: (accessToken) =>
+      setAccessToken: (accessToken, expiresIn) =>
         set((state) => {
-          setCookie(ACCESS_TOKEN, JSON.stringify(accessToken))
+          const maxAge = expiresIn ? Math.floor(expiresIn / 1000) : 60 * 60 * 24 * 7
+          setCookie(ACCESS_TOKEN_KEY, JSON.stringify(accessToken), maxAge)
           return { ...state, auth: { ...state.auth, accessToken } }
         }),
       resetAccessToken: () =>
         set((state) => {
-          removeCookie(ACCESS_TOKEN)
+          removeCookie(ACCESS_TOKEN_KEY)
           return { ...state, auth: { ...state.auth, accessToken: '' } }
         }),
       reset: () =>
         set((state) => {
-          removeCookie(ACCESS_TOKEN)
+          removeCookie(ACCESS_TOKEN_KEY)
           return {
             ...state,
             auth: { ...state.auth, user: null, accessToken: '' },
           }
         }),
+      isAuthenticated: () => {
+        const state = get()
+        return !!state.auth.accessToken
+      },
     },
   }
 })
+
+// Helper hooks
+export const useAuth = () => useAuthStore((state) => state.auth)
+export const useUser = () => useAuthStore((state) => state.auth.user)
+export const useIsAuthenticated = () => useAuthStore((state) => state.auth.isAuthenticated())
+
+// Role checking helpers
+export const hasRole = (role: UserRole): boolean => {
+  const user = useAuthStore.getState().auth.user
+  return user?.role === role
+}
+
+export const isAdmin = (): boolean => hasRole('ADMIN')
+export const isUser = (): boolean => hasRole('USER')

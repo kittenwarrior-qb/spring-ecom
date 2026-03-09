@@ -1,11 +1,11 @@
 package com.example.spring_ecom.service.user;
 
-import com.example.spring_ecom.core.exception.BaseException;
-import com.example.spring_ecom.core.exception.ErrorCode;
 import com.example.spring_ecom.domain.user.User;
 import com.example.spring_ecom.repository.database.user.UserEntityMapper;
 import com.example.spring_ecom.repository.database.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -19,6 +19,10 @@ public class UserQueryService {
 
    protected Optional<User> findById(Long userId) {
        return repository.findById(userId).map(mapper::toDomain);
+   }
+
+   protected Page<User> findAll(PageRequest pageRequest) {
+       return repository.findAll(pageRequest).map(mapper::toDomain);
    }
 
 }

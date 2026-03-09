@@ -1,5 +1,7 @@
 package com.example.spring_ecom.repository.database.user;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,10 +22,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     boolean existsByUsername(String username);
 
-    @Query("SELECT u FROM UserEntity u WHERE u.email = :email AND u.isActive = true")
-    Optional<UserEntity> findActiveByEmail(@Param("email") String email);
-
-    @Query("SELECT u FROM UserEntity u WHERE u.username = :username AND u.isActive = true")
-    Optional<UserEntity> findActiveByUsername(@Param("username") String username);
+    @Query("SELECT u FROM UserEntity u WHERE u.isActive = true")
+    Page<UserEntity> findAll(Pageable pageable);
 
 }
