@@ -11,8 +11,10 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
+import { useUsers as useUsersQuery } from '@/hooks/use-user'
 import {
   Table,
   TableBody,
@@ -28,20 +30,15 @@ import { DataTableBulkActions } from './data-table-bulk-actions'
 import { usersColumns as columns } from './users-columns'
 
 type DataTableProps = {
-  data: User[]
   search: Record<string, unknown>
   navigate: NavigateFn
 }
 
-export function UsersTable({ data, search, navigate }: DataTableProps) {
+export function UsersTable({ search, navigate }: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [sorting, setSorting] = useState<SortingState>([])
-
-  // Local state management for table (uncomment to use local-only state, not synced with URL)
-  // const [columnFilters, onColumnFiltersChange] = useState<ColumnFiltersState>([])
-  // const [pagination, onPaginationChange] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 })
 
   // Synced with URL states (keys/defaults mirror users route search schema)
   const {
@@ -62,6 +59,14 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
       { columnId: 'role', searchKey: 'role', type: 'array' },
     ],
   })
+
+  // Fetch users from API with pagination
+  const { data: pageData, isLoading, error } = useUsersQuery({
+    page: pagination.pageIndex,
+    size: pagination.pageSize,
+  })
+
+  const data: User[] = pageData?.content ?? []
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -86,11 +91,22 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    manualPagination: true,
+    pageCount: pageData?.totalPages ?? -1,
   })
 
   useEffect(() => {
     ensurePageInRange(table.getPageCount())
   }, [table, ensurePageInRange])
+
+  if (error) {
+    return (
+      <div className='rounded-md border p-8 text-center'>
+        <p className='text-destructive'>Failed to load users. Please try again.</p>
+        <p className='text-muted-foreground text-sm mt-2'>{error.message}</p>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -104,16 +120,6 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
         searchPlaceholder='Filter users...'
         searchKey='username'
         filters={[
-          {
-            columnId: 'status',
-            title: 'Status',
-            options: [
-              { label: 'Active', value: 'active' },
-              { label: 'Inactive', value: 'inactive' },
-              { label: 'Invited', value: 'invited' },
-              { label: 'Suspended', value: 'suspended' },
-            ],
-          },
           {
             columnId: 'role',
             title: 'Role',
@@ -150,7 +156,13 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className='h-24 text-center'>
+                  <Loader2 className='mx-auto h-6 w-6 animate-spin' />
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

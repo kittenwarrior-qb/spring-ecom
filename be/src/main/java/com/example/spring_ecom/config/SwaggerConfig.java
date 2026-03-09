@@ -8,6 +8,7 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,7 +21,7 @@ public class SwaggerConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("E-commerce Bookstore API")
+                        .title("E-commerce Bookstore")
                         .version("1.0.0")
                         .description("API documentation for E-commerce Bookstore application")
                         .contact(new Contact()
@@ -43,5 +44,13 @@ public class SwaggerConfig {
                                 .bearerFormat("JWT")
                                 .description("Enter JWT token")))
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
+    }
+    
+    @Bean
+    public GroupedOpenApi publicApi() {
+        return GroupedOpenApi.builder()
+                .group("public")
+                .pathsToMatch("/v1/api/**")
+                .build();
     }
 }

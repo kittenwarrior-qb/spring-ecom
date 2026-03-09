@@ -61,7 +61,37 @@ export interface CategoryResponse {
   updatedAt: string
 }
 
-// Pagination types (for future use)
+// User types
+export interface UserRequest {
+  username: string
+  email: string
+  password: string
+}
+
+export interface UserResponse {
+  id: number
+  username: string
+  email: string
+  password: string
+  firstName: string | null
+  lastName: string | null
+  phoneNumber: string | null
+  dateOfBirth: string | null
+  avatarUrl: string | null
+  role: UserRole
+  isEmailVerified: boolean
+  emailVerificationToken: string | null
+  emailVerificationTokenExpiry: string | null
+  passwordResetToken: string | null
+  passwordResetTokenExpiry: string | null
+  lastLoginAt: string | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+// Pagination types
 export interface PageRequest {
   page?: number
   size?: number
@@ -76,4 +106,14 @@ export interface PageResponse<T> {
   number: number
   first: boolean
   last: boolean
+  empty: boolean
+  pageable: {
+    pageNumber: number
+    pageSize: number
+    sort: {
+      sorted: boolean
+      unsorted: boolean
+      empty: boolean
+    }
+  }
 }

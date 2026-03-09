@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { callTypes, roles } from '../data/data'
+import { getStatusColor, roles } from '../data/data'
 import { type User } from '../data/schema'
 import { DataTableRowActions } from './data-table-row-actions'
 
@@ -37,6 +37,13 @@ export const usersColumns: ColumnDef<User>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: 'id',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='ID' />
+    ),
+    cell: ({ row }) => <div className='w-fit ps-2'>{row.getValue('id')}</div>,
+  },
+  {
     accessorKey: 'username',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Username' />
@@ -59,8 +66,8 @@ export const usersColumns: ColumnDef<User>[] = [
     ),
     cell: ({ row }) => {
       const { firstName, lastName } = row.original
-      const fullName = `${firstName} ${lastName}`
-      return <LongText className='max-w-36'>{fullName}</LongText>
+      const fullName = [firstName, lastName].filter(Boolean).join(' ')
+      return <LongText className='max-w-36'>{fullName || '—'}</LongText>
     },
     meta: { className: 'w-36' },
   },
@@ -76,29 +83,27 @@ export const usersColumns: ColumnDef<User>[] = [
   {
     accessorKey: 'phoneNumber',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Phone Number' />
+      <DataTableColumnHeader column={column} title='Phone' />
     ),
-    cell: ({ row }) => <div>{row.getValue('phoneNumber')}</div>,
+    cell: ({ row }) => <div>{row.getValue('phoneNumber') || '—'}</div>,
     enableSorting: false,
   },
   {
-    accessorKey: 'status',
+    id: 'status',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Status' />
     ),
     cell: ({ row }) => {
-      const { status } = row.original
-      const badgeColor = callTypes.get(status)
+      const { isActive, isEmailVerified } = row.original
+      const statusText = !isActive ? 'Inactive' : !isEmailVerified ? 'Pending' : 'Active'
+      const badgeColor = getStatusColor(isActive, isEmailVerified)
       return (
         <div className='flex space-x-2'>
           <Badge variant='outline' className={cn('capitalize', badgeColor)}>
-            {row.getValue('status')}
+            {statusText}
           </Badge>
         </div>
       )
-    },
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
     },
     enableHiding: false,
     enableSorting: false,
@@ -121,7 +126,7 @@ export const usersColumns: ColumnDef<User>[] = [
           {userType.icon && (
             <userType.icon size={16} className='text-muted-foreground' />
           )}
-          <span className='text-sm capitalize'>{row.getValue('role')}</span>
+          <span className='text-sm capitalize'>{userType.label}</span>
         </div>
       )
     },
@@ -130,6 +135,16 @@ export const usersColumns: ColumnDef<User>[] = [
     },
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: 'createdAt',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Created' />
+    ),
+    cell: ({ row }) => {
+      const date = row.getValue('createdAt') as string
+      return new Date(date).toLocaleDateString()
+    },
   },
   {
     id: 'actions',

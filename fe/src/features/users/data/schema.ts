@@ -1,31 +1,34 @@
 import { z } from 'zod'
 
-const userStatusSchema = z.union([
-  z.literal('active'),
-  z.literal('inactive'),
-  z.literal('invited'),
-  z.literal('suspended'),
-])
-export type UserStatus = z.infer<typeof userStatusSchema>
-
+// Match backend UserRole
 const userRoleSchema = z.union([
-  z.literal('superadmin'),
-  z.literal('admin'),
-  z.literal('cashier'),
-  z.literal('manager'),
+  z.literal('ADMIN'),
+  z.literal('USER'),
 ])
+export type UserRole = z.infer<typeof userRoleSchema>
 
+// User schema matching backend UserResponse
 const userSchema = z.object({
-  id: z.string(),
-  firstName: z.string(),
-  lastName: z.string(),
+  id: z.number(),
   username: z.string(),
   email: z.string(),
-  phoneNumber: z.string(),
-  status: userStatusSchema,
+  password: z.string(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  phoneNumber: z.string().nullable(),
+  dateOfBirth: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
   role: userRoleSchema,
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  isEmailVerified: z.boolean(),
+  emailVerificationToken: z.string().nullable(),
+  emailVerificationTokenExpiry: z.string().nullable(),
+  passwordResetToken: z.string().nullable(),
+  passwordResetTokenExpiry: z.string().nullable(),
+  lastLoginAt: z.string().nullable(),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  deletedAt: z.string().nullable(),
 })
 export type User = z.infer<typeof userSchema>
 
