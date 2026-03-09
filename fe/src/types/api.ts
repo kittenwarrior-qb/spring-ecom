@@ -91,6 +91,50 @@ export interface UserResponse {
   deletedAt: string | null
 }
 
+// Product types
+export interface ProductRequest {
+  title: string
+  slug?: string
+  author?: string
+  publisher?: string
+  publicationYear?: number
+  language?: string
+  pages?: number
+  format?: string
+  description?: string
+  price: number
+  discountPrice?: number
+  stockQuantity?: number
+  coverImageUrl?: string
+  isBestseller?: boolean
+  isActive?: boolean
+}
+
+export interface ProductResponse {
+  id: number
+  title: string
+  slug: string
+  author: string | null
+  publisher: string | null
+  publicationYear: number | null
+  language: string | null
+  pages: number | null
+  format: string | null
+  description: string | null
+  price: number
+  discountPrice: number | null
+  stockQuantity: number
+  coverImageUrl: string | null
+  isBestseller: boolean
+  isActive: boolean
+  viewCount: number
+  soldCount: number
+  ratingAverage: number
+  ratingCount: number
+  createdAt: string
+  updatedAt: string
+}
+
 // Pagination types
 export interface PageRequest {
   page?: number

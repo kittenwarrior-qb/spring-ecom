@@ -8,7 +8,6 @@ public record CategoryRequest(
     @Size(min = 1, max = 100, message = "Category name must be between 1 and 100 characters")
     String name,
     
-    @NotBlank(message = "Slug cannot be blank")
     @Size(min = 1, max = 100, message = "Slug must be between 1 and 100 characters")
     String slug,
     

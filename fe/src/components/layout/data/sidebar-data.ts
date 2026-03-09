@@ -21,6 +21,8 @@ import {
   AudioWaveform,
   Command,
   GalleryVerticalEnd,
+  FolderOpen,
+  ShoppingBag,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
@@ -50,13 +52,33 @@ export const sidebarData: SidebarData = {
   ],
   navGroups: [
     {
-      title: 'General',
+      title: 'Admin',
       items: [
         {
           title: 'Dashboard',
-          url: '/',
+          url: '/admin',
           icon: LayoutDashboard,
         },
+        {
+          title: 'Products',
+          url: '/admin/products',
+          icon: ShoppingBag,
+        },
+        {
+          title: 'Categories',
+          url: '/admin/categories',
+          icon: FolderOpen,
+        },
+        {
+          title: 'Users',
+          url: '/admin/users',
+          icon: Users,
+        },
+      ],
+    },
+    {
+      title: 'General',
+      items: [
         {
           title: 'Tasks',
           url: '/tasks',
@@ -72,11 +94,6 @@ export const sidebarData: SidebarData = {
           url: '/chats',
           badge: '3',
           icon: MessagesSquare,
-        },
-        {
-          title: 'Users',
-          url: '/users',
-          icon: Users,
         },
         {
           title: 'Secured by Clerk',

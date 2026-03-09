@@ -2,6 +2,7 @@ package com.example.spring_ecom.service.category;
 
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
+import com.example.spring_ecom.core.util.SlugUtil;
 import com.example.spring_ecom.domain.category.Category;
 import com.example.spring_ecom.repository.database.category.CategoryEntity;
 import com.example.spring_ecom.repository.database.category.CategoryEntityMapper;
@@ -22,11 +23,6 @@ public class CategoryCommandService {
     private final CategoryEntityMapper mapper;
     
     public Optional<Category> create(Category category) {
-        // Check if slug already exists
-        if (categoryRepository.existsBySlugAndDeletedAtIsNull(category.slug())) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Category slug already exists");
-        }
-        
         // Check if parent exists
         if (category.parentId() != null) {
             categoryRepository.findById(category.parentId())
@@ -35,6 +31,18 @@ public class CategoryCommandService {
         }
         
         CategoryEntity entity = mapper.toEntity(category);
+        
+        // Auto-generate slug from name if not provided
+        if (entity.getSlug() == null || entity.getSlug().isBlank()) {
+            String baseSlug = SlugUtil.toSlug(entity.getName());
+            String uniqueSlug = generateUniqueSlug(baseSlug);
+            entity.setSlug(uniqueSlug);
+        } else {
+            // If slug is provided, check if it already exists
+            if (categoryRepository.existsBySlugAndDeletedAtIsNull(entity.getSlug())) {
+                throw new BaseException(ResponseCode.BAD_REQUEST, "Category slug already exists");
+            }
+        }
         
         // Set default values
         if (entity.getDisplayOrder() == null) {
@@ -86,5 +94,20 @@ public class CategoryCommandService {
         // Soft delete
         entity.setDeletedAt(LocalDateTime.now());
         categoryRepository.save(entity);
+    }
+    
+    /**
+     * Generate unique slug by appending suffix if needed
+     */
+    private String generateUniqueSlug(String baseSlug) {
+        String slug = baseSlug;
+        int suffix = 0;
+        
+        while (categoryRepository.existsBySlugAndDeletedAtIsNull(slug)) {
+            suffix++;
+            slug = SlugUtil.toSlugWithSuffix(baseSlug, suffix);
+        }
+        
+        return slug;
     }
 }

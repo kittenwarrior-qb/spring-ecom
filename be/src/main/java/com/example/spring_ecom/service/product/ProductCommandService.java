@@ -2,7 +2,9 @@ package com.example.spring_ecom.service.product;
 
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
+import com.example.spring_ecom.core.util.SlugUtil;
 import com.example.spring_ecom.domain.product.Product;
+import com.example.spring_ecom.domain.product.ProductFormat;
 import com.example.spring_ecom.repository.database.product.ProductEntity;
 import com.example.spring_ecom.repository.database.product.ProductEntityMapper;
 import com.example.spring_ecom.repository.database.product.ProductRepository;
@@ -23,11 +25,6 @@ public class ProductCommandService {
     private final ProductEntityMapper mapper;
     
     public Optional<Product> create(Product product) {
-        // Check if slug already exists
-        if (productRepository.existsBySlugAndDeletedAtIsNull(product.slug())) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Product slug already exists");
-        }
-        
         // Validate discount price
         if (product.discountPrice() != null && 
             product.discountPrice().compareTo(product.price()) > 0) {
@@ -35,6 +32,27 @@ public class ProductCommandService {
         }
         
         ProductEntity entity = mapper.toEntity(product);
+        
+        // Validate format if provided
+        if (entity.getFormat() != null && !entity.getFormat().isBlank()) {
+            try {
+                ProductFormat.fromString(entity.getFormat());
+            } catch (IllegalArgumentException e) {
+                throw new BaseException(ResponseCode.BAD_REQUEST, e.getMessage());
+            }
+        }
+        
+        // Auto-generate slug
+        if (entity.getSlug() == null || entity.getSlug().isBlank()) {
+            String baseSlug = SlugUtil.toSlug(entity.getTitle());
+            String uniqueSlug = generateUniqueSlug(baseSlug);
+            entity.setSlug(uniqueSlug);
+        } else {
+            // check if it already exists
+            if (productRepository.existsBySlugAndDeletedAtIsNull(entity.getSlug())) {
+                throw new BaseException(ResponseCode.BAD_REQUEST, "Product slug already exists");
+            }
+        }
         
         // Set default values
         if (entity.getLanguage() == null || entity.getLanguage().isBlank()) {
@@ -74,6 +92,15 @@ public class ProductCommandService {
                 .filter(e -> e.getDeletedAt() == null)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
         
+        // Validate format if provided
+        if (product.format() != null && !product.format().isBlank()) {
+            try {
+                ProductFormat.fromString(product.format());
+            } catch (IllegalArgumentException e) {
+                throw new BaseException(ResponseCode.BAD_REQUEST, e.getMessage());
+            }
+        }
+        
         // Check if slug is changed and already exists
         if (!entity.getSlug().equals(product.slug()) && 
             productRepository.existsBySlugAndDeletedAtIsNull(product.slug())) {
@@ -101,5 +128,20 @@ public class ProductCommandService {
         // Soft delete
         entity.setDeletedAt(LocalDateTime.now());
         productRepository.save(entity);
+    }
+    
+    /**
+     * Generate unique slug by appending suffix if needed
+     */
+    private String generateUniqueSlug(String baseSlug) {
+        String slug = baseSlug;
+        int suffix = 0;
+        
+        while (productRepository.existsBySlugAndDeletedAtIsNull(slug)) {
+            suffix++;
+            slug = SlugUtil.toSlugWithSuffix(baseSlug, suffix);
+        }
+        
+        return slug;
     }
 }

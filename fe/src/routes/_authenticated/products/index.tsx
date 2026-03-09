@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { AdminGuard } from '@/components/auth/auth-guard'
-import { CategoriesPage } from '@/features/categories'
+import { ProductsPage } from '@/features/products'
 
-export const Route = createFileRoute('/_authenticated/categories/')({
+export const Route = createFileRoute('/_authenticated/products/')({
   component: () => (
     <AdminGuard>
-      <CategoriesPage />
+      <ProductsPage />
     </AdminGuard>
   ),
 })
