@@ -57,5 +57,43 @@ public class UserCommandService {
             throw e;
         }
     }
+    
+    protected User updateProfile(Long userId, String firstName, String lastName, String phoneNumber, java.time.LocalDate dateOfBirth) {
+        UserEntity entity = repository.findById(userId)
+                .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
+        
+        if (firstName != null) entity.setFirstName(firstName);
+        if (lastName != null) entity.setLastName(lastName);
+        if (phoneNumber != null) entity.setPhoneNumber(phoneNumber);
+        if (dateOfBirth != null) entity.setDateOfBirth(dateOfBirth);
+        
+        UserEntity updated = repository.save(entity);
+        return mapper.toDomain(updated);
+    }
+    
+    protected User updateAvatar(Long userId, String avatarUrl) {
+        UserEntity entity = repository.findById(userId)
+                .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
+        
+        entity.setAvatarUrl(avatarUrl);
+        UserEntity updated = repository.save(entity);
+        return mapper.toDomain(updated);
+    }
+    
+    protected void changePassword(Long userId, String currentPassword, String newPassword) {
+        UserEntity entity = repository.findById(userId)
+                .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
+        
+        // Verify current password
+        if (!passwordUtil.matches(currentPassword, entity.getPassword())) {
+            throw new BaseException(ResponseCode.INVALID_CREDENTIALS, "Current password is incorrect");
+        }
+        
+        // Update to new password
+        String encodedPassword = passwordUtil.encode(newPassword);
+        entity.setPassword(encodedPassword);
+        repository.save(entity);
+        log.info("Password changed successfully for user ID: {}", userId);
+    }
 }
 

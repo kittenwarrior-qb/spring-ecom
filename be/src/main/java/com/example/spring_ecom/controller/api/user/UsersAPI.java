@@ -9,7 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Users", description = "User management APIs")
-@RequestMapping("v1/api/users")
+@RequestMapping("/v1/api/users")
 public interface UsersAPI {
 
     @PostMapping

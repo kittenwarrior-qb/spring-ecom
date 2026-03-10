@@ -1,10 +1,37 @@
 # Address Management API
 
+## Architecture
+
+Project này sử dụng Clean Architecture pattern với các layer:
+
+- **Controller Layer**: `AddressAPI` (interface) + `AddressController` (implementation)
+- **Service Layer**: 
+  - `AddressUseCase` (interface)
+  - `AddressUseCaseService` (orchestration)
+  - `AddressQueryService` (read operations)
+  - `AddressCommandService` (write operations)
+- **Domain Layer**: `Address` (domain model)
+- **Repository Layer**: `AddressEntity` + `AddressRepository` + `AddressEntityMapper`
+
+## Swagger Documentation
+
+Swagger UI có sẵn tại: `http://localhost:8080/swagger-ui/index.html`
+
+Address API được document đầy đủ với:
+- ✅ Detailed operation descriptions
+- ✅ Request/Response examples
+- ✅ Parameter descriptions
+- ✅ Validation rules
+- ✅ HTTP status codes
+- ✅ Security requirements (JWT Bearer token)
+
 ## Endpoints
+
+Base URL: `/v1/api/addresses`
 
 ### 1. Get All Addresses
 ```http
-GET /api/addresses
+GET /v1/api/addresses
 Authorization: Bearer {token}
 ```
 
@@ -31,15 +58,44 @@ Authorization: Bearer {token}
 }
 ```
 
-### 2. Get Address by ID
+### 2. Get Default Address
 ```http
-GET /api/addresses/{id}
+GET /v1/api/addresses/default
 Authorization: Bearer {token}
 ```
 
-### 3. Create New Address
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "fullName": "Nguyễn Văn A",
+    "phoneNumber": "0901234567",
+    "addressLine": "123 Đường ABC",
+    "ward": "Phường 1",
+    "district": "Quận 1",
+    "city": "Hồ Chí Minh",
+    "postalCode": "700000",
+    "isDefault": true,
+    "createdAt": "2026-03-10T10:00:00",
+    "updatedAt": "2026-03-10T10:00:00"
+  }
+}
+```
+
+**Use case:** Dùng cho checkout page để tự động điền địa chỉ giao hàng mặc định.
+
+### 3. Get Address by ID
 ```http
-POST /api/addresses
+GET /v1/api/addresses/{id}
+Authorization: Bearer {token}
+```
+
+### 4. Create New Address
+```http
+POST /v1/api/addresses
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -55,6 +111,8 @@ Content-Type: application/json
 }
 ```
 
+**Note:** Address tự động gắn với user hiện tại (lấy từ JWT token). Không cần truyền userId.
+
 **Validation:**
 - `fullName`: Required, max 100 characters
 - `phoneNumber`: Required, 10-11 digits
@@ -65,9 +123,9 @@ Content-Type: application/json
 - `postalCode`: Optional, max 20 characters
 - `isDefault`: Optional, boolean
 
-### 4. Update Address
+### 5. Update Address
 ```http
-PUT /api/addresses/{id}
+PUT /v1/api/addresses/{id}
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -83,23 +141,23 @@ Content-Type: application/json
 }
 ```
 
-### 5. Delete Address
+### 6. Delete Address
 ```http
-DELETE /api/addresses/{id}
+DELETE /v1/api/addresses/{id}
 Authorization: Bearer {token}
 ```
 
 **Note:** Nếu xóa địa chỉ mặc định, địa chỉ tiếp theo sẽ tự động được set làm mặc định.
 
-### 6. Set Default Address
+### 7. Set Default Address
 ```http
-PATCH /api/addresses/{id}/set-default
+PATCH /v1/api/addresses/{id}/set-default
 Authorization: Bearer {token}
 ```
 
-### 7. Get Location Suggestion (Auto-fill based on IP)
+### 8. Get Location Suggestion (Auto-fill based on IP)
 ```http
-GET /api/addresses/location-suggestion
+GET /v1/api/addresses/location-suggestion
 Authorization: Bearer {token}
 ```
 

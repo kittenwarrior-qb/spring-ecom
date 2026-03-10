@@ -34,4 +34,22 @@ public class UserUseCaseService implements UserUseCase {
     public void save(User user) {
         commandService.save(user);
     }
+    
+    @Override
+    @Transactional
+    public User updateProfile(Long userId, String firstName, String lastName, String phoneNumber, java.time.LocalDate dateOfBirth) {
+        return commandService.updateProfile(userId, firstName, lastName, phoneNumber, dateOfBirth);
+    }
+    
+    @Override
+    @Transactional
+    public User updateAvatar(Long userId, String avatarUrl) {
+        return commandService.updateAvatar(userId, avatarUrl);
+    }
+    
+    @Override
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        commandService.changePassword(userId, currentPassword, newPassword);
+    }
 }
