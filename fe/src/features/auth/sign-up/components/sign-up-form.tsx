@@ -2,9 +2,8 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { IconFacebook, IconGithub } from '@/assets/brand-icons'
 import { useAuth } from '@/stores/auth-store'
 import { authApi } from '@/api/auth.api'
 import { handleServerError } from '@/lib/handle-server-error'
@@ -25,23 +24,23 @@ const formSchema = z
   .object({
     username: z
       .string()
-      .min(1, 'Please enter your username')
-      .min(3, 'Username must be at least 3 characters'),
+      .min(1, 'Vui lòng nhập tên đăng nhập')
+      .min(3, 'Tên đăng nhập phải có ít nhất 3 ký tự'),
     email: z.email({
       error: (iss) =>
-        iss.input === '' ? 'Please enter your email' : undefined,
+        iss.input === '' ? 'Vui lòng nhập email' : undefined,
     }),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
     phoneNumber: z.string().optional(),
     password: z
       .string()
-      .min(1, 'Please enter your password')
-      .min(1, 'Password is required'),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+      .min(1, 'Vui lòng nhập mật khẩu')
+      .min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+    confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match.",
+    message: "Mật khẩu không khớp.",
     path: ['confirmPassword'],
   })
 
@@ -83,7 +82,7 @@ export function SignUpForm({
       auth.setUser(response.user)
       auth.setAccessToken(response.accessToken, response.expiresIn)
 
-      toast.success(`Account created successfully! Welcome, ${response.user.username}!`)
+      toast.success(`Tạo tài khoản thành công! Chào mừng, ${response.user.username}!`)
 
       // Redirect to dashboard
       navigate({ to: '/', replace: true })
@@ -107,9 +106,9 @@ export function SignUpForm({
             name='firstName'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>First Name</FormLabel>
+                <FormLabel>Họ</FormLabel>
                 <FormControl>
-                  <Input placeholder='John' {...field} />
+                  <Input placeholder='Nguyễn' {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -120,9 +119,9 @@ export function SignUpForm({
             name='lastName'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Last Name</FormLabel>
+                <FormLabel>Tên</FormLabel>
                 <FormControl>
-                  <Input placeholder='Doe' {...field} />
+                  <Input placeholder='Văn A' {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -134,9 +133,9 @@ export function SignUpForm({
           name='username'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>Tên đăng nhập</FormLabel>
               <FormControl>
-                <Input placeholder='johndoe' {...field} />
+                <Input placeholder='username123' {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -160,9 +159,9 @@ export function SignUpForm({
           name='phoneNumber'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone Number (Optional)</FormLabel>
+              <FormLabel>Số điện thoại (Tuỳ chọn)</FormLabel>
               <FormControl>
-                <Input placeholder='+1234567890' {...field} />
+                <Input placeholder='0912345678' {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -173,7 +172,7 @@ export function SignUpForm({
           name='password'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Mật khẩu</FormLabel>
               <FormControl>
                 <PasswordInput placeholder='********' {...field} />
               </FormControl>
@@ -186,7 +185,7 @@ export function SignUpForm({
           name='confirmPassword'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Confirm Password</FormLabel>
+              <FormLabel>Xác nhận mật khẩu</FormLabel>
               <FormControl>
                 <PasswordInput placeholder='********' {...field} />
               </FormControl>
@@ -195,38 +194,25 @@ export function SignUpForm({
           )}
         />
         <Button className='mt-2' disabled={isLoading}>
-          Create Account
+          {isLoading ? 'Đang xử lý...' : 'Đăng ký tài khoản'}
         </Button>
 
-        <div className='relative my-2'>
+        <div className='relative my-4'>
           <div className='absolute inset-0 flex items-center'>
             <span className='w-full border-t' />
           </div>
           <div className='relative flex justify-center text-xs uppercase'>
-            <span className='bg-background px-2 text-muted-foreground'>
-              Or continue with
+            <span className='bg-[#f8fafb] px-2 text-muted-foreground'>
+              Đã có tài khoản?
             </span>
           </div>
         </div>
 
-        <div className='grid grid-cols-2 gap-2'>
-          <Button
-            variant='outline'
-            className='w-full'
-            type='button'
-            disabled={isLoading}
-          >
-            <IconGithub className='h-4 w-4' /> GitHub
+        <Link to='/sign-in' search={{ redirect: undefined }}>
+          <Button variant='outline' className='w-full' type='button' disabled={isLoading}>
+            Đăng nhập ngay
           </Button>
-          <Button
-            variant='outline'
-            className='w-full'
-            type='button'
-            disabled={isLoading}
-          >
-            <IconFacebook className='h-4 w-4' /> Facebook
-          </Button>
-        </div>
+        </Link>
       </form>
     </Form>
   )

@@ -1,0 +1,224 @@
+import { Link, useNavigate } from '@tanstack/react-router'
+import { ShoppingCart, Menu, X, User, LogOut, Package, ChevronDown } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useIsAuthenticated, useUser, useAuthStore } from '@/stores/auth-store'
+import { useCartCount } from '@/hooks/use-cart'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+
+// Import logo
+import logoImg from '@/assets/images/logo.png'
+
+export function SiteHeader() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const navigate = useNavigate()
+
+  // Use real auth store
+  const isLoggedIn = useIsAuthenticated()
+  const user = useUser()
+  const cartCount = useCartCount()
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const handleLogout = () => {
+    useAuthStore.getState().auth.reset()
+    toast.success('Đã đăng xuất')
+    navigate({ to: '/' })
+  }
+
+  return (
+    <nav
+      className={cn(
+        "sticky top-0 z-50 transition-all duration-300",
+        isScrolled ? "bg-white/90 backdrop-blur-md border-b shadow-sm" : "bg-transparent"
+      )}
+    >
+      <div className="mx-auto max-w-7xl py-4 px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+            <img src={logoImg} alt="Fahaza Logo" className="h-10" />
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex md:items-center md:space-x-1">
+            <Link
+              to="/"
+              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-md font-medium transition-colors"
+            >
+              Trang chủ
+            </Link>
+            <Link
+              to="/products"
+              search={{ category: undefined, keyword: undefined }}
+              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-md font-medium transition-colors"
+            >
+              Sách
+            </Link>
+            <a
+              href="#"
+              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-md font-medium transition-colors"
+            >
+              Giới thiệu
+            </a>
+          </div>
+
+          {/* Right Actions */}
+          <div className="hidden md:flex md:items-center md:space-x-2">
+            {/* Cart */}
+            <Link to="/cart">
+              <Button variant="ghost" className="relative text-gray-700 hover:text-gray-900">
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                    {cartCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+
+            {/* User Section */}
+            {isLoggedIn && user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2 text-gray-700 hover:bg-gray-50">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-[#EBF2FA] text-gray-800 font-semibold">
+                        {user.username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-4 py-3 border-b">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{user.username}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center gap-3">
+                      <User className="h-4 w-4" />
+                      Tài khoản của tôi
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile/orders" className="flex items-center gap-3">
+                      <Package className="h-4 w-4" />
+                      Đơn hàng của tôi
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault()
+                      handleLogout()
+                    }}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <LogOut className="mr-3 h-4 w-4" />
+                    Đăng xuất
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link to="/sign-in" search={{ redirect: undefined }}>
+                <Button className="bg-primary text-white rounded-[40px] py-2 px-4 text-sm font-semibold hover:opacity-90 transition-opacity">
+                  Đăng nhập
+                </Button>
+              </Link>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden pb-4 border-t mt-2 pt-4">
+            <div className="flex flex-col space-y-1">
+              <Link
+                to="/"
+                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Trang chủ
+              </Link>
+              <Link
+                to="/products"
+                search={{ category: undefined, keyword: undefined }}
+                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Sách
+              </Link>
+              <a href="#" className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
+                Giới thiệu
+              </a>
+              <Link
+                to="/cart"
+                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <ShoppingCart className="h-4 w-4 inline mr-2" />
+                Giỏ hàng ({cartCount})
+              </Link>
+              {isLoggedIn && user ? (
+                <>
+                  <Link
+                    to="/profile"
+                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <User className="h-4 w-4 inline mr-2" />
+                    Tài khoản
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md text-left"
+                  >
+                    <LogOut className="h-4 w-4 inline mr-2" />
+                    Đăng xuất
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/sign-in"
+                  search={{ redirect: undefined }}
+                  className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Đăng nhập
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
+  )
+}

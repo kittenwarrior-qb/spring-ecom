@@ -10,7 +10,7 @@ import { UsersPrimaryButtons } from './components/users-primary-buttons'
 import { UsersProvider } from './components/users-provider'
 import { UsersTable } from './components/users-table'
 
-const route = getRouteApi('/_authenticated/users/')
+const route = getRouteApi('/admin/users/')
 
 export function Users() {
   const search = route.useSearch()

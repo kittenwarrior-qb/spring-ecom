@@ -9,46 +9,47 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as CartRouteImport } from './routes/cart'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as ProductsIndexRouteImport } from './routes/products/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as ProfileSettingsRouteImport } from './routes/profile/settings'
+import { Route as ProfileOrdersRouteImport } from './routes/profile/orders'
 import { Route as ProductsSlugRouteImport } from './routes/products/$slug'
-import { Route as errors503RouteImport } from './routes/(errors)/503'
-import { Route as errors500RouteImport } from './routes/(errors)/500'
-import { Route as errors404RouteImport } from './routes/(errors)/404'
-import { Route as errors403RouteImport } from './routes/(errors)/403'
-import { Route as errors401RouteImport } from './routes/(errors)/401'
-import { Route as authSignUpRouteImport } from './routes/(auth)/sign-up'
-import { Route as authSignIn2RouteImport } from './routes/(auth)/sign-in-2'
-import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
-import { Route as authOtpRouteImport } from './routes/(auth)/otp'
-import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
-import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
-import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
 import { Route as AdminProductsIndexRouteImport } from './routes/admin/products/index'
 import { Route as AdminCategoriesIndexRouteImport } from './routes/admin/categories/index'
-import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
-import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
-import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
-import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
-import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
-import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
-import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
-import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 
-const ClerkRouteRoute = ClerkRouteRouteImport.update({
-  id: '/clerk',
-  path: '/clerk',
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
@@ -65,6 +66,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductsIndexRoute = ProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
@@ -75,68 +81,20 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const ProfileSettingsRoute = ProfileSettingsRouteImport.update({
+  id: '/profile/settings',
+  path: '/profile/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileOrdersRoute = ProfileOrdersRouteImport.update({
+  id: '/profile/orders',
+  path: '/profile/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductsSlugRoute = ProductsSlugRouteImport.update({
   id: '/products/$slug',
   path: '/products/$slug',
   getParentRoute: () => rootRouteImport,
-} as any)
-const errors503Route = errors503RouteImport.update({
-  id: '/(errors)/503',
-  path: '/503',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const errors500Route = errors500RouteImport.update({
-  id: '/(errors)/500',
-  path: '/500',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const errors404Route = errors404RouteImport.update({
-  id: '/(errors)/404',
-  path: '/404',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const errors403Route = errors403RouteImport.update({
-  id: '/(errors)/403',
-  path: '/403',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const errors401Route = errors401RouteImport.update({
-  id: '/(errors)/401',
-  path: '/401',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const authSignUpRoute = authSignUpRouteImport.update({
-  id: '/(auth)/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const authSignIn2Route = authSignIn2RouteImport.update({
-  id: '/(auth)/sign-in-2',
-  path: '/sign-in-2',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const authSignInRoute = authSignInRouteImport.update({
-  id: '/(auth)/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const authOtpRoute = authOtpRouteImport.update({
-  id: '/(auth)/otp',
-  path: '/otp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
-  id: '/(auth)/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ClerkAuthenticatedRouteRoute = ClerkAuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => ClerkRouteRoute,
-} as any)
-const ClerkauthRouteRoute = ClerkauthRouteRouteImport.update({
-  id: '/(auth)',
-  getParentRoute: () => ClerkRouteRoute,
 } as any)
 const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
@@ -159,49 +117,12 @@ const AdminCategoriesIndexRoute = AdminCategoriesIndexRouteImport.update({
   path: '/categories/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
-  id: '/tasks/',
-  path: '/tasks/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
-const AuthenticatedHelpCenterIndexRoute =
-  AuthenticatedHelpCenterIndexRouteImport.update({
-    id: '/help-center/',
-    path: '/help-center/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
-  id: '/chats/',
-  path: '/chats/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAppsIndexRoute = AuthenticatedAppsIndexRouteImport.update({
-  id: '/apps/',
-  path: '/apps/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const ClerkAuthenticatedUserManagementRoute =
-  ClerkAuthenticatedUserManagementRouteImport.update({
-    id: '/user-management',
-    path: '/user-management',
-    getParentRoute: () => ClerkAuthenticatedRouteRoute,
-  } as any)
-const ClerkauthSignUpRoute = ClerkauthSignUpRouteImport.update({
-  id: '/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => ClerkauthRouteRoute,
-} as any)
-const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => ClerkauthRouteRoute,
-} as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
@@ -226,77 +147,47 @@ const AuthenticatedSettingsAccountRoute =
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
-const AuthenticatedErrorsErrorRoute =
-  AuthenticatedErrorsErrorRouteImport.update({
-    id: '/errors/$error',
-    path: '/errors/$error',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/cart': typeof CartRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/forgot-password': typeof authForgotPasswordRoute
-  '/otp': typeof authOtpRoute
-  '/sign-in': typeof authSignInRoute
-  '/sign-in-2': typeof authSignIn2Route
-  '/sign-up': typeof authSignUpRoute
-  '/401': typeof errors401Route
-  '/403': typeof errors403Route
-  '/404': typeof errors404Route
-  '/500': typeof errors500Route
-  '/503': typeof errors503Route
   '/products/$slug': typeof ProductsSlugRoute
+  '/profile/orders': typeof ProfileOrdersRoute
+  '/profile/settings': typeof ProfileSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/products': typeof ProductsIndexRoute
-  '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/profile': typeof ProfileIndexRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/apps': typeof AuthenticatedAppsIndexRoute
-  '/chats': typeof AuthenticatedChatsIndexRoute
-  '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/tasks': typeof AuthenticatedTasksIndexRoute
   '/admin/categories': typeof AdminCategoriesIndexRoute
   '/admin/products': typeof AdminProductsIndexRoute
   '/admin/users': typeof AdminUsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
-  '/forgot-password': typeof authForgotPasswordRoute
-  '/otp': typeof authOtpRoute
-  '/sign-in': typeof authSignInRoute
-  '/sign-in-2': typeof authSignIn2Route
-  '/sign-up': typeof authSignUpRoute
-  '/401': typeof errors401Route
-  '/403': typeof errors403Route
-  '/404': typeof errors404Route
-  '/500': typeof errors500Route
-  '/503': typeof errors503Route
+  '/cart': typeof CartRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/profile/orders': typeof ProfileOrdersRoute
+  '/profile/settings': typeof ProfileSettingsRoute
   '/admin': typeof AdminIndexRoute
   '/products': typeof ProductsIndexRoute
-  '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/profile': typeof ProfileIndexRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/apps': typeof AuthenticatedAppsIndexRoute
-  '/chats': typeof AuthenticatedChatsIndexRoute
-  '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
-  '/tasks': typeof AuthenticatedTasksIndexRoute
   '/admin/categories': typeof AdminCategoriesIndexRoute
   '/admin/products': typeof AdminProductsIndexRoute
   '/admin/users': typeof AdminUsersIndexRoute
@@ -306,36 +197,22 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
-  '/clerk': typeof ClerkRouteRouteWithChildren
+  '/cart': typeof CartRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
-  '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
-  '/(auth)/forgot-password': typeof authForgotPasswordRoute
-  '/(auth)/otp': typeof authOtpRoute
-  '/(auth)/sign-in': typeof authSignInRoute
-  '/(auth)/sign-in-2': typeof authSignIn2Route
-  '/(auth)/sign-up': typeof authSignUpRoute
-  '/(errors)/401': typeof errors401Route
-  '/(errors)/403': typeof errors403Route
-  '/(errors)/404': typeof errors404Route
-  '/(errors)/500': typeof errors500Route
-  '/(errors)/503': typeof errors503Route
   '/products/$slug': typeof ProductsSlugRoute
+  '/profile/orders': typeof ProfileOrdersRoute
+  '/profile/settings': typeof ProfileSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/products/': typeof ProductsIndexRoute
-  '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/profile/': typeof ProfileIndexRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
-  '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
-  '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
-  '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
-  '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
-  '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
-  '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/admin/categories/': typeof AdminCategoriesIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
   '/admin/users/': typeof AdminUsersIndexRoute
@@ -345,67 +222,43 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/clerk'
-    | '/settings'
-    | '/forgot-password'
-    | '/otp'
+    | '/cart'
     | '/sign-in'
-    | '/sign-in-2'
     | '/sign-up'
-    | '/401'
-    | '/403'
-    | '/404'
-    | '/500'
-    | '/503'
+    | '/verify-email'
+    | '/settings'
     | '/products/$slug'
+    | '/profile/orders'
+    | '/profile/settings'
     | '/admin/'
     | '/products'
-    | '/errors/$error'
+    | '/profile'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
-    | '/clerk/sign-in'
-    | '/clerk/sign-up'
-    | '/clerk/user-management'
-    | '/apps'
-    | '/chats'
-    | '/help-center'
     | '/settings/'
-    | '/tasks'
     | '/admin/categories'
     | '/admin/products'
     | '/admin/users'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/clerk'
-    | '/forgot-password'
-    | '/otp'
+    | '/cart'
     | '/sign-in'
-    | '/sign-in-2'
     | '/sign-up'
-    | '/401'
-    | '/403'
-    | '/404'
-    | '/500'
-    | '/503'
+    | '/verify-email'
     | '/products/$slug'
+    | '/profile/orders'
+    | '/profile/settings'
     | '/admin'
     | '/products'
-    | '/errors/$error'
+    | '/profile'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
-    | '/clerk/sign-in'
-    | '/clerk/sign-up'
-    | '/clerk/user-management'
-    | '/apps'
-    | '/chats'
-    | '/help-center'
     | '/settings'
-    | '/tasks'
     | '/admin/categories'
     | '/admin/products'
     | '/admin/users'
@@ -414,36 +267,22 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/admin'
-    | '/clerk'
+    | '/cart'
+    | '/sign-in'
+    | '/sign-up'
+    | '/verify-email'
     | '/_authenticated/settings'
-    | '/clerk/(auth)'
-    | '/clerk/_authenticated'
-    | '/(auth)/forgot-password'
-    | '/(auth)/otp'
-    | '/(auth)/sign-in'
-    | '/(auth)/sign-in-2'
-    | '/(auth)/sign-up'
-    | '/(errors)/401'
-    | '/(errors)/403'
-    | '/(errors)/404'
-    | '/(errors)/500'
-    | '/(errors)/503'
     | '/products/$slug'
+    | '/profile/orders'
+    | '/profile/settings'
     | '/admin/'
     | '/products/'
-    | '/_authenticated/errors/$error'
+    | '/profile/'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
-    | '/clerk/(auth)/sign-in'
-    | '/clerk/(auth)/sign-up'
-    | '/clerk/_authenticated/user-management'
-    | '/_authenticated/apps/'
-    | '/_authenticated/chats/'
-    | '/_authenticated/help-center/'
     | '/_authenticated/settings/'
-    | '/_authenticated/tasks/'
     | '/admin/categories/'
     | '/admin/products/'
     | '/admin/users/'
@@ -453,28 +292,45 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
-  ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
-  authForgotPasswordRoute: typeof authForgotPasswordRoute
-  authOtpRoute: typeof authOtpRoute
-  authSignInRoute: typeof authSignInRoute
-  authSignIn2Route: typeof authSignIn2Route
-  authSignUpRoute: typeof authSignUpRoute
-  errors401Route: typeof errors401Route
-  errors403Route: typeof errors403Route
-  errors404Route: typeof errors404Route
-  errors500Route: typeof errors500Route
-  errors503Route: typeof errors503Route
+  CartRoute: typeof CartRoute
+  SignInRoute: typeof SignInRoute
+  SignUpRoute: typeof SignUpRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
+  ProfileOrdersRoute: typeof ProfileOrdersRoute
+  ProfileSettingsRoute: typeof ProfileSettingsRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
+  ProfileIndexRoute: typeof ProfileIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/clerk': {
-      id: '/clerk'
-      path: '/clerk'
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkRouteRouteImport
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -498,6 +354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/products/': {
       id: '/products/'
       path: '/products'
@@ -512,96 +375,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/profile/settings': {
+      id: '/profile/settings'
+      path: '/profile/settings'
+      fullPath: '/profile/settings'
+      preLoaderRoute: typeof ProfileSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/orders': {
+      id: '/profile/orders'
+      path: '/profile/orders'
+      fullPath: '/profile/orders'
+      preLoaderRoute: typeof ProfileOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/products/$slug': {
       id: '/products/$slug'
       path: '/products/$slug'
       fullPath: '/products/$slug'
       preLoaderRoute: typeof ProductsSlugRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/(errors)/503': {
-      id: '/(errors)/503'
-      path: '/503'
-      fullPath: '/503'
-      preLoaderRoute: typeof errors503RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(errors)/500': {
-      id: '/(errors)/500'
-      path: '/500'
-      fullPath: '/500'
-      preLoaderRoute: typeof errors500RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(errors)/404': {
-      id: '/(errors)/404'
-      path: '/404'
-      fullPath: '/404'
-      preLoaderRoute: typeof errors404RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(errors)/403': {
-      id: '/(errors)/403'
-      path: '/403'
-      fullPath: '/403'
-      preLoaderRoute: typeof errors403RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(errors)/401': {
-      id: '/(errors)/401'
-      path: '/401'
-      fullPath: '/401'
-      preLoaderRoute: typeof errors401RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(auth)/sign-up': {
-      id: '/(auth)/sign-up'
-      path: '/sign-up'
-      fullPath: '/sign-up'
-      preLoaderRoute: typeof authSignUpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(auth)/sign-in-2': {
-      id: '/(auth)/sign-in-2'
-      path: '/sign-in-2'
-      fullPath: '/sign-in-2'
-      preLoaderRoute: typeof authSignIn2RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(auth)/sign-in': {
-      id: '/(auth)/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof authSignInRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(auth)/otp': {
-      id: '/(auth)/otp'
-      path: '/otp'
-      fullPath: '/otp'
-      preLoaderRoute: typeof authOtpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(auth)/forgot-password': {
-      id: '/(auth)/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof authForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/clerk/_authenticated': {
-      id: '/clerk/_authenticated'
-      path: ''
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkAuthenticatedRouteRouteImport
-      parentRoute: typeof ClerkRouteRoute
-    }
-    '/clerk/(auth)': {
-      id: '/clerk/(auth)'
-      path: ''
-      fullPath: '/clerk'
-      preLoaderRoute: typeof ClerkauthRouteRouteImport
-      parentRoute: typeof ClerkRouteRoute
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
@@ -631,61 +424,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/_authenticated/tasks/': {
-      id: '/_authenticated/tasks/'
-      path: '/tasks'
-      fullPath: '/tasks'
-      preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/'
       path: '/'
       fullPath: '/settings/'
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/help-center/': {
-      id: '/_authenticated/help-center/'
-      path: '/help-center'
-      fullPath: '/help-center'
-      preLoaderRoute: typeof AuthenticatedHelpCenterIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/chats/': {
-      id: '/_authenticated/chats/'
-      path: '/chats'
-      fullPath: '/chats'
-      preLoaderRoute: typeof AuthenticatedChatsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/apps/': {
-      id: '/_authenticated/apps/'
-      path: '/apps'
-      fullPath: '/apps'
-      preLoaderRoute: typeof AuthenticatedAppsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/clerk/_authenticated/user-management': {
-      id: '/clerk/_authenticated/user-management'
-      path: '/user-management'
-      fullPath: '/clerk/user-management'
-      preLoaderRoute: typeof ClerkAuthenticatedUserManagementRouteImport
-      parentRoute: typeof ClerkAuthenticatedRouteRoute
-    }
-    '/clerk/(auth)/sign-up': {
-      id: '/clerk/(auth)/sign-up'
-      path: '/sign-up'
-      fullPath: '/clerk/sign-up'
-      preLoaderRoute: typeof ClerkauthSignUpRouteImport
-      parentRoute: typeof ClerkauthRouteRoute
-    }
-    '/clerk/(auth)/sign-in': {
-      id: '/clerk/(auth)/sign-in'
-      path: '/sign-in'
-      fullPath: '/clerk/sign-in'
-      preLoaderRoute: typeof ClerkauthSignInRouteImport
-      parentRoute: typeof ClerkauthRouteRoute
     }
     '/_authenticated/settings/notifications': {
       id: '/_authenticated/settings/notifications'
@@ -715,13 +459,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
-    '/_authenticated/errors/$error': {
-      id: '/_authenticated/errors/$error'
-      path: '/errors/$error'
-      fullPath: '/errors/$error'
-      preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
   }
 }
 
@@ -750,20 +487,10 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
-  AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
-  AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
-  AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
-  AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
-  AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
-  AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
-  AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
-  AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
-  AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
-  AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -787,66 +514,19 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
-interface ClerkauthRouteRouteChildren {
-  ClerkauthSignInRoute: typeof ClerkauthSignInRoute
-  ClerkauthSignUpRoute: typeof ClerkauthSignUpRoute
-}
-
-const ClerkauthRouteRouteChildren: ClerkauthRouteRouteChildren = {
-  ClerkauthSignInRoute: ClerkauthSignInRoute,
-  ClerkauthSignUpRoute: ClerkauthSignUpRoute,
-}
-
-const ClerkauthRouteRouteWithChildren = ClerkauthRouteRoute._addFileChildren(
-  ClerkauthRouteRouteChildren,
-)
-
-interface ClerkAuthenticatedRouteRouteChildren {
-  ClerkAuthenticatedUserManagementRoute: typeof ClerkAuthenticatedUserManagementRoute
-}
-
-const ClerkAuthenticatedRouteRouteChildren: ClerkAuthenticatedRouteRouteChildren =
-  {
-    ClerkAuthenticatedUserManagementRoute:
-      ClerkAuthenticatedUserManagementRoute,
-  }
-
-const ClerkAuthenticatedRouteRouteWithChildren =
-  ClerkAuthenticatedRouteRoute._addFileChildren(
-    ClerkAuthenticatedRouteRouteChildren,
-  )
-
-interface ClerkRouteRouteChildren {
-  ClerkauthRouteRoute: typeof ClerkauthRouteRouteWithChildren
-  ClerkAuthenticatedRouteRoute: typeof ClerkAuthenticatedRouteRouteWithChildren
-}
-
-const ClerkRouteRouteChildren: ClerkRouteRouteChildren = {
-  ClerkauthRouteRoute: ClerkauthRouteRouteWithChildren,
-  ClerkAuthenticatedRouteRoute: ClerkAuthenticatedRouteRouteWithChildren,
-}
-
-const ClerkRouteRouteWithChildren = ClerkRouteRoute._addFileChildren(
-  ClerkRouteRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdminRouteRoute: AdminRouteRouteWithChildren,
-  ClerkRouteRoute: ClerkRouteRouteWithChildren,
-  authForgotPasswordRoute: authForgotPasswordRoute,
-  authOtpRoute: authOtpRoute,
-  authSignInRoute: authSignInRoute,
-  authSignIn2Route: authSignIn2Route,
-  authSignUpRoute: authSignUpRoute,
-  errors401Route: errors401Route,
-  errors403Route: errors403Route,
-  errors404Route: errors404Route,
-  errors500Route: errors500Route,
-  errors503Route: errors503Route,
+  CartRoute: CartRoute,
+  SignInRoute: SignInRoute,
+  SignUpRoute: SignUpRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   ProductsSlugRoute: ProductsSlugRoute,
+  ProfileOrdersRoute: ProfileOrdersRoute,
+  ProfileSettingsRoute: ProfileSettingsRoute,
   ProductsIndexRoute: ProductsIndexRoute,
+  ProfileIndexRoute: ProfileIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

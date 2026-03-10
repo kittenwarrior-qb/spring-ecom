@@ -43,6 +43,15 @@ export const productApi = {
     return response.data.data
   },
 
+  // Get products by category slug
+  getByCategory: async (categorySlug: string, page = 0, size = 10, sort = 'id,desc'): Promise<PageResponse<ProductResponse>> => {
+    const response = await apiClient.get<ApiResponse<PageResponse<ProductResponse>>>(
+      `${PRODUCT_BASE_URL}/category/${categorySlug}`,
+      { params: { page, size, sort } }
+    )
+    return response.data.data
+  },
+
   // Create new product
   create: async (data: ProductRequest): Promise<ProductResponse> => {
     const response = await apiClient.post<ApiResponse<ProductResponse>>(PRODUCT_BASE_URL, data)

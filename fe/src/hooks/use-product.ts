@@ -15,6 +15,8 @@ export const productKeys = {
     [...productKeys.all, 'search', keyword, params] as const,
   bestsellers: (params: { page?: number; size?: number }) =>
     [...productKeys.all, 'bestsellers', params] as const,
+  byCategory: (categorySlug: string, params: { page?: number; size?: number; sort?: string }) =>
+    [...productKeys.all, 'category', categorySlug, params] as const,
 }
 
 // Get all products with pagination
@@ -57,6 +59,15 @@ export function useBestsellerProducts(page = 0, size = 10) {
   return useQuery({
     queryKey: productKeys.bestsellers({ page, size }),
     queryFn: () => productApi.getBestsellers(page, size),
+  })
+}
+
+// Get products by category
+export function useProductsByCategory(categorySlug: string, page = 0, size = 10, sort = 'id,desc') {
+  return useQuery({
+    queryKey: productKeys.byCategory(categorySlug, { page, size, sort }),
+    queryFn: () => productApi.getByCategory(categorySlug, page, size, sort),
+    enabled: !!categorySlug,
   })
 }
 

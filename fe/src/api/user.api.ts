@@ -1,7 +1,8 @@
 import apiClient from '@/lib/api-client'
-import type { ApiResponse, PageResponse, UserRequest, UserResponse } from '@/types/api'
+import type { ApiResponse, PageResponse, UserRequest, UserResponse, UserProfileResponse, UpdateProfileRequest, UpdateAvatarRequest, ChangePasswordRequest } from '@/types/api'
 
 const USER_BASE_URL = '/v1/api/users'
+const PROFILE_BASE_URL = '/v1/api/user'
 
 export const userApi = {
   // Get all users with pagination
@@ -12,7 +13,7 @@ export const userApi = {
 
   // Get user by ID
   getById: async (userId: string): Promise<UserResponse> => {
-    const response = await apiClient.get<ApiResponse<UserResponse>>(`/v1/api/user/${userId}`)
+    const response = await apiClient.get<ApiResponse<UserResponse>>(`${PROFILE_BASE_URL}/${userId}`)
     return response.data.data
   },
 
@@ -30,5 +31,29 @@ export const userApi = {
   // Delete user
   delete: async (id: number): Promise<void> => {
     await apiClient.delete<ApiResponse<void>>(`${USER_BASE_URL}/${id}`)
+  },
+
+  // Profile APIs
+  // Get current user profile
+  getProfile: async (): Promise<UserProfileResponse> => {
+    const response = await apiClient.get<ApiResponse<UserProfileResponse>>(`${PROFILE_BASE_URL}/me`)
+    return response.data.data
+  },
+
+  // Update profile
+  updateProfile: async (data: UpdateProfileRequest): Promise<UserProfileResponse> => {
+    const response = await apiClient.put<ApiResponse<UserProfileResponse>>(`${PROFILE_BASE_URL}/me`, data)
+    return response.data.data
+  },
+
+  // Update avatar
+  updateAvatar: async (data: UpdateAvatarRequest): Promise<UserProfileResponse> => {
+    const response = await apiClient.put<ApiResponse<UserProfileResponse>>(`${PROFILE_BASE_URL}/me/avatar`, data)
+    return response.data.data
+  },
+
+  // Change password
+  changePassword: async (data: ChangePasswordRequest): Promise<void> => {
+    await apiClient.put<ApiResponse<void>>(`${PROFILE_BASE_URL}/me/password`, data)
   },
 }

@@ -1,35 +1,30 @@
-import { useNavigate, useRouter } from '@tanstack/react-router'
-import { cn } from '@/lib/utils'
+import { Link } from '@tanstack/react-router'
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-type GeneralErrorProps = React.HTMLAttributes<HTMLDivElement> & {
-  minimal?: boolean
-}
-
-export function GeneralError({
-  className,
-  minimal = false,
-}: GeneralErrorProps) {
-  const navigate = useNavigate()
-  const { history } = useRouter()
+export function GeneralError() {
   return (
-    <div className={cn('h-svh w-full', className)}>
-      <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2'>
-        {!minimal && (
-          <h1 className='text-[7rem] leading-tight font-bold'>500</h1>
-        )}
-        <span className='font-medium'>Oops! Something went wrong {`:')`}</span>
-        <p className='text-center text-muted-foreground'>
-          We apologize for the inconvenience. <br /> Please try again later.
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-4">
+      <div className="flex flex-col items-center gap-4">
+        <div className="rounded-full bg-destructive/10 p-6">
+          <AlertTriangle className="h-12 w-12 text-destructive" />
+        </div>
+        <h1 className="text-3xl font-bold">Something went wrong</h1>
+        <p className="text-center text-muted-foreground max-w-md">
+          An unexpected error occurred. Please try again or contact support if the problem persists.
         </p>
-        {!minimal && (
-          <div className='mt-6 flex gap-4'>
-            <Button variant='outline' onClick={() => history.go(-1)}>
-              Go Back
-            </Button>
-            <Button onClick={() => navigate({ to: '/' })}>Back to Home</Button>
-          </div>
-        )}
+      </div>
+      <div className="flex gap-4">
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Try Again
+        </Button>
+        <Link to="/">
+          <Button>
+            <Home className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+        </Link>
       </div>
     </div>
   )

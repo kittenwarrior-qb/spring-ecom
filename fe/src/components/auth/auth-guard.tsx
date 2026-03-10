@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { useIsAuthenticated, isAdmin } from '@/stores/auth-store'
+import { useIsAuthenticated, useUser } from '@/stores/auth-store'
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -10,11 +10,12 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children, requireAdmin = false }: AuthGuardProps) {
   const isAuthenticated = useIsAuthenticated()
+  const user = useUser()
   const navigate = useNavigate()
 
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.error('Please sign in to access this page')
+      toast.error('Vui lòng đăng nhập để truy cập trang này')
       navigate({
         to: '/sign-in',
         search: { redirect: window.location.pathname },
@@ -23,21 +24,20 @@ export function AuthGuard({ children, requireAdmin = false }: AuthGuardProps) {
       return
     }
 
-    if (requireAdmin && !isAdmin()) {
-      toast.error('You do not have permission to access this page')
+    if (requireAdmin && user?.role !== 'ADMIN') {
+      toast.error('Bạn không có quyền truy cập trang này')
       navigate({
-        to: '/sign-in',
-        search: { redirect: window.location.pathname },
+        to: '/',
         replace: true,
       })
     }
-  }, [isAuthenticated, requireAdmin, navigate])
+  }, [isAuthenticated, requireAdmin, user, navigate])
 
   if (!isAuthenticated) {
     return null
   }
 
-  if (requireAdmin && !isAdmin()) {
+  if (requireAdmin && user?.role !== 'ADMIN') {
     return null
   }
 

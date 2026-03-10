@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { userApi } from '@/api/user.api'
-import type { PageRequest, UserRequest, UserResponse } from '@/types/api'
+import type { PageRequest, UserRequest, UserResponse, UpdateProfileRequest, UpdateAvatarRequest, ChangePasswordRequest } from '@/types/api'
 
 // Query keys
 export const userKeys = {
@@ -9,6 +9,7 @@ export const userKeys = {
   list: (params: PageRequest) => [...userKeys.lists(), params] as const,
   details: () => [...userKeys.all, 'detail'] as const,
   detail: (id: string) => [...userKeys.details(), id] as const,
+  profile: () => [...userKeys.all, 'profile'] as const,
 }
 
 // Get all users with pagination
@@ -63,5 +64,45 @@ export function useDeleteUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() })
     },
+  })
+}
+
+// Profile hooks
+// Get current user profile
+export function useUserProfile() {
+  return useQuery({
+    queryKey: userKeys.profile(),
+    queryFn: userApi.getProfile,
+  })
+}
+
+// Update profile
+export function useUpdateProfile() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (data: UpdateProfileRequest) => userApi.updateProfile(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.profile() })
+    },
+  })
+}
+
+// Update avatar
+export function useUpdateAvatar() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (data: UpdateAvatarRequest) => userApi.updateAvatar(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.profile() })
+    },
+  })
+}
+
+// Change password
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (data: ChangePasswordRequest) => userApi.changePassword(data),
   })
 }

@@ -35,7 +35,7 @@ export interface UserInfo {
 export interface AuthResponse {
   accessToken: string
   expiresIn: number
-  user: UserInfo
+  userInfo: UserInfo
 }
 
 // Category types
@@ -135,6 +135,26 @@ export interface ProductResponse {
   updatedAt: string
 }
 
+// Cart types
+export interface CartItemResponse {
+  id: number
+  cartId: number
+  productId: number
+  quantity: number
+  price: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AddToCartRequest {
+  productId: number
+  quantity: number
+}
+
+export interface UpdateCartItemRequest {
+  quantity: number
+}
+
 // Pagination types
 export interface PageRequest {
   page?: number
@@ -160,4 +180,80 @@ export interface PageResponse<T> {
       empty: boolean
     }
   }
+}
+
+// User Profile types
+export interface UserProfileResponse {
+  id: number
+  username: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  phoneNumber: string | null
+  dateOfBirth: string | null
+  avatarUrl: string | null
+  role: UserRole
+  isEmailVerified: boolean
+  isActive: boolean
+  lastLoginAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface UpdateProfileRequest {
+  firstName?: string
+  lastName?: string
+  phoneNumber?: string
+  dateOfBirth?: string
+}
+
+export interface UpdateAvatarRequest {
+  avatarUrl: string
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}
+
+// Order types
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
+export type PaymentMethod = 'COD' | 'PAYOS' | 'BANK_TRANSFER'
+
+export interface OrderResponse {
+  id: number
+  orderNumber: string
+  userId: number
+  status: OrderStatus
+  subtotal: number
+  shippingFee: number
+  discount: number
+  total: number
+  paymentMethod: PaymentMethod
+  shippingAddress: string
+  shippingCity: string
+  shippingDistrict: string
+  shippingWard: string
+  recipientName: string
+  recipientPhone: string
+  note: string | null
+  createdAt: string
+  updatedAt: string
+  cancelledAt: string | null
+}
+
+export interface OrderItemResponse {
+  id: number
+  orderId: number
+  productId: number
+  productTitle: string
+  quantity: number
+  price: number
+  subtotal: number
+  createdAt: string
+}
+
+export interface OrderDetailResponse extends OrderResponse {
+  items: OrderItemResponse[]
 }

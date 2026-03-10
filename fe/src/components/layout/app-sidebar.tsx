@@ -1,4 +1,6 @@
 import { useLayout } from '@/context/layout-provider'
+import { useUser } from '@/stores/auth-store'
+import { useUserProfile } from '@/hooks/use-user'
 import {
   Sidebar,
   SidebarContent,
@@ -7,13 +9,20 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 // import { AppTitle } from './app-title'
-import { sidebarData } from './data/sidebar-data'
+import { getStaticSidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import { TeamSwitcher } from './team-switcher'
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
+  const currentUser = useUser()
+  const { data: userProfile } = useUserProfile()
+  const sidebarData = getStaticSidebarData()
+
+  // Use profile data if available, otherwise fall back to auth store user
+  const user = userProfile || currentUser
+
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
@@ -29,7 +38,7 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={sidebarData.user} />
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

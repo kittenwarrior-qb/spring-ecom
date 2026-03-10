@@ -1,25 +1,25 @@
-import { useNavigate, useRouter } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
+import { FileQuestion, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export function NotFoundError() {
-  const navigate = useNavigate()
-  const { history } = useRouter()
   return (
-    <div className='h-svh'>
-      <div className='m-auto flex h-full w-full flex-col items-center justify-center gap-2'>
-        <h1 className='text-[7rem] leading-tight font-bold'>404</h1>
-        <span className='font-medium'>Oops! Page Not Found!</span>
-        <p className='text-center text-muted-foreground'>
-          It seems like the page you're looking for <br />
-          does not exist or might have been removed.
-        </p>
-        <div className='mt-6 flex gap-4'>
-          <Button variant='outline' onClick={() => history.go(-1)}>
-            Go Back
-          </Button>
-          <Button onClick={() => navigate({ to: '/' })}>Back to Home</Button>
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-4">
+      <div className="flex flex-col items-center gap-4">
+        <div className="rounded-full bg-muted p-6">
+          <FileQuestion className="h-12 w-12 text-muted-foreground" />
         </div>
+        <h1 className="text-3xl font-bold">Page Not Found</h1>
+        <p className="text-center text-muted-foreground max-w-md">
+          The page you're looking for doesn't exist or has been moved.
+        </p>
       </div>
+      <Link to="/">
+        <Button>
+          <Home className="mr-2 h-4 w-4" />
+          Back to Home
+        </Button>
+      </Link>
     </div>
   )
 }

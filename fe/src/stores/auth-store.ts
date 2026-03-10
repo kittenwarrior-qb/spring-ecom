@@ -57,6 +57,15 @@ export const useAuthStore = create<AuthState>()(
     },
     {
       name: 'auth-storage', // saves to localStorage
+      merge: (persistedState: any, currentState: AuthState) => {
+        return {
+          ...currentState,
+          auth: {
+            ...currentState.auth,
+            ...(persistedState?.auth || {}),
+          },
+        }
+      },
     }
   )
 )

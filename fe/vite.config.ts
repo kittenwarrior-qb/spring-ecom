@@ -14,6 +14,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  assetsInclude: ['**/*.riv'],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
