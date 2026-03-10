@@ -48,14 +48,14 @@ public class CartController implements CartAPI {
     public ApiResponse<Void> removeItemFromCart(Long productId) {
         Long userId = SecurityUtil.getCurrentUserId();
         cartUseCase.removeItemFromCart(userId, productId);
-        return ApiResponse.Success.of(null);
+        return ApiResponse.Success.of();
     }
     
     @Override
     public ApiResponse<Void> clearCart() {
         Long userId = SecurityUtil.getCurrentUserId();
         cartUseCase.clearCart(userId);
-        return ApiResponse.Success.of(null);
+        return ApiResponse.Success.of();
     }
 
     @Override
@@ -64,7 +64,7 @@ public class CartController implements CartAPI {
         for (AddToCartRequest item : items) {
             cartUseCase.addItemToCart(userId, item.productId(), item.quantity());
         }
-        return ApiResponse.Success.of(null);
+        return ApiResponse.Success.of();
     }
 }
 

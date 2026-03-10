@@ -25,7 +25,6 @@ public class ProductCommandService {
     private final ProductEntityMapper mapper;
     
     public Optional<Product> create(Product product) {
-        // Validate discount price
         if (product.discountPrice() != null && 
             product.discountPrice().compareTo(product.price()) > 0) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Discount price cannot be greater than price");
@@ -33,7 +32,6 @@ public class ProductCommandService {
         
         ProductEntity entity = mapper.toEntity(product);
         
-        // Validate format if provided
         if (entity.getFormat() != null && !entity.getFormat().isBlank()) {
             try {
                 ProductFormat.fromString(entity.getFormat());
@@ -42,19 +40,16 @@ public class ProductCommandService {
             }
         }
         
-        // Auto-generate slug
         if (entity.getSlug() == null || entity.getSlug().isBlank()) {
             String baseSlug = SlugUtil.toSlug(entity.getTitle());
             String uniqueSlug = generateUniqueSlug(baseSlug);
             entity.setSlug(uniqueSlug);
         } else {
-            // check if it already exists
             if (productRepository.existsBySlugAndDeletedAtIsNull(entity.getSlug())) {
                 throw new BaseException(ResponseCode.BAD_REQUEST, "Product slug already exists");
             }
         }
         
-        // Set default values
         if (entity.getLanguage() == null || entity.getLanguage().isBlank()) {
             entity.setLanguage("Vietnamese");
         }
@@ -92,7 +87,6 @@ public class ProductCommandService {
                 .filter(e -> e.getDeletedAt() == null)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
         
-        // Validate format if provided
         if (product.format() != null && !product.format().isBlank()) {
             try {
                 ProductFormat.fromString(product.format());
@@ -101,19 +95,16 @@ public class ProductCommandService {
             }
         }
         
-        // Check if slug is changed and already exists
         if (!entity.getSlug().equals(product.slug()) && 
             productRepository.existsBySlugAndDeletedAtIsNull(product.slug())) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Product slug already exists");
         }
         
-        // Validate discount price
         if (product.discountPrice() != null && 
             product.discountPrice().compareTo(product.price()) > 0) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Discount price cannot be greater than price");
         }
         
-        // Update fields
         mapper.update(entity, product);
         
         ProductEntity updated = productRepository.save(entity);
@@ -125,14 +116,10 @@ public class ProductCommandService {
                 .filter(e -> e.getDeletedAt() == null)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
         
-        // Soft delete
         entity.setDeletedAt(LocalDateTime.now());
         productRepository.save(entity);
     }
-    
-    /**
-     * Generate unique slug by appending suffix if needed
-     */
+
     private String generateUniqueSlug(String baseSlug) {
         String slug = baseSlug;
         int suffix = 0;

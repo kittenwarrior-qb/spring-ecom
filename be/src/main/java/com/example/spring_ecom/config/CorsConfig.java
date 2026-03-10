@@ -16,11 +16,11 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Allow frontend origins
+        // Allow frontend and internal service origins
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",
-            "http://localhost:3000",
-            "http://localhost:4200"
+            "http://localhost:5173",  // Frontend (Vite)
+            "http://localhost:3000",  // Frontend (React/Next.js)
+            "http://localhost:3001"  // SePay service
         ));
         
         // Allow all HTTP methods
