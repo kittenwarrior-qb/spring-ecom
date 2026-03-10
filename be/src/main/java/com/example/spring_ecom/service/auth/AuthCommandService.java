@@ -13,7 +13,9 @@ import com.example.spring_ecom.repository.database.auth.AuthEntityMapper;
 import com.example.spring_ecom.repository.database.auth.RefreshTokenEntity;
 import com.example.spring_ecom.repository.database.user.UserEntity;
 import com.example.spring_ecom.repository.database.user.UserRepository;
+import com.example.spring_ecom.service.auth.email.EmailUseCase;
 import com.example.spring_ecom.service.auth.refreshToken.RefreshTokenService;
+
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,7 @@ public class AuthCommandService {
     private final JwtConfig jwtConfig;
     private final RefreshTokenService refreshTokenService;
     private final CookieUtil cookieUtil;
+    private final EmailUseCase emailUseCase;
 
     public AuthResponse login(LoginDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
         UserEntity userEntity = userRepository.findByEmail(command.email())
@@ -40,6 +43,10 @@ public class AuthCommandService {
         
         if (!userEntity.getIsActive()) {
             throw new BaseException(ResponseCode.FORBIDDEN, "Account is not activated");
+        }
+
+        if (!userEntity.getIsEmailVerified()) {
+            throw new BaseException(ResponseCode.FORBIDDEN, "Email is not verified. Please check your email and verify your account.");
         }
 
         if (!passwordEncoder.matches(command.password(), userEntity.getPassword())) {
@@ -87,15 +94,15 @@ public class AuthCommandService {
 
         userEntity = userRepository.save(userEntity);
 
-        String accessToken = jwtUtil.generateToken(
-                userEntity.getEmail(),
-                userEntity.getId(),
-                userEntity.getRole().name()
-        );
-        
-        String refreshToken = refreshTokenService.createRefreshToken(userEntity.getId(), deviceInfo, ipAddress);
-        cookieUtil.addRefreshTokenCookie(response, refreshToken);
+        // Send email verification
+        try {
+            emailUseCase.sendVerificationEmail(userEntity.getId());
+        } catch (Exception e) {
+            log.error("Failed to send verification email to {}: {}", userEntity.getEmail(), e.getMessage());
+            // Continue with registration even if email fails
+        }
 
+        // Return response without tokens - user needs to verify email first
         AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
                 userEntity.getId(),
                 userEntity.getUsername(),
@@ -105,7 +112,13 @@ public class AuthCommandService {
                 userEntity.getRole()
         );
 
-        return AuthResponse.of(accessToken, jwtConfig.getExpiration(), userInfo);
+        // Return a special response indicating email verification is needed
+        return AuthResponse.builder()
+                .accessToken(null)
+                .expiresIn(0L)
+                .userInfo(userInfo)
+                .message("Registration successful. Please check your email to verify your account.")
+                .build();
     }
     
     public AuthResponse refreshToken(String oldRefreshToken, String deviceInfo, String ipAddress, HttpServletResponse response) {

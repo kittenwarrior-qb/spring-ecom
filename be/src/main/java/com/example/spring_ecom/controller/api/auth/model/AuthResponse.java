@@ -1,14 +1,17 @@
 package com.example.spring_ecom.controller.api.auth.model;
 
 import com.example.spring_ecom.domain.user.UserRole;
+import lombok.Builder;
 
+@Builder
 public record AuthResponse(
     String accessToken,
     Long expiresIn,
-    UserInfo user
+    UserInfo userInfo,
+    String message
 ) {
-    public static AuthResponse of(String accessToken, Long expiresIn, UserInfo user) {
-        return new AuthResponse(accessToken, expiresIn, user);
+    public static AuthResponse of(String accessToken, Long expiresIn, UserInfo userInfo) {
+        return new AuthResponse(accessToken, expiresIn, userInfo, null);
     }
     
     public record UserInfo(

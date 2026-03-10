@@ -61,8 +61,6 @@ public class AddressUseCaseService implements AddressUseCase {
                 null,
                 null
         );
-        
-        // If this is set as default or user has no addresses, make it default
         boolean shouldBeDefault = Boolean.TRUE.equals(request.isDefault()) || 
                                   queryService.findByUserId(userId).isEmpty();
         
@@ -84,7 +82,6 @@ public class AddressUseCaseService implements AddressUseCase {
                     address.deletedAt()
             );
         }
-        
         return commandService.save(address);
     }
     

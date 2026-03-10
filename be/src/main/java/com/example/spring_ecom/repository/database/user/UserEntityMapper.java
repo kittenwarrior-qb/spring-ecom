@@ -4,13 +4,7 @@ import com.example.spring_ecom.config.MapStructGlobalConfig;
 import com.example.spring_ecom.core.mapper.BaseEntityMapper;
 import com.example.spring_ecom.domain.user.User;
 import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
 
 @Mapper(config = MapStructGlobalConfig.class)
 public interface UserEntityMapper extends BaseEntityMapper<User, UserEntity> {
-
-    UserEntity toEntity(User source);
-
-    void update(@MappingTarget UserEntity target, User source);
-
 }

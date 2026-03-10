@@ -57,4 +57,14 @@ public class CartController implements CartAPI {
         cartUseCase.clearCart(userId);
         return ApiResponse.Success.of(null);
     }
+
+    @Override
+    public ApiResponse<Void> syncCart(List<AddToCartRequest> items) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        for (AddToCartRequest item : items) {
+            cartUseCase.addItemToCart(userId, item.productId(), item.quantity());
+        }
+        return ApiResponse.Success.of(null);
+    }
 }
+

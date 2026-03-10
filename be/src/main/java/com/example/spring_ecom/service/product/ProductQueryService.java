@@ -44,4 +44,9 @@ public class ProductQueryService {
         return productRepository.findByIsBestsellerAndDeletedAtIsNull(true, pageable)
                 .map(mapper::toDomain);
     }
+    
+    public Page<Product> findByCategorySlug(String slug, Pageable pageable) {
+        return productRepository.findByCategorySlug(slug, pageable)
+                .map(mapper::toDomain);
+    }
 }

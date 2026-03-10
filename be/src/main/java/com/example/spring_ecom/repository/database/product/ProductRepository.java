@@ -21,6 +21,9 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     
     Page<ProductEntity> findByIsBestsellerAndDeletedAtIsNull(Boolean isBestseller, Pageable pageable);
     
+    @Query("SELECT p FROM ProductEntity p JOIN p.categories c WHERE p.deletedAt IS NULL AND c.slug = :categorySlug")
+    Page<ProductEntity> findByCategorySlug(@Param("categorySlug") String categorySlug, Pageable pageable);
+    
     @Query("SELECT p FROM ProductEntity p WHERE p.deletedAt IS NULL AND " +
            "(LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(p.author) LIKE LOWER(CONCAT('%', :keyword, '%')))")

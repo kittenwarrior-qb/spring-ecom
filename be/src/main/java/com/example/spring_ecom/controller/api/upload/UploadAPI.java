@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Upload", description = "Upload API")
-@RequestMapping("/api/upload")
+@RequestMapping("v1/api/upload")
 public interface UploadAPI {
 
     @Operation(summary = "Upload image to Cloudinary")

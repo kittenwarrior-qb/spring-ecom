@@ -14,6 +14,8 @@ public interface ProductUseCase {
     
     Optional<Product> findBySlug(String slug);
     
+    Page<Product> findByCategorySlug(String slug, Pageable pageable);
+    
     Page<Product> searchProducts(String keyword, Pageable pageable);
     
     Page<Product> findBestsellerProducts(Pageable pageable);

@@ -44,6 +44,9 @@ public class SecurityConfig {
                 // Public endpoints - Auth
                 .requestMatchers("/v1/api/auth/login", "/v1/api/auth/register", "/v1/api/auth/refresh").permitAll()
                 
+                // Public endpoints - Email verification
+                .requestMatchers("/v1/api/email/verify", "/v1/api/email/resend-verification").permitAll()
+                
                 // Public endpoints - Products (read only)
                 .requestMatchers(HttpMethod.GET, "/v1/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/v1/api/categories/**").permitAll()

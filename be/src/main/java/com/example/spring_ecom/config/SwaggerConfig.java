@@ -50,7 +50,7 @@ public class SwaggerConfig {
     public GroupedOpenApi publicApi() {
         return GroupedOpenApi.builder()
                 .group("public")
-                .pathsToMatch("/v1/api/**")
+                .pathsToMatch("/v1/api/**", "/api/v1/**")
                 .build();
     }
 }

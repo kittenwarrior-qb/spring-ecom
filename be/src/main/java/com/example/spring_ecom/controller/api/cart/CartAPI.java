@@ -36,4 +36,9 @@ public interface CartAPI {
     @Operation(summary = "Clear all items from cart")
     @DeleteMapping
     ApiResponse<Void> clearCart();
+
+    @Operation(summary = "Sync local cart to server")
+    @PostMapping("/sync")
+    ApiResponse<Void> syncCart(@RequestBody List<AddToCartRequest> items);
 }
+

@@ -45,6 +45,13 @@ public class ProductController implements ProductAPI {
     }
     
     @Override
+    public ApiResponse<Page<ProductResponse>> getProductsByCategory(String slug, Pageable pageable) {
+        Page<ProductResponse> products = productUseCase.findByCategorySlug(slug, pageable)
+                .map(responseMapper::toResDto);
+        return ApiResponse.Success.of(products);
+    }
+    
+    @Override
     public ApiResponse<Page<ProductResponse>> searchProducts(String keyword, Pageable pageable) {
         Page<ProductResponse> products = productUseCase.searchProducts(keyword, pageable)
                 .map(responseMapper::toResDto);

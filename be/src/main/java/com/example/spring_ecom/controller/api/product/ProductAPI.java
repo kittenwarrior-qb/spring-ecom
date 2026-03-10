@@ -27,6 +27,12 @@ public interface ProductAPI {
     @GetMapping("/slug/{slug}")
     ApiResponse<ProductResponse> getProductBySlug(@PathVariable String slug);
     
+    @Operation(summary = "Get products by category slug")
+    @GetMapping("/category/{slug}")
+    ApiResponse<Page<ProductResponse>> getProductsByCategory(
+            @PathVariable String slug, 
+            @Parameter(hidden = true) Pageable pageable);
+    
     @Operation(summary = "Search products by keyword")
     @GetMapping("/search")
     ApiResponse<Page<ProductResponse>> searchProducts(

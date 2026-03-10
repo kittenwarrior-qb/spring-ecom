@@ -33,6 +33,11 @@ public class ProductUseCaseService implements ProductUseCase {
     public Optional<Product> findBySlug(String slug) {
         return queryService.findBySlug(slug);
     }
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Product> findByCategorySlug(String slug, Pageable pageable) {
+        return queryService.findByCategorySlug(slug, pageable);
+    }
     
     @Override
     @Transactional(readOnly = true)
