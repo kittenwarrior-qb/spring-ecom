@@ -2,6 +2,7 @@ package com.example.spring_ecom.service.order;
 
 import com.example.spring_ecom.domain.order.Order;
 import com.example.spring_ecom.domain.order.OrderStatus;
+import com.example.spring_ecom.domain.order.PaymentStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -57,6 +58,12 @@ public class OrderUseCaseService implements OrderUseCase {
     @Transactional
     public Order updateOrderStatus(Long id, OrderStatus status) {
         return commandService.updateOrderStatus(id, status);
+    }
+    
+    @Override
+    @Transactional
+    public Order updatePaymentStatus(Long id, PaymentStatus paymentStatus) {
+        return commandService.updatePaymentStatus(id, paymentStatus);
     }
     
     @Override

@@ -53,6 +53,7 @@ public class OrderController implements OrderAPI {
                 null,
                 userId,
                 OrderStatus.PENDING,
+                null, 
                 subtotal,
                 shippingFee,
                 BigDecimal.ZERO,

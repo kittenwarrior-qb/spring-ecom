@@ -39,7 +39,7 @@ public class DatabaseLogger implements CommandLineRunner {
                     log.warn("No migrations found!");
                 } else {
                     for (MigrationInfo migration : migrations) {
-                        log.info("Version: {} | Description: {} | State: {} | Installed on: {}",
+                        log.info("Migration: {} | Description: {} | State: {} | Installed on: {}",
                                 migration.getVersion(),
                                 migration.getDescription(),
                                 migration.getState(),

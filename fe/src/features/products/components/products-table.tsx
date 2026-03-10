@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { useProductsContext } from './products-provider'
 import type { ProductResponse } from '@/types/api'
 
+/* react-compiler-ignore */
 const columns: ColumnDef<ProductResponse>[] = [
   {
     id: 'select',
@@ -40,6 +41,32 @@ const columns: ColumnDef<ProductResponse>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: 'coverImageUrl',
+    header: 'Cover',
+    cell: ({ row }) => {
+      const imageUrl = row.getValue('coverImageUrl') as string | null
+      return (
+        <div className="w-12 h-16 rounded overflow-hidden bg-muted">
+          {imageUrl ? (
+            <img 
+              src={imageUrl} 
+              alt={row.getValue('title') as string}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="64" viewBox="0 0 48 64"%3E%3Crect width="48" height="64" fill="%23f3f4f6"/%3E%3Ctext x="24" y="32" text-anchor="middle" dy=".3em" font-family="sans-serif" font-size="8" fill="%239ca3af"%3ENo Image%3C/text%3E%3C/svg%3E'
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+              No Image
+            </div>
+          )}
+        </div>
+      )
+    },
+    enableSorting: false,
   },
   {
     accessorKey: 'id',
@@ -94,20 +121,32 @@ const columns: ColumnDef<ProductResponse>[] = [
     ),
     cell: ({ row }) => {
       const price = row.getValue('price') as number
-      const discountPrice = row.original.discountPrice
+      return (
+        <div className='whitespace-nowrap'>
+          <span className='font-semibold'>{price.toLocaleString('vi-VN')}đ</span>
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: 'discountPrice',
+    header: ({ column }) => (
+      <Button
+        variant='ghost'
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      >
+        Discount Price
+        <ArrowUpDown className='ml-2 h-4 w-4' />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const discountPrice = row.getValue('discountPrice') as number | null
       return (
         <div className='whitespace-nowrap'>
           {discountPrice ? (
-            <>
-              <span className='text-destructive line-through mr-2'>
-                {price.toLocaleString('vi-VN')}đ
-              </span>
-              <span className='font-semibold'>
-                {discountPrice.toLocaleString('vi-VN')}đ
-              </span>
-            </>
+            <span className='font-semibold text-green-600'>{discountPrice.toLocaleString('vi-VN')}đ</span>
           ) : (
-            <span className='font-semibold'>{price.toLocaleString('vi-VN')}đ</span>
+            <span className='text-muted-foreground'>—</span>
           )}
         </div>
       )
@@ -213,6 +252,8 @@ export function ProductsTable() {
 
   const products = data?.content ?? []
 
+  // React Compiler warning expected here - TanStack Table API returns functions that cannot be safely memoized
+  // This is known limitation and doesn't affect functionality
   const table = useReactTable({
     data: products,
     columns,
