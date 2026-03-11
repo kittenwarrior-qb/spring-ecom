@@ -20,28 +20,6 @@ import type { CategoryResponse } from '@/types/api'
 
 const columns: ColumnDef<CategoryResponse>[] = [
   {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
     accessorKey: 'id',
     header: ({ column }) => (
       <Button
@@ -60,7 +38,7 @@ const columns: ColumnDef<CategoryResponse>[] = [
         variant='ghost'
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
-        Name
+        Tên danh mục
         <ArrowUpDown className='ml-2 h-4 w-4' />
       </Button>
     ),
@@ -75,7 +53,7 @@ const columns: ColumnDef<CategoryResponse>[] = [
   },
   {
     accessorKey: 'description',
-    header: 'Description',
+    header: 'Mô tả',
     cell: ({ row }) => {
       const description = row.getValue('description') as string | null
       return description ? (
@@ -87,7 +65,7 @@ const columns: ColumnDef<CategoryResponse>[] = [
   },
   {
     accessorKey: 'parentName',
-    header: 'Parent',
+    header: 'Danh mục cha',
     cell: ({ row }) => {
       const parentName = row.getValue('parentName') as string | null
       return parentName ? (

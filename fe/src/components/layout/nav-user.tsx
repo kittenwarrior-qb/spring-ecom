@@ -1,11 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import {
   BadgeCheck,
-  Bell,
   ChevronsUpDown,
   CreditCard,
   LogOut,
   Sparkles,
+  LayoutDashboard,
 } from 'lucide-react'
 import useDialogState from '@/hooks/use-dialog-state'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -25,10 +25,10 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { SignOutDialog } from '@/components/sign-out-dialog'
-import type { UserInfo } from '@/types/api'
+import type { UserInfo, UserResponse } from '@/types/api'
 
 type NavUserProps = {
-  user: UserInfo | null
+  user: UserInfo | UserResponse | null
 }
 
 export function NavUser({ user }: NavUserProps) {
@@ -36,15 +36,24 @@ export function NavUser({ user }: NavUserProps) {
   const [open, setOpen] = useDialogState()
 
   // Generate avatar fallback from user's name or email
-  const getAvatarFallback = (user: UserInfo | null) => {
+  const getAvatarFallback = (user: UserInfo | UserResponse | null) => {
     if (!user) return 'U'
     
-    if (user.fullName) {
-      const names = user.fullName.trim().split(' ')
-      if (names.length >= 2) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
+    // Check if user has firstName and lastName
+    if ('firstName' in user && user.firstName && user.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+    }
+    
+    if ('firstName' in user && user.firstName) {
+      return user.firstName[0].toUpperCase()
+    }
+    
+    if (user.username) {
+      const username = user.username.trim()
+      if (username.length >= 2) {
+        return username.substring(0, 2).toUpperCase()
       }
-      return names[0][0].toUpperCase()
+      return username[0].toUpperCase()
     }
     
     if (user.email) {
@@ -54,9 +63,27 @@ export function NavUser({ user }: NavUserProps) {
     return 'U'
   }
 
+  // Get display name
+  const getDisplayName = (user: UserInfo | UserResponse | null) => {
+    if (!user) return 'User'
+    
+    if ('firstName' in user && user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`
+    }
+    
+    if ('firstName' in user && user.firstName) {
+      return user.firstName
+    }
+    
+    return user.username || user.email || 'User'
+  }
+
   const avatarFallback = getAvatarFallback(user)
-  const displayName = user?.fullName || user?.email || 'User'
+  const displayName = getDisplayName(user)
   const displayEmail = user?.email || ''
+  const avatarUrl = 'avatarUrl' in (user || {}) ? (user as UserResponse)?.avatarUrl || undefined : undefined
+  const isAdmin = user?.role === 'ADMIN'
+  
 
   return (
     <>
@@ -69,7 +96,7 @@ export function NavUser({ user }: NavUserProps) {
                 className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
               >
                 <Avatar className='h-8 w-8 rounded-lg'>
-                  <AvatarImage src={user?.avatarUrl} alt={displayName} />
+                  <AvatarImage src={avatarUrl} alt={displayName} />
                   <AvatarFallback className='rounded-lg'>{avatarFallback}</AvatarFallback>
                 </Avatar>
                 <div className='grid flex-1 text-start text-sm leading-tight'>
@@ -88,7 +115,7 @@ export function NavUser({ user }: NavUserProps) {
               <DropdownMenuLabel className='p-0 font-normal'>
                 <div className='flex items-center gap-2 px-1 py-1.5 text-start text-sm'>
                   <Avatar className='h-8 w-8 rounded-lg'>
-                    <AvatarImage src={user?.avatarUrl} alt={displayName} />
+                    <AvatarImage src={avatarUrl} alt={displayName} />
                     <AvatarFallback className='rounded-lg'>{avatarFallback}</AvatarFallback>
                   </Avatar>
                   <div className='grid flex-1 text-start text-sm leading-tight'>
@@ -98,6 +125,19 @@ export function NavUser({ user }: NavUserProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              {isAdmin && (
+                <>
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem asChild>
+                      <Link to='/admin'>
+                        <LayoutDashboard />
+                        Quản Trị Viên
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuGroup>
                 <DropdownMenuItem>
                   <Sparkles />
@@ -107,21 +147,15 @@ export function NavUser({ user }: NavUserProps) {
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                  <Link to='/settings/account'>
+                  <Link to='/profile'>
                     <BadgeCheck />
-                    Account
+                    Tài khoản của tôi
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to='/settings'>
+                  <Link to='/profile/orders'>
                     <CreditCard />
-                    Billing
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to='/settings/notifications'>
-                    <Bell />
-                    Notifications
+                    Đơn hàng của tôi
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
@@ -131,7 +165,7 @@ export function NavUser({ user }: NavUserProps) {
                 onClick={() => setOpen(true)}
               >
                 <LogOut />
-                Sign out
+                Đăng xuất
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

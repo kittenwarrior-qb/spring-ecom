@@ -3,7 +3,24 @@ import type { ApiResponse, PageResponse, OrderResponse, OrderDetailResponse, Ord
 
 const ORDER_BASE_URL = '/v1/api/orders'
 
+export interface CreateOrderRequest {
+  recipientName: string
+  recipientPhone: string
+  shippingAddress: string
+  shippingWard: string
+  shippingDistrict: string
+  shippingCity: string
+  paymentMethod: 'COD' | 'PAYOS' | 'BANK_TRANSFER'
+  note?: string
+}
+
 export const orderApi = {
+  // Create order from cart
+  createOrder: async (request: CreateOrderRequest): Promise<OrderResponse> => {
+    const response = await apiClient.post<ApiResponse<OrderResponse>>(`${ORDER_BASE_URL}/create-from-cart`, request)
+    return response.data.data
+  },
+
   // Get my orders
   getMyOrders: async (page = 0, size = 10): Promise<PageResponse<OrderResponse>> => {
     const response = await apiClient.get<ApiResponse<PageResponse<OrderResponse>>>(`${ORDER_BASE_URL}/my-orders`, {

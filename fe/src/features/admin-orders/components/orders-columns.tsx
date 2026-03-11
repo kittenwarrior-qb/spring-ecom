@@ -1,49 +1,25 @@
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
+import { DataTableColumnHeader } from '@/components/data-table'
+
 import { OrderResponse, OrderStatus } from '@/types/api'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export const statusStyles: Record<OrderStatus, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
-    PENDING: { label: 'Pending', variant: 'outline' },
-    CONFIRMED: { label: 'Confirmed', variant: 'secondary' },
-    PROCESSING: { label: 'Processing', variant: 'default' },
-    SHIPPED: { label: 'Shipped', variant: 'default' },
-    DELIVERED: { label: 'Delivered', variant: 'secondary' },
-    CANCELLED: { label: 'Cancelled', variant: 'destructive' },
+    PENDING: { label: 'Chờ xử lý', variant: 'outline' },
+    CONFIRMED: { label: 'Đã xác nhận', variant: 'secondary' },
+    PROCESSING: { label: 'Đang xử lý', variant: 'default' },
+    SHIPPED: { label: 'Đã gửi', variant: 'default' },
+    DELIVERED: { label: 'Đã giao', variant: 'secondary' },
+    CANCELLED: { label: 'Đã hủy', variant: 'destructive' },
 }
 
 export const ordersColumns: ColumnDef<OrderResponse>[] = [
     {
-        id: 'select',
-        header: ({ table }) => (
-            <Checkbox
-                checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && 'indeterminate')
-                }
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label='Select all'
-                className='translate-y-[2px]'
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label='Select row'
-                className='translate-y-[2px]'
-            />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
-    {
         accessorKey: 'orderNumber',
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Order #' />
+            <DataTableColumnHeader column={column} title='Mã đơn hàng' />
         ),
         cell: ({ row }) => <div className='font-medium'>{row.getValue('orderNumber')}</div>,
         enableSorting: true,
@@ -52,14 +28,14 @@ export const ordersColumns: ColumnDef<OrderResponse>[] = [
     {
         accessorKey: 'recipientName',
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Customer' />
+            <DataTableColumnHeader column={column} title='Khách hàng' />
         ),
         cell: ({ row }) => <div>{row.getValue('recipientName')}</div>,
     },
     {
         accessorKey: 'total',
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Total' />
+            <DataTableColumnHeader column={column} title='Tổng tiền' />
         ),
         cell: ({ row }) => {
             const amount = parseFloat(row.getValue('total'))
@@ -73,7 +49,7 @@ export const ordersColumns: ColumnDef<OrderResponse>[] = [
     {
         accessorKey: 'status',
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Status' />
+            <DataTableColumnHeader column={column} title='Trạng thái' />
         ),
         cell: ({ row }) => {
             const status = row.getValue('status') as OrderStatus
@@ -91,11 +67,11 @@ export const ordersColumns: ColumnDef<OrderResponse>[] = [
     {
         accessorKey: 'createdAt',
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Date' />
+            <DataTableColumnHeader column={column} title='Ngày tạo' />
         ),
         cell: ({ row }) => {
             return (
-                <div className='text-muted-foreground'>
+                <div className='text-gray-700 dark:text-gray-300'>
                     {format(new Date(row.getValue('createdAt')), 'dd/MM/yyyy HH:mm')}
                 </div>
             )

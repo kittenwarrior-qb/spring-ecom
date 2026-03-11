@@ -11,72 +11,71 @@ import {
   LayoutDashboard,
   Users,
 } from 'lucide-react'
-import { type SidebarData } from '../types'
 
 export const getStaticSidebarData = () => ({
   teams: [
     {
-      name: 'Shadcn Admin',
+      name: 'Spring Ecom',
       logo: Command,
-      plan: 'Vite + ShadcnUI',
+      plan: 'Bảng Quản Trị',
     },
     {
       name: 'Acme Inc',
       logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
+      plan: 'Doanh Nghiệp',
     },
   ],
   navGroups: [
     {
-      title: 'Admin',
+      title: 'Quản Trị',
       items: [
         {
-          title: 'Dashboard',
+          title: 'Đơn Hàng',
           url: '/admin/',
           icon: LayoutDashboard,
         },
         {
-          title: 'Products',
+          title: 'Sản Phẩm',
           url: '/admin/products/',
           icon: ShoppingBag,
         },
         {
-          title: 'Categories',
+          title: 'Danh Mục',
           url: '/admin/categories/',
           icon: FolderOpen,
         },
         {
-          title: 'Users',
+          title: 'Người Dùng',
           url: '/admin/users/',
           icon: Users,
         },
       ],
     },
     {
-      title: 'Settings',
+      title: 'Cài Đặt',
       items: [
         {
-          title: 'Profile',
+          title: 'Hồ Sơ',
           url: '/settings',
           icon: UserCog,
         },
         {
-          title: 'Account',
+          title: 'Tài Khoản',
           url: '/settings/account',
           icon: Wrench,
         },
         {
-          title: 'Appearance',
+          title: 'Giao Diện',
           url: '/settings/appearance',
           icon: Palette,
         },
         {
-          title: 'Notifications',
+          title: 'Thông Báo',
           url: '/settings/notifications',
           icon: Bell,
         },
         {
-          title: 'Display',
+          title: 'Hiển Thị',
           url: '/settings/display',
           icon: Monitor,
         },
@@ -84,3 +83,5 @@ export const getStaticSidebarData = () => ({
     },
   ],
 })
+
+

@@ -1,4 +1,4 @@
-package com.example.spring_ecom.service.payment;
+package com.example.spring_ecom.service.order.payment;
 
 import com.example.spring_ecom.controller.api.payment.model.SepayWebhookRequest;
 import com.example.spring_ecom.core.exception.BaseException;
@@ -10,6 +10,8 @@ import com.example.spring_ecom.domain.order.PaymentStatus;
 import com.example.spring_ecom.domain.order.SepayTransaction;
 import com.example.spring_ecom.repository.database.SepayTransactionRepository;
 import com.example.spring_ecom.service.order.OrderUseCase;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 @Slf4j
@@ -28,6 +29,7 @@ public class SepayWebhookService {
     
     private final SepayTransactionRepository sepayTransactionRepository;
     private final OrderUseCase orderUseCase;
+    private final ObjectMapper objectMapper;
     
     @Value("${payment.webhook.api-key:}")
     private String webhookApiKey;
@@ -55,39 +57,23 @@ public class SepayWebhookService {
             return;
         }
         
-        // Parse transaction date
-        LocalDateTime transactionDate;
+        // Convert request to JsonNode for storage
+        JsonNode webhookData;
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            transactionDate = LocalDateTime.parse(request.transactionDate(), formatter);
+            webhookData = objectMapper.valueToTree(request);
         } catch (Exception e) {
-            log.error("Failed to parse transaction date: {}", request.transactionDate(), e);
-            transactionDate = LocalDateTime.now();
+            log.error("Failed to convert webhook request to JSON", e);
+            throw new BaseException(ResponseCode.BAD_REQUEST, "Invalid webhook data format");
         }
-        
-        // Calculate amounts
-        BigDecimal amountIn = "in".equals(request.transferType()) ? 
-                BigDecimal.valueOf(request.transferAmount()) : BigDecimal.ZERO;
-        BigDecimal amountOut = "out".equals(request.transferType()) ? 
-                BigDecimal.valueOf(request.transferAmount()) : BigDecimal.ZERO;
         
         // Create and save transaction
         SepayTransaction transaction = new SepayTransaction(
                 null,
                 request.id(),
-                request.gateway(),
-                transactionDate,
-                request.accountNumber(),
-                request.subAccount(),
-                amountIn,
-                amountOut,
-                BigDecimal.valueOf(request.accumulated()),
+                webhookData,
                 request.code(),
-                request.content(),
-                request.referenceCode(),
-                request.description(),
-                request.transferType(),
                 BigDecimal.valueOf(request.transferAmount()),
+                request.transferType(),
                 false,
                 null,
                 LocalDateTime.now(),
@@ -147,19 +133,10 @@ public class SepayWebhookService {
             SepayTransaction updatedTransaction = new SepayTransaction(
                     transaction.id(),
                     transaction.sepayId(),
-                    transaction.gateway(),
-                    transaction.transactionDate(),
-                    transaction.accountNumber(),
-                    transaction.subAccount(),
-                    transaction.amountIn(),
-                    transaction.amountOut(),
-                    transaction.accumulated(),
+                    transaction.webhookData(),
                     transaction.code(),
-                    transaction.transactionContent(),
-                    transaction.referenceCode(),
-                    transaction.description(),
-                    transaction.transferType(),
                     transaction.transferAmount(),
+                    transaction.transferType(),
                     true,
                     order.id(),
                     transaction.createdAt(),

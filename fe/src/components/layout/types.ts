@@ -30,8 +30,14 @@ type NavGroup = {
 }
 
 type SidebarData = {
+  user: {
+    name: string
+    email: string
+    avatar: string
+  }
   teams: Team[]
   navGroups: NavGroup[]
 }
+
 
 export type { SidebarData, NavGroup, NavItem, NavCollapsible, NavLink }

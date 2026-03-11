@@ -4,7 +4,6 @@ import { ArrowUpDown, Edit, Trash2, MoreHorizontal, Loader2 } from 'lucide-react
 import { format } from 'date-fns'
 import { useProducts } from '@/hooks/use-product'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,30 +20,8 @@ import type { ProductResponse } from '@/types/api'
 /* react-compiler-ignore */
 const columns: ColumnDef<ProductResponse>[] = [
   {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
     accessorKey: 'coverImageUrl',
-    header: 'Cover',
+    header: 'Ảnh bìa',
     cell: ({ row }) => {
       const imageUrl = row.getValue('coverImageUrl') as string | null
       return (
@@ -55,12 +32,12 @@ const columns: ColumnDef<ProductResponse>[] = [
               alt={row.getValue('title') as string}
               className="w-full h-full object-cover"
               onError={(e) => {
-                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="64" viewBox="0 0 48 64"%3E%3Crect width="48" height="64" fill="%23f3f4f6"/%3E%3Ctext x="24" y="32" text-anchor="middle" dy=".3em" font-family="sans-serif" font-size="8" fill="%239ca3af"%3ENo Image%3C/text%3E%3C/svg%3E'
+                e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="64" viewBox="0 0 48 64"%3E%3Crect width="48" height="64" fill="%23f3f4f6"/%3E%3Ctext x="24" y="32" text-anchor="middle" dy=".3em" font-family="sans-serif" font-size="8" fill="%239ca3af"%3EKhông ảnh%3C/text%3E%3C/svg%3E'
               }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-              No Image
+              Không ảnh
             </div>
           )}
         </div>
@@ -87,7 +64,7 @@ const columns: ColumnDef<ProductResponse>[] = [
         variant='ghost'
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
-        Title
+        Tiêu đề
         <ArrowUpDown className='ml-2 h-4 w-4' />
       </Button>
     ),
@@ -115,7 +92,7 @@ const columns: ColumnDef<ProductResponse>[] = [
         variant='ghost'
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
-        Price
+        Giá gốc
         <ArrowUpDown className='ml-2 h-4 w-4' />
       </Button>
     ),
@@ -135,7 +112,7 @@ const columns: ColumnDef<ProductResponse>[] = [
         variant='ghost'
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
-        Discount Price
+        Giá khuyến mãi
         <ArrowUpDown className='ml-2 h-4 w-4' />
       </Button>
     ),
@@ -154,7 +131,7 @@ const columns: ColumnDef<ProductResponse>[] = [
   },
   {
     accessorKey: 'stockQuantity',
-    header: 'Stock',
+    header: 'Tồn kho',
     cell: ({ row }) => {
       const stock = row.getValue('stockQuantity') as number
       return (
@@ -166,31 +143,31 @@ const columns: ColumnDef<ProductResponse>[] = [
   },
   {
     accessorKey: 'isBestseller',
-    header: 'Bestseller',
+    header: 'Bán chạy',
     cell: ({ row }) => {
       const isBestseller = row.getValue('isBestseller') as boolean
       return isBestseller ? (
-        <Badge variant='default'>Yes</Badge>
+        <Badge variant='default'>Có</Badge>
       ) : (
-        <Badge variant='secondary'>No</Badge>
+        <Badge variant='secondary'>Không</Badge>
       )
     },
   },
   {
     accessorKey: 'isActive',
-    header: 'Status',
+    header: 'Trạng thái',
     cell: ({ row }) => {
       const isActive = row.getValue('isActive') as boolean
       return (
         <Badge variant={isActive ? 'default' : 'secondary'}>
-          {isActive ? 'Active' : 'Inactive'}
+          {isActive ? 'Hoạt động' : 'Không hoạt động'}
         </Badge>
       )
     },
   },
   {
     accessorKey: 'createdAt',
-    header: 'Created',
+    header: 'Ngày tạo',
     cell: ({ row }) => {
       const date = row.getValue('createdAt') as string
       return format(new Date(date), 'MMM d, yyyy')
@@ -215,11 +192,11 @@ function ProductActions({ product }: { product: ProductResponse }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end'>
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
         <DropdownMenuItem
           onClick={() => navigator.clipboard.writeText(product.id.toString())}
         >
-          Copy product ID
+          Sao chép ID sản phẩm
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -229,7 +206,7 @@ function ProductActions({ product }: { product: ProductResponse }) {
           }}
         >
           <Edit className='mr-2 h-4 w-4' />
-          Edit
+          Chỉnh sửa
         </DropdownMenuItem>
         <DropdownMenuItem
           className='text-destructive'
@@ -239,7 +216,7 @@ function ProductActions({ product }: { product: ProductResponse }) {
           }}
         >
           <Trash2 className='mr-2 h-4 w-4' />
-          Delete
+          Xóa
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -267,7 +244,7 @@ export function ProductsTable() {
   if (error) {
     return (
       <div className='rounded-md border p-8 text-center'>
-        <p className='text-destructive'>Failed to load products. Please try again.</p>
+        <p className='text-destructive'>Không thể tải danh sách sản phẩm. Vui lòng thử lại.</p>
         <p className='text-muted-foreground text-sm mt-2'>{error.message}</p>
       </div>
     )
@@ -312,7 +289,7 @@ export function ProductsTable() {
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className='h-24 text-center'>
-                No products found.
+                Không tìm thấy sản phẩm nào.
               </TableCell>
             </TableRow>
           )}

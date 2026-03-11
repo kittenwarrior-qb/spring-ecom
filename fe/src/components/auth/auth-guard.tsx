@@ -14,6 +14,7 @@ export function AuthGuard({ children, requireAdmin = false }: AuthGuardProps) {
   const navigate = useNavigate()
 
   useEffect(() => {
+    
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để truy cập trang này')
       navigate({

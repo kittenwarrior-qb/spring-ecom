@@ -226,10 +226,12 @@ function CartPage() {
             </div>
           </CardContent>
           <CardFooter className="flex-col gap-2">
-            <Button className="w-full" size="lg">
-              Tiến hành thanh toán
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <Link to="/payment" className="w-full">
+              <Button className="w-full" size="lg">
+                Tiến hành thanh toán
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
             <Link to="/products" search={{ category: undefined, keyword: undefined }} className="w-full">
               <Button variant="outline" className="w-full">
                 Tiếp tục mua sắm

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { orderApi } from '@/api/order.api'
+import { orderApi, type CreateOrderRequest } from '@/api/order.api'
 import type { OrderStatus } from '@/types/api'
 
 // Query keys
@@ -8,6 +8,20 @@ export const orderKeys = {
   myOrders: (page: number, size: number) => [...orderKeys.all, 'my', { page, size }] as const,
   myOrdersByStatus: (status?: OrderStatus, page?: number, size?: number) => [...orderKeys.all, 'my', status, { page, size }] as const,
   detail: (id: number) => [...orderKeys.all, 'detail', id] as const,
+}
+
+// Create order from cart
+export function useCreateOrder() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (request: CreateOrderRequest) => orderApi.createOrder(request),
+    onSuccess: () => {
+      // Clear cart after successful order
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
+      queryClient.invalidateQueries({ queryKey: orderKeys.all })
+    },
+  })
 }
 
 // Get my orders

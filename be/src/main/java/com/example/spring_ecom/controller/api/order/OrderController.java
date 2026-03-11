@@ -45,7 +45,7 @@ public class OrderController implements OrderAPI {
                 .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        BigDecimal shippingFee = BigDecimal.valueOf(30000);
+        BigDecimal shippingFee = BigDecimal.ZERO;
         BigDecimal total = subtotal.add(shippingFee);
         
         Order order = new Order(

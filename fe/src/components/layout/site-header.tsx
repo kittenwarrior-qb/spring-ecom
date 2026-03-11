@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ShoppingCart, Menu, X, User, LogOut, Package, ChevronDown } from 'lucide-react'
+import { ShoppingCart, Menu, X, User, LogOut, Package, ChevronDown, LayoutDashboard } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,9 +10,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useIsAuthenticated, useUser, useAuthStore } from '@/stores/auth-store'
 import { useCartCount } from '@/hooks/use-cart'
+import { useUserProfile } from '@/hooks/use-user'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -27,7 +28,59 @@ export function SiteHeader() {
   // Use real auth store
   const isLoggedIn = useIsAuthenticated()
   const user = useUser()
+  const { data: userProfile } = useUserProfile()
   const cartCount = useCartCount()
+
+  // Use profile data if available, otherwise fall back to auth store user
+  const currentUser = userProfile || user
+
+  // Generate avatar fallback
+  const getAvatarFallback = (user: unknown) => {
+    if (!user) return 'U'
+    
+    // Check if user has firstName and lastName
+    if (user.firstName && user.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+    }
+    
+    if (user.firstName) {
+      return user.firstName[0].toUpperCase()
+    }
+    
+    if (user.username) {
+      const username = user.username.trim()
+      if (username.length >= 2) {
+        return username.substring(0, 2).toUpperCase()
+      }
+      return username[0].toUpperCase()
+    }
+    
+    if (user.email) {
+      return user.email[0].toUpperCase()
+    }
+    
+    return 'U'
+  }
+
+  // Get display name
+  const getDisplayName = (user: unknown) => {
+    if (!user) return 'User'
+    
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`
+    }
+    
+    if (user.firstName) {
+      return user.firstName
+    }
+    
+    return user.username || user.email || 'User'
+  }
+
+  const avatarFallback = getAvatarFallback(currentUser)
+  const displayName = getDisplayName(currentUser)
+  const isAdmin = currentUser?.role === 'ADMIN'
+  const avatarUrl = currentUser && 'avatarUrl' in currentUser ? (currentUser.avatarUrl as string) : undefined
 
   useEffect(() => {
     const handleScroll = () => {
@@ -95,13 +148,14 @@ export function SiteHeader() {
             </Link>
 
             {/* User Section */}
-            {isLoggedIn && user ? (
+            {isLoggedIn && currentUser ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2 text-gray-700 hover:bg-gray-50">
                     <Avatar className="h-8 w-8">
+                      <AvatarImage src={avatarUrl} alt={displayName} />
                       <AvatarFallback className="bg-[#EBF2FA] text-gray-800 font-semibold">
-                        {user.username.charAt(0).toUpperCase()}
+                        {avatarFallback}
                       </AvatarFallback>
                     </Avatar>
                     <ChevronDown className="h-4 w-4" />
@@ -109,9 +163,20 @@ export function SiteHeader() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="px-4 py-3 border-b">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{user.username}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
+                    <p className="text-xs text-gray-500 truncate">{currentUser?.email || 'No email'}</p>
                   </div>
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="flex items-center gap-3">
+                          <LayoutDashboard className="h-4 w-4" />
+                          Quản Trị Viên
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="flex items-center gap-3">
                       <User className="h-4 w-4" />
@@ -187,8 +252,18 @@ export function SiteHeader() {
                 <ShoppingCart className="h-4 w-4 inline mr-2" />
                 Giỏ hàng ({cartCount})
               </Link>
-              {isLoggedIn && user ? (
+              {isLoggedIn && currentUser ? (
                 <>
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <LayoutDashboard className="h-4 w-4 inline mr-2" />
+                      Quản Trị Viên
+                    </Link>
+                  )}
                   <Link
                     to="/profile"
                     className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
