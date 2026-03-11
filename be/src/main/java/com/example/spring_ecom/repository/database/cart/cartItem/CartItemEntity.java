@@ -1,8 +1,6 @@
 package com.example.spring_ecom.repository.database.cart.cartItem;
 
-import com.example.spring_ecom.repository.database.cart.CartEntity;
 import com.example.spring_ecom.repository.database.common.BaseAuditEntity;
-import com.example.spring_ecom.repository.database.product.ProductEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,13 +19,11 @@ public class CartItemEntity extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cart_id", nullable = false)
-    private CartEntity cart;
+    @Column(name = "cart_id", nullable = false)
+    private Long cartId;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private ProductEntity product;
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
     
     @Column(name = "quantity", nullable = false)
     private Integer quantity;

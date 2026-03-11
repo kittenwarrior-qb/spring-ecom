@@ -1,12 +1,8 @@
 package com.example.spring_ecom.repository.database.category;
 
-import com.example.spring_ecom.repository.database.product.ProductEntity;
 import com.example.spring_ecom.repository.database.common.BaseAuditEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "categories")
@@ -34,14 +30,8 @@ public class CategoryEntity extends BaseAuditEntity {
     private Long parentId;
     
     @Column(name = "display_order", nullable = false)
-    @Builder.Default
     private Integer displayOrder = 0;
     
     @Column(name = "is_active", nullable = false)
-    @Builder.Default
     private Boolean isActive = true;
-    
-    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<ProductEntity> products = new ArrayList<>();
 }

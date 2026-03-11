@@ -45,13 +45,10 @@ public class UserEntity extends BaseAuditEntity {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    @Builder.Default
     private UserRole role = UserRole.USER;
 
     @Column(name = "is_email_verified", nullable = false)
-    @Builder.Default
     private Boolean isEmailVerified = false;
 
     @Column(name = "email_verification_token")
@@ -70,6 +67,5 @@ public class UserEntity extends BaseAuditEntity {
     private LocalDateTime lastLoginAt;
 
     @Column(name = "is_active", nullable = false)
-    @Builder.Default
     private Boolean isActive = true;
 }

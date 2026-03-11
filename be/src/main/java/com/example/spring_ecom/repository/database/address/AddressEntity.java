@@ -42,6 +42,5 @@ public class AddressEntity extends BaseAuditEntity {
     private String postalCode;
     
     @Column(name = "is_default", nullable = false)
-    @Builder.Default
     private Boolean isDefault = false;
 }

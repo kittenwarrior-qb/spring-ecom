@@ -148,10 +148,16 @@ public class ProductCommandService {
     private String generateUniqueSlug(String baseSlug) {
         String slug = baseSlug;
         int suffix = 0;
+        int maxRetries = 100; // Prevent infinite loop
         
-        while (productRepository.existsBySlugAndDeletedAtIsNull(slug)) {
+        while (suffix < maxRetries && productRepository.existsBySlugAndDeletedAtIsNull(slug)) {
             suffix++;
             slug = SlugUtil.toSlugWithSuffix(baseSlug, suffix);
+        }
+        
+        if (suffix >= maxRetries) {
+            // Fallback with timestamp
+            slug = baseSlug + "-" + System.currentTimeMillis();
         }
         
         return slug;

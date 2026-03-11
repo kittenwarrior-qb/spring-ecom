@@ -4,9 +4,10 @@ import com.example.spring_ecom.controller.api.order.model.OrderDetailResponse;
 import com.example.spring_ecom.controller.api.order.model.OrderItemResponse;
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
-import com.example.spring_ecom.repository.database.order.OrderEntity;
-import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
+import com.example.spring_ecom.domain.order.OrderWithUserDto;
+import com.example.spring_ecom.domain.order.OrderItemWithProductDto;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
+import com.example.spring_ecom.repository.database.order.orderItem.OrderItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,54 +18,54 @@ import java.util.List;
 public class OrderDetailService {
     
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
     
     public OrderDetailResponse getOrderDetail(Long orderId) {
-        OrderEntity order = orderRepository.findByIdWithUser(orderId)
+        OrderWithUserDto order = orderRepository.findOrderWithUserById(orderId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
         
-        List<OrderItemResponse> items = order.getItems().stream()
+        List<OrderItemWithProductDto> orderItems = orderItemRepository.findOrderItemsWithProductByOrderId(orderId);
+        
+        List<OrderItemResponse> items = orderItems.stream()
                 .map(this::toOrderItemResponse)
                 .toList();
         
         return new OrderDetailResponse(
-                order.getId(),
-                order.getOrderNumber(),
-                order.getUser().getId(),
-                order.getUser().getEmail(),
-                order.getStatus(),
-                order.getSubtotal(),
-                order.getShippingFee(),
-                order.getDiscount(),
-                order.getTotal(),
-                order.getPaymentMethod(),
-                order.getShippingAddress(),
-                order.getShippingCity(),
-                order.getShippingDistrict(),
-                order.getShippingWard(),
-                order.getRecipientName(),
-                order.getRecipientPhone(),
-                order.getNote(),
+                order.id(),
+                order.orderNumber(),
+                order.userId(),
+                order.userEmail(),
+                order.status(),
+                order.subtotal(),
+                order.shippingFee(),
+                order.discount(),
+                order.total(),
+                order.paymentMethod(),
+                order.shippingAddress(),
+                order.shippingCity(),
+                order.shippingDistrict(),
+                order.shippingWard(),
+                order.recipientName(),
+                order.recipientPhone(),
+                order.note(),
                 items,
-                order.getCreatedAt(),
-                order.getUpdatedAt(),
-                order.getCancelledAt()
+                order.createdAt(),
+                order.updatedAt(),
+                order.cancelledAt()
         );
     }
     
-    private OrderItemResponse toOrderItemResponse(OrderItemEntity item) {
-        // Lấy cover image của sản phẩm
-        String productImage = item.getProduct().getCoverImageUrl();
-        
+    private OrderItemResponse toOrderItemResponse(OrderItemWithProductDto item) {
         return new OrderItemResponse(
-                item.getId(),
-                item.getOrder().getId(),
-                item.getProduct().getId(),
-                item.getProductTitle(),
-                productImage,
-                item.getQuantity(),
-                item.getPrice(),
-                item.getSubtotal(),
-                item.getCreatedAt()
+                item.id(),
+                item.orderId(),
+                item.productId(),
+                item.productTitle(),
+                item.productCoverImageUrl(),
+                item.quantity(),
+                item.price(),
+                item.subtotal(),
+                item.createdAt()
         );
     }
 }

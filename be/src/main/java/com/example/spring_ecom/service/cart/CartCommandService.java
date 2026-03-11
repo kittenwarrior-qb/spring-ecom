@@ -50,8 +50,8 @@ public class CartCommandService {
                     return existing;
                 })
                 .orElseGet(() -> CartItemEntity.builder()
-                        .cart(cart)
-                        .product(product)
+                        .cartId(cart.getId())
+                        .productId(product.getId())
                         .quantity(quantity)
                         .price(product.getDiscountPrice() != null ? product.getDiscountPrice() : product.getPrice())
                         .build());
@@ -71,7 +71,9 @@ public class CartCommandService {
         CartItemEntity cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Cart item not found"));
         
-        ProductEntity product = cartItem.getProduct();
+        ProductEntity product = productRepository.findById(cartItem.getProductId())
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
+        
         if (product.getStockQuantity() < quantity) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Insufficient stock");
         }
@@ -105,7 +107,7 @@ public class CartCommandService {
                             .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "User not found"));
                     
                     CartEntity newCart = CartEntity.builder()
-                            .user(user)
+                            .userId(user.getId())
                             .build();
                     return cartRepository.save(newCart);
                 });

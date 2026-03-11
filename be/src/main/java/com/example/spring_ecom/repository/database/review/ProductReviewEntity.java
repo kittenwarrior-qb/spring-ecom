@@ -35,15 +35,12 @@ public class ProductReviewEntity extends BaseAuditEntity {
     private String comment;
     
     @Column(name = "is_verified_purchase", nullable = false)
-    @Builder.Default
     private Boolean isVerifiedPurchase = false;
     
     @Column(name = "like_count", nullable = false)
-    @Builder.Default
     private Integer likeCount = 0;
     
     @Column(name = "dislike_count", nullable = false)
-    @Builder.Default
     private Integer dislikeCount = 0;
     
     @Column(name = "admin_reply", columnDefinition = "TEXT")

@@ -13,11 +13,7 @@ public class SlugUtil {
     private SlugUtil() {
         throw new IllegalStateException("Utility class");
     }
-    
-    /**
-     * Generate slug from text
-     * Example: "Sách Hay Về Lập Trình" -> "sach-hay-ve-lap-trinh"
-     */
+
     public static String toSlug(String input) {
         if (input == null || input.isBlank()) {
             return "";
@@ -29,11 +25,7 @@ public class SlugUtil {
         slug = EDGESDHASHES.matcher(slug).replaceAll("");
         return slug.toLowerCase(Locale.ENGLISH);
     }
-    
-    /**
-     * Generate unique slug with suffix if needed
-     * Example: "sach-hay" -> "sach-hay-1", "sach-hay-2"
-     */
+
     public static String toSlugWithSuffix(String input, int suffix) {
         String baseSlug = toSlug(input);
         return suffix > 0 ? baseSlug + "-" + suffix : baseSlug;

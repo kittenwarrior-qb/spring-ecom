@@ -10,10 +10,17 @@ import org.mapstruct.Mapping;
 public interface ProductEntityMapper extends BaseEntityMapper<Product, ProductEntity> {
     
     @Override
-    @Mapping(source = "categoryId", target = "category.id")
+    @Mapping(target = "language", defaultValue = "Vietnamese")
+    @Mapping(target = "format", defaultValue = "Paperback")
+    @Mapping(target = "stockQuantity", defaultValue = "0")
+    @Mapping(target = "isBestseller", defaultValue = "false")
+    @Mapping(target = "isActive", defaultValue = "true")
+    @Mapping(target = "viewCount", defaultValue = "0")
+    @Mapping(target = "soldCount", defaultValue = "0")
+    @Mapping(target = "ratingAverage", defaultValue = "0")
+    @Mapping(target = "ratingCount", defaultValue = "0")
     ProductEntity toEntity(Product domain);
     
     @Override
-    @Mapping(source = "category.id", target = "categoryId")
     Product toDomain(ProductEntity entity);
 }

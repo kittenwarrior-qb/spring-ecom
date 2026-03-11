@@ -1,7 +1,5 @@
 package com.example.spring_ecom.repository.database.order.orderItem;
 
-import com.example.spring_ecom.repository.database.order.OrderEntity;
-import com.example.spring_ecom.repository.database.product.ProductEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,13 +19,11 @@ public class OrderItemEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
-    private OrderEntity order;
+    @Column(name = "order_id", nullable = false)
+    private Long orderId;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private ProductEntity product;
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
     
     @Column(name = "product_title", nullable = false)
     private String productTitle;

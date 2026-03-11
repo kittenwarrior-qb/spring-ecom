@@ -10,10 +10,8 @@ import org.mapstruct.Mapping;
 public interface CartEntityMapper extends BaseEntityMapper<Cart, CartEntity> {
     
     @Override
-    @Mapping(source = "user.id", target = "userId")
     Cart toDomain(CartEntity entity);
     
     @Override
-    @Mapping(source = "userId", target = "user.id")
     CartEntity toEntity(Cart domain);
 }

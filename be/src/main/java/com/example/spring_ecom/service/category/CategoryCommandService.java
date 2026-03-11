@@ -32,19 +32,15 @@ public class CategoryCommandService {
         
         CategoryEntity entity = mapper.toEntity(category);
         
-        // Auto-generate slug from name if not provided
         if (entity.getSlug() == null || entity.getSlug().isBlank()) {
             String baseSlug = SlugUtil.toSlug(entity.getName());
             String uniqueSlug = generateUniqueSlug(baseSlug);
             entity.setSlug(uniqueSlug);
         } else {
-            // If slug is provided, check if it already exists
             if (categoryRepository.existsBySlugAndDeletedAtIsNull(entity.getSlug())) {
                 throw new BaseException(ResponseCode.BAD_REQUEST, "Category slug already exists");
             }
         }
-        
-        // Set default values
         if (entity.getDisplayOrder() == null) {
             entity.setDisplayOrder(0);
         }
@@ -61,13 +57,11 @@ public class CategoryCommandService {
                 .filter(e -> e.getDeletedAt() == null)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Category not found"));
         
-        // Check if slug is changed and already exists
         if (!entity.getSlug().equals(category.slug()) && 
             categoryRepository.existsBySlugAndDeletedAtIsNull(category.slug())) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Category slug already exists");
         }
         
-        // Check if parent exists
         if (category.parentId() != null) {
             // Cannot set itself as parent
             if (category.parentId().equals(id)) {
@@ -79,7 +73,6 @@ public class CategoryCommandService {
                     .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Parent category not found"));
         }
         
-        // Update fields
         mapper.update(entity, category);
         
         CategoryEntity updated = categoryRepository.save(entity);
@@ -91,21 +84,22 @@ public class CategoryCommandService {
                 .filter(e -> e.getDeletedAt() == null)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Category not found"));
         
-        // Soft delete
         entity.setDeletedAt(LocalDateTime.now());
         categoryRepository.save(entity);
     }
     
-    /**
-     * Generate unique slug by appending suffix if needed
-     */
     private String generateUniqueSlug(String baseSlug) {
         String slug = baseSlug;
         int suffix = 0;
+        int maxRetries = 100; 
         
-        while (categoryRepository.existsBySlugAndDeletedAtIsNull(slug)) {
+        while (suffix < maxRetries && categoryRepository.existsBySlugAndDeletedAtIsNull(slug)) {
             suffix++;
             slug = SlugUtil.toSlugWithSuffix(baseSlug, suffix);
+        }
+        
+        if (suffix >= maxRetries) {
+            slug = baseSlug + "-" + System.currentTimeMillis();
         }
         
         return slug;

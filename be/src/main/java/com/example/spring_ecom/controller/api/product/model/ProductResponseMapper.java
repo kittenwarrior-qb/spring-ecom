@@ -10,7 +10,6 @@ import org.mapstruct.Mapping;
 @Mapper(config = MapStructGlobalConfig.class)
 public interface ProductResponseMapper extends BaseModelMapper<ProductResponse, Product> {
     
-    @Mapping(source = "category.id", target = "categoryId")
-    @Mapping(source = "category.name", target = "categoryName")
+    // Note: categoryName will be populated via @Query join in repository
     ProductResponse fromEntity(ProductEntity entity);
 }

@@ -10,6 +10,7 @@ import com.example.spring_ecom.domain.order.PaymentMethod;
 import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.OrderEntityMapper;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
+import com.example.spring_ecom.repository.database.order.orderItem.OrderItemRepository;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
 import com.example.spring_ecom.repository.database.product.ProductEntity;
 import com.example.spring_ecom.repository.database.product.ProductRepository;
@@ -23,7 +24,11 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,6 +38,7 @@ public class OrderCommandService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final OrderItemRepository orderItemRepository;
     private final CartUseCase cartUseCase;
     private final OrderEntityMapper mapper;
     
@@ -46,7 +52,7 @@ public class OrderCommandService {
         }
         
         OrderEntity entity = mapper.toEntity(order);
-        entity.setUser(user);
+        entity.setUserId(user.getId());
         entity.setOrderNumber(generateOrderNumber());
         entity.setStatus(OrderStatus.PENDING);
         
@@ -57,34 +63,46 @@ public class OrderCommandService {
             entity.setPaymentStatus(PaymentStatus.PENDING); 
         }
         
-        // Create order items from cart
+        // Create order items from cart - Batch process
+        List<Long> productIds = cartItems.stream()
+                .map(CartItem::productId)
+                .toList();
+        
+        List<ProductEntity> products = productRepository.findAllById(productIds);
+        if (products.size() != productIds.size()) {
+            throw new BaseException(ResponseCode.NOT_FOUND, "Some products not found");
+        }
+        
+        Map<Long, ProductEntity> productMap = products.stream()
+                .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
+        
+        List<OrderItemEntity> orderItems = new ArrayList<>();
         for (CartItem cartItem : cartItems) {
-            ProductEntity product = productRepository.findById(cartItem.productId())
-                    .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
+            ProductEntity product = productMap.get(cartItem.productId());
             
-            // Check stock
             if (product.getStockQuantity() < cartItem.quantity()) {
                 throw new BaseException(ResponseCode.BAD_REQUEST, 
                         "Insufficient stock for product: " + product.getTitle());
             }
             
-            // Reduce stock
             product.setStockQuantity(product.getStockQuantity() - cartItem.quantity());
-            productRepository.save(product);
-            
-            // Create order item
             OrderItemEntity orderItem = OrderItemEntity.builder()
-                    .order(entity)
-                    .product(product)
+                    .orderId(entity.getId()) 
+                    .productId(product.getId())
                     .productTitle(product.getTitle())
                     .quantity(cartItem.quantity())
                     .price(cartItem.price())
                     .subtotal(cartItem.price().multiply(BigDecimal.valueOf(cartItem.quantity())))
                     .build();
             
-            entity.getItems().add(orderItem);
+            orderItems.add(orderItem);
         }
+        // Batch save all products
+        productRepository.saveAll(products);
         OrderEntity saved = orderRepository.save(entity);
+        
+        orderItems.forEach(item -> item.setOrderId(saved.getId()));
+        orderItemRepository.saveAll(orderItems);
         cartUseCase.clearCart(order.userId());
         
         return mapper.toDomain(saved);
@@ -188,18 +206,58 @@ public class OrderCommandService {
     }
     
     private void restoreStock(OrderEntity order) {
-        for (OrderItemEntity item : order.getItems()) {
-            ProductEntity product = item.getProduct();
-            product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
-            productRepository.save(product);
-        }
+        // Get order items by order ID
+        List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(order.getId());
+        
+        // Get product IDs and fetch products
+        List<Long> productIds = orderItems.stream()
+                .map(OrderItemEntity::getProductId)
+                .toList();
+        
+        List<ProductEntity> products = productRepository.findAllById(productIds);
+        Map<Long, ProductEntity> productMap = products.stream()
+                .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
+        
+        // Update stock for each product
+        List<ProductEntity> productsToUpdate = orderItems.stream()
+                .map(item -> {
+                    ProductEntity product = productMap.get(item.getProductId());
+                    if (product != null) {
+                        product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
+                    }
+                    return product;
+                })
+                .filter(product -> product != null)
+                .toList();
+        
+        productRepository.saveAll(productsToUpdate);
     }
     
     private void updateSoldCount(OrderEntity order) {
-        for (OrderItemEntity item : order.getItems()) {
-            ProductEntity product = item.getProduct();
-            product.setSoldCount(product.getSoldCount() + item.getQuantity());
-            productRepository.save(product);
-        }
+        // Get order items by order ID
+        List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(order.getId());
+        
+        // Get product IDs and fetch products
+        List<Long> productIds = orderItems.stream()
+                .map(OrderItemEntity::getProductId)
+                .toList();
+        
+        List<ProductEntity> products = productRepository.findAllById(productIds);
+        Map<Long, ProductEntity> productMap = products.stream()
+                .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
+        
+        // Update sold count for each product
+        List<ProductEntity> productsToUpdate = orderItems.stream()
+                .map(item -> {
+                    ProductEntity product = productMap.get(item.getProductId());
+                    if (product != null) {
+                        product.setSoldCount(product.getSoldCount() + item.getQuantity());
+                    }
+                    return product;
+                })
+                .filter(product -> product != null)
+                .toList();
+        
+        productRepository.saveAll(productsToUpdate);
     }
 }

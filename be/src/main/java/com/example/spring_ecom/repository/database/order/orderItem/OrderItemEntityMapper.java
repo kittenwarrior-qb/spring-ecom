@@ -10,12 +10,8 @@ import org.mapstruct.Mapping;
 public interface OrderItemEntityMapper extends BaseEntityMapper<OrderItem, OrderItemEntity> {
     
     @Override
-    @Mapping(source = "order.id", target = "orderId")
-    @Mapping(source = "product.id", target = "productId")
     OrderItem toDomain(OrderItemEntity entity);
     
     @Override
-    @Mapping(source = "orderId", target = "order.id")
-    @Mapping(source = "productId", target = "product.id")
     OrderItemEntity toEntity(OrderItem domain);
 }

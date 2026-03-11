@@ -1,6 +1,5 @@
 package com.example.spring_ecom.repository.database.product;
 
-import com.example.spring_ecom.repository.database.category.CategoryEntity;
 import com.example.spring_ecom.repository.database.common.BaseAuditEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,14 +35,12 @@ public class ProductEntity extends BaseAuditEntity {
     private Integer publicationYear;
     
     @Column(name = "language", nullable = false, length = 50)
-    @Builder.Default
     private String language = "Vietnamese";
     
     @Column(name = "pages")
     private Integer pages;
     
     @Column(name = "format", nullable = false, length = 50)
-    @Builder.Default
     private String format = "Paperback";
     
     @Column(name = "description", columnDefinition = "TEXT")
@@ -56,37 +53,33 @@ public class ProductEntity extends BaseAuditEntity {
     private BigDecimal discountPrice;
     
     @Column(name = "stock_quantity", nullable = false)
-    @Builder.Default
     private Integer stockQuantity = 0;
     
     @Column(name = "cover_image_url", length = 500)
     private String coverImageUrl;
     
     @Column(name = "is_bestseller", nullable = false)
-    @Builder.Default
     private Boolean isBestseller = false;
     
     @Column(name = "is_active", nullable = false)
-    @Builder.Default
     private Boolean isActive = true;
     
     @Column(name = "view_count", nullable = false)
-    @Builder.Default
     private Integer viewCount = 0;
     
     @Column(name = "sold_count", nullable = false)
-    @Builder.Default
     private Integer soldCount = 0;
     
     @Column(name = "rating_average", precision = 3, scale = 2)
-    @Builder.Default
     private BigDecimal ratingAverage = BigDecimal.ZERO;
     
     @Column(name = "rating_count", nullable = false)
-    @Builder.Default
     private Integer ratingCount = 0;
     
+    @Column(name = "category_id")
+    private Long categoryId;
+    
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "category_id", insertable = false, updatable = false)
     private CategoryEntity category;
 }
