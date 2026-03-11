@@ -1,9 +1,8 @@
 package com.example.spring_ecom.repository.database.address;
 
+import com.example.spring_ecom.repository.database.common.BaseAuditEntity;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "addresses")
@@ -12,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AddressEntity {
+public class AddressEntity extends BaseAuditEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,24 +44,4 @@ public class AddressEntity {
     @Column(name = "is_default", nullable = false)
     @Builder.Default
     private Boolean isDefault = false;
-    
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-    
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

@@ -19,7 +19,7 @@ public class OrderDetailService {
     private final OrderRepository orderRepository;
     
     public OrderDetailResponse getOrderDetail(Long orderId) {
-        OrderEntity order = orderRepository.findById(orderId)
+        OrderEntity order = orderRepository.findByIdWithUser(orderId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
         
         List<OrderItemResponse> items = order.getItems().stream()
@@ -30,6 +30,7 @@ public class OrderDetailService {
                 order.getId(),
                 order.getOrderNumber(),
                 order.getUser().getId(),
+                order.getUser().getEmail(),
                 order.getStatus(),
                 order.getSubtotal(),
                 order.getShippingFee(),
@@ -51,11 +52,15 @@ public class OrderDetailService {
     }
     
     private OrderItemResponse toOrderItemResponse(OrderItemEntity item) {
+        // Lấy cover image của sản phẩm
+        String productImage = item.getProduct().getCoverImageUrl();
+        
         return new OrderItemResponse(
                 item.getId(),
                 item.getOrder().getId(),
                 item.getProduct().getId(),
                 item.getProductTitle(),
+                productImage,
                 item.getQuantity(),
                 item.getPrice(),
                 item.getSubtotal(),

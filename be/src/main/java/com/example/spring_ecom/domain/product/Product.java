@@ -26,6 +26,7 @@ public record Product(
     Integer ratingCount,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
-    LocalDateTime deletedAt
+    LocalDateTime deletedAt,
+    Long categoryId
 ) {
 }

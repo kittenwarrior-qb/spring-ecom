@@ -1,6 +1,8 @@
 package com.example.spring_ecom.service.order;
 
+import com.example.spring_ecom.controller.api.order.model.OrderDetailResponse;
 import com.example.spring_ecom.domain.order.Order;
+import com.example.spring_ecom.domain.order.OrderStatistics;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentStatus;
 import org.springframework.data.domain.Page;
@@ -27,4 +29,8 @@ public interface OrderUseCase {
     Order updatePaymentStatus(Long id, PaymentStatus paymentStatus);
     
     void cancelOrder(Long id);
+    
+    OrderDetailResponse getOrderDetail(Long orderId);
+    
+    OrderStatistics getOrderStatistics();
 }

@@ -52,9 +52,9 @@ public class OrderCommandService {
         
         // Set payment status based on payment method
         if (order.paymentMethod() == PaymentMethod.COD) {
-            entity.setPaymentStatus(PaymentStatus.UNPAID); // COD will be paid on delivery
+            entity.setPaymentStatus(PaymentStatus.UNPAID); 
         } else if (order.paymentMethod() == PaymentMethod.BANK_TRANSFER) {
-            entity.setPaymentStatus(PaymentStatus.PENDING); // Bank transfer needs confirmation
+            entity.setPaymentStatus(PaymentStatus.PENDING); 
         }
         
         // Create order items from cart

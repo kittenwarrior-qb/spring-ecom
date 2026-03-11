@@ -71,6 +71,18 @@ const columns: ColumnDef<ProductResponse>[] = [
     cell: ({ row }) => <div className='font-medium max-w-[200px]'>{row.getValue('title')}</div>,
   },
   {
+    accessorKey: 'categoryName',
+    header: 'Danh mục',
+    cell: ({ row }) => {
+      const categoryName = row.getValue('categoryName') as string | null
+      return categoryName ? (
+        <Badge variant='outline'>{categoryName}</Badge>
+      ) : (
+        <span className='text-muted-foreground'>—</span>
+      )
+    },
+  },
+  {
     accessorKey: 'slug',
     header: 'Slug',
     cell: ({ row }) => (

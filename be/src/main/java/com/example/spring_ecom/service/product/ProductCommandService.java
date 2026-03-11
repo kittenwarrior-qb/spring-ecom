@@ -5,6 +5,8 @@ import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.core.util.SlugUtil;
 import com.example.spring_ecom.domain.product.Product;
 import com.example.spring_ecom.domain.product.ProductFormat;
+import com.example.spring_ecom.repository.database.category.CategoryEntity;
+import com.example.spring_ecom.repository.database.category.CategoryRepository;
 import com.example.spring_ecom.repository.database.product.ProductEntity;
 import com.example.spring_ecom.repository.database.product.ProductEntityMapper;
 import com.example.spring_ecom.repository.database.product.ProductRepository;
@@ -22,12 +24,24 @@ import java.util.Optional;
 public class ProductCommandService {
     
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private final ProductEntityMapper mapper;
     
     public Optional<Product> create(Product product) {
         if (product.discountPrice() != null && 
             product.discountPrice().compareTo(product.price()) > 0) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Discount price cannot be greater than price");
+        }
+        
+        // Validate category if provided
+        if (product.categoryId() != null) {
+            CategoryEntity category = categoryRepository.findById(product.categoryId())
+                    .filter(c -> c.getDeletedAt() == null)
+                    .orElseThrow(() -> new BaseException(ResponseCode.BAD_REQUEST, "Category not found"));
+            
+            if (!category.getIsActive()) {
+                throw new BaseException(ResponseCode.BAD_REQUEST, "Category is not active");
+            }
         }
         
         ProductEntity entity = mapper.toEntity(product);
@@ -86,6 +100,17 @@ public class ProductCommandService {
         ProductEntity entity = productRepository.findById(id)
                 .filter(e -> e.getDeletedAt() == null)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
+        
+        // Validate category if provided
+        if (product.categoryId() != null) {
+            CategoryEntity category = categoryRepository.findById(product.categoryId())
+                    .filter(c -> c.getDeletedAt() == null)
+                    .orElseThrow(() -> new BaseException(ResponseCode.BAD_REQUEST, "Category not found"));
+            
+            if (!category.getIsActive()) {
+                throw new BaseException(ResponseCode.BAD_REQUEST, "Category is not active");
+            }
+        }
         
         if (product.format() != null && !product.format().isBlank()) {
             try {

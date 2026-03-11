@@ -25,6 +25,8 @@ public record ProductResponse(
     BigDecimal ratingAverage,
     Integer ratingCount,
     LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    LocalDateTime updatedAt,
+    Long categoryId,
+    String categoryName
 ) {
 }

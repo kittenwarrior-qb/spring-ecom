@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/use-product'
+import { useCategories } from '@/hooks/use-category'
 import { handleServerError } from '@/lib/handle-server-error'
 import { Button } from '@/components/ui/button'
 import {
@@ -62,6 +63,7 @@ const productFormSchema = z.object({
   coverImageUrl: z.string().url('Must be a valid URL').max(500).optional().or(z.literal('')),
   isBestseller: z.boolean(),
   isActive: z.boolean(),
+  categoryId: z.number().optional(),
 })
 
 type ProductFormValues = z.input<typeof productFormSchema>
@@ -85,6 +87,8 @@ function ProductFormDialog({
   description: string
   isLoading: boolean
 }) {
+  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
+  
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: {
@@ -103,6 +107,7 @@ function ProductFormDialog({
       coverImageUrl: '',
       isBestseller: false,
       isActive: true,
+      categoryId: undefined,
       ...defaultValues,
     },
   })
@@ -126,6 +131,7 @@ function ProductFormDialog({
         coverImageUrl: '',
         isBestseller: false,
         isActive: true,
+        categoryId: undefined,
         ...defaultValues,
       })
     }
@@ -295,6 +301,43 @@ function ProductFormDialog({
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name='categoryId'
+                render={({ field }) => (
+                  <FormItem className='col-span-2'>
+                    <FormLabel>Category</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
+                      value={field.value?.toString() || undefined}
+                      disabled={categoriesLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={categoriesLoading ? 'Loading categories...' : 'Select category'} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categoriesLoading ? (
+                          <SelectItem value="loading" disabled>Loading...</SelectItem>
+                        ) : categories && categories.length > 0 ? (
+                          categories.filter(cat => cat.isActive).map((category) => (
+                            <SelectItem key={category.id} value={category.id.toString()}>
+                              {category.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-categories" disabled>No categories available</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Select a category for this product (optional)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -504,6 +547,7 @@ function EditProductDialog() {
               coverImageUrl: selectedProduct.coverImageUrl ?? '',
               isBestseller: selectedProduct.isBestseller,
               isActive: selectedProduct.isActive,
+              categoryId: selectedProduct.categoryId ?? undefined,
             }
           : undefined
       }

@@ -9,7 +9,7 @@ public record ProductRequest(
     @Size(min = 1, max = 255, message = "Title must be between 1 and 255 characters")
     String title,
     
-    @Size(min = 1, max = 255, message = "Slug must be between 1 and 255 characters")
+    @Size(max = 255, message = "Slug must not exceed 255 characters")
     String slug,
     
     String author,
@@ -43,6 +43,8 @@ public record ProductRequest(
     
     Boolean isBestseller,
     
-    Boolean isActive
+    Boolean isActive,
+    
+    Long categoryId
 ) {
 }

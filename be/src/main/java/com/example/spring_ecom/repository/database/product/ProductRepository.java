@@ -1,5 +1,6 @@
 package com.example.spring_ecom.repository.database.product;
 
+import com.example.spring_ecom.repository.database.category.CategoryEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,8 +22,15 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     
     Page<ProductEntity> findByIsBestsellerAndDeletedAtIsNull(Boolean isBestseller, Pageable pageable);
     
-    @Query("SELECT p FROM ProductEntity p JOIN p.categories c WHERE p.deletedAt IS NULL AND c.slug = :categorySlug")
+    @Query("SELECT p FROM ProductEntity p WHERE p.deletedAt IS NULL AND p.category.slug = :categorySlug")
     Page<ProductEntity> findByCategorySlug(@Param("categorySlug") String categorySlug, Pageable pageable);
+    
+    Page<ProductEntity> findByCategoryIdAndDeletedAtIsNull(Long categoryId, Pageable pageable);
+    
+    Page<ProductEntity> findByCategoryAndDeletedAtIsNull(CategoryEntity category, Pageable pageable);
+    
+    @Query("SELECT p FROM ProductEntity p WHERE p.deletedAt IS NULL AND p.category.id = :categoryId AND p.isActive = true")
+    Page<ProductEntity> findActiveByCategoryId(@Param("categoryId") Long categoryId, Pageable pageable);
     
     @Query("SELECT p FROM ProductEntity p WHERE p.deletedAt IS NULL AND " +
            "(LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
+import axios, { type AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import { getCookie } from './cookies'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
@@ -45,8 +45,13 @@ const processQueue = (error: AxiosError | null, token: string | null = null) => 
 }
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    
+    return response
+  },
   async (error: AxiosError) => {
+    
+    
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean
     }

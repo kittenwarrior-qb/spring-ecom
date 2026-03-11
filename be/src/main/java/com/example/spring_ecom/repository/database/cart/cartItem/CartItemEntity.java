@@ -1,12 +1,12 @@
 package com.example.spring_ecom.repository.database.cart.cartItem;
 
 import com.example.spring_ecom.repository.database.cart.CartEntity;
+import com.example.spring_ecom.repository.database.common.BaseAuditEntity;
 import com.example.spring_ecom.repository.database.product.ProductEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "cart_items")
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CartItemEntity {
+public class CartItemEntity extends BaseAuditEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,26 +34,4 @@ public class CartItemEntity {
     
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
-    
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        if (createdAt == null) {
-            createdAt = now;
-        }
-        if (updatedAt == null) {
-            updatedAt = now;
-        }
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

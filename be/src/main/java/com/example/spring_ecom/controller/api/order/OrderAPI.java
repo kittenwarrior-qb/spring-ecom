@@ -4,6 +4,7 @@ import com.example.spring_ecom.controller.api.order.model.CreateOrderRequest;
 import com.example.spring_ecom.controller.api.order.model.OrderDetailResponse;
 import com.example.spring_ecom.controller.api.order.model.OrderResponse;
 import com.example.spring_ecom.controller.api.order.model.UpdateOrderStatusRequest;
+import com.example.spring_ecom.controller.api.payment.model.PaymentInfoResponse;
 import com.example.spring_ecom.core.response.ApiResponse;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +22,10 @@ public interface OrderAPI {
     @Operation(summary = "Create new order from cart")
     @PostMapping
     ApiResponse<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request);
+    
+    @Operation(summary = "Create new order from cart (Alternative endpoint)")
+    @PostMapping("/create-from-cart")
+    ApiResponse<OrderResponse> createOrderFromCart(@Valid @RequestBody CreateOrderRequest request);
     
     @Operation(summary = "Get order by ID")
     @GetMapping("/{id}")
@@ -57,4 +62,12 @@ public interface OrderAPI {
     @Operation(summary = "Cancel order")
     @PostMapping("/{id}/cancel")
     ApiResponse<Void> cancelOrder(@PathVariable Long id);
+    
+    @Operation(summary = "Create payment info for order")
+    @PostMapping("/{orderNumber}/create-payment")
+    ApiResponse<PaymentInfoResponse> createPaymentInfo(@PathVariable String orderNumber);
+    
+    @Operation(summary = "Get payment status for order")
+    @GetMapping("/{orderNumber}/payment-status")
+    ApiResponse<String> getPaymentStatus(@PathVariable String orderNumber);
 }

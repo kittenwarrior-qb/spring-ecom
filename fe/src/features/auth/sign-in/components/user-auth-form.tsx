@@ -100,7 +100,6 @@ export function UserAuthForm({
     } finally {
       setIsLoading(false)
     }
-
   }
 
   return (
@@ -147,6 +146,7 @@ export function UserAuthForm({
           Sign in
         </Button>
 
+        {/* Raw fetch test button */}
         <div className='relative my-4'>
           <div className='absolute inset-0 flex items-center'>
             <span className='w-full border-t' />

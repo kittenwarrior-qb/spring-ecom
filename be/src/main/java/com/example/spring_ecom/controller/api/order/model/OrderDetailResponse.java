@@ -11,6 +11,7 @@ public record OrderDetailResponse(
     Long id,
     String orderNumber,
     Long userId,
+    String userEmail,
     OrderStatus status,
     BigDecimal subtotal,
     BigDecimal shippingFee,

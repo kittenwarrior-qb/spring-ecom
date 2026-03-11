@@ -74,6 +74,6 @@ public class CategoryController implements CategoryAPI {
     @Override
     public ApiResponse<Void> deleteCategory(Long id) {
         categoryUseCase.delete(id);
-        return ApiResponse.Success.of(null);
+        return ApiResponse.Success.of(ResponseCode.OK, "Category deleted successfully", null);
     }
 }

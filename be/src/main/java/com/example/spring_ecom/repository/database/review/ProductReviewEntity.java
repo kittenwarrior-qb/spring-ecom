@@ -1,5 +1,6 @@
 package com.example.spring_ecom.repository.database.review;
 
+import com.example.spring_ecom.repository.database.common.BaseAuditEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductReviewEntity {
+public class ProductReviewEntity extends BaseAuditEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,24 +54,4 @@ public class ProductReviewEntity {
     
     @Column(name = "admin_id")
     private Long adminId;
-    
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-    
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

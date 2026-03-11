@@ -1,8 +1,12 @@
 package com.example.spring_ecom.service.order;
 
+import com.example.spring_ecom.controller.api.order.model.OrderDetailResponse;
 import com.example.spring_ecom.domain.order.Order;
+import com.example.spring_ecom.domain.order.OrderStatistics;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentStatus;
+import com.example.spring_ecom.service.order.detail.OrderDetailService;
+import com.example.spring_ecom.service.order.detail.OrderStatisticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +21,8 @@ public class OrderUseCaseService implements OrderUseCase {
     
     private final OrderQueryService queryService;
     private final OrderCommandService commandService;
+    private final OrderDetailService orderDetailService;
+    private final OrderStatisticsService orderStatisticsService;
     
     @Override
     @Transactional
@@ -70,5 +76,17 @@ public class OrderUseCaseService implements OrderUseCase {
     @Transactional
     public void cancelOrder(Long id) {
         commandService.cancelOrder(id);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public OrderDetailResponse getOrderDetail(Long orderId) {
+        return orderDetailService.getOrderDetail(orderId);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public OrderStatistics getOrderStatistics() {
+        return orderStatisticsService.getStatistics();
     }
 }

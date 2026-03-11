@@ -8,6 +8,7 @@ public record OrderItemResponse(
     Long orderId,
     Long productId,
     String productTitle,
+    String productImage,
     Integer quantity,
     BigDecimal price,
     BigDecimal subtotal,

@@ -3,6 +3,7 @@ package com.example.spring_ecom.repository.database.order;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentMethod;
 import com.example.spring_ecom.domain.order.PaymentStatus;
+import com.example.spring_ecom.repository.database.common.BaseAuditEntity;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
 import com.example.spring_ecom.repository.database.user.UserEntity;
 import jakarta.persistence.*;
@@ -20,7 +21,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderEntity {
+public class OrderEntity extends BaseAuditEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -86,28 +87,6 @@ public class OrderEntity {
     @Builder.Default
     private List<OrderItemEntity> items = new ArrayList<>();
     
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-    
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        if (createdAt == null) {
-            createdAt = now;
-        }
-        if (updatedAt == null) {
-            updatedAt = now;
-        }
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

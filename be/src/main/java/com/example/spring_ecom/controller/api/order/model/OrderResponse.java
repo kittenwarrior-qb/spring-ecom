@@ -5,11 +5,13 @@ import com.example.spring_ecom.domain.order.PaymentMethod;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record OrderResponse(
     Long id,
     String orderNumber,
     Long userId,
+    String userEmail,
     OrderStatus status,
     BigDecimal subtotal,
     BigDecimal shippingFee,
@@ -23,6 +25,7 @@ public record OrderResponse(
     String recipientName,
     String recipientPhone,
     String note,
+    List<OrderItemResponse> items,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
     LocalDateTime cancelledAt

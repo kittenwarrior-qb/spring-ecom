@@ -108,6 +108,7 @@ export interface ProductRequest {
   coverImageUrl?: string
   isBestseller?: boolean
   isActive?: boolean
+  categoryId?: number
 }
 
 export interface ProductResponse {
@@ -133,6 +134,8 @@ export interface ProductResponse {
   ratingCount: number
   createdAt: string
   updatedAt: string
+  categoryId: number | null
+  categoryName: string | null
 }
 
 // Cart types

@@ -5,6 +5,7 @@ import com.example.spring_ecom.controller.api.auth.model.AuthResponse;
 import com.example.spring_ecom.controller.api.auth.model.LoginRequest;
 import com.example.spring_ecom.controller.api.auth.model.RegisterRequest;
 import com.example.spring_ecom.core.response.ApiResponse;
+import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.core.util.CookieUtil;
 import com.example.spring_ecom.service.auth.AuthUseCase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,6 +65,6 @@ public class AuthController {
         String refreshToken = cookieUtil.getRefreshTokenFromCookie(httpRequest);
         authUseCase.logout(refreshToken);
         cookieUtil.deleteRefreshTokenCookie(httpResponse);
-        return ResponseEntity.ok(ApiResponse.Success.of(null));
+        return ResponseEntity.ok(ApiResponse.Success.of(ResponseCode.OK, "Logged out successfully", null));
     }
 }

@@ -1,8 +1,8 @@
 package com.example.spring_ecom.service.address;
 
 import com.example.spring_ecom.domain.address.Address;
-import com.example.spring_ecom.domain.address.dto.AddressRequest;
-import com.example.spring_ecom.domain.address.dto.LocationSuggestionResponse;
+import com.example.spring_ecom.domain.address.model.AddressRequest;
+import com.example.spring_ecom.domain.address.model.LocationSuggestionResponse;
 
 import java.util.List;
 

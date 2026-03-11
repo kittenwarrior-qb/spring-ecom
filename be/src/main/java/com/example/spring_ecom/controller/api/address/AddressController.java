@@ -9,7 +9,7 @@ import com.example.spring_ecom.core.response.ApiResponse;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.core.util.SecurityUtil;
 import com.example.spring_ecom.domain.address.Address;
-import com.example.spring_ecom.domain.address.dto.AddressRequest;
+import com.example.spring_ecom.domain.address.model.AddressRequest;
 import com.example.spring_ecom.service.address.AddressUseCase;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -101,7 +101,7 @@ public class AddressController implements AddressAPI {
     @Override
     public ApiResponse<LocationSuggestionResponse> getLocationSuggestion(HttpServletRequest request) {
         String ipAddress = getClientIpAddress(request);
-        com.example.spring_ecom.domain.address.dto.LocationSuggestionResponse suggestion = 
+        com.example.spring_ecom.domain.address.model.LocationSuggestionResponse suggestion = 
                 addressUseCase.getLocationSuggestion(ipAddress);
         
         LocationSuggestionResponse response = new LocationSuggestionResponse(
