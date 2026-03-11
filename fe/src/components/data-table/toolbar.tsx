@@ -1,7 +1,9 @@
 import { Cross2Icon } from '@radix-ui/react-icons'
 import { type Table } from '@tanstack/react-table'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useDebounce } from '@/hooks/use-debounce'
 import { DataTableFacetedFilter } from './faceted-filter'
 import { DataTableViewOptions } from './view-options'
 
@@ -26,8 +28,25 @@ export function DataTableToolbar<TData>({
   searchKey,
   filters = [],
 }: DataTableToolbarProps<TData>) {
+  // Get initial value from table state
+  const initialValue = searchKey 
+    ? (table.getColumn(searchKey)?.getFilterValue() as string) ?? ''
+    : table.getState().globalFilter ?? ''
+    
+  const [searchValue, setSearchValue] = useState(initialValue)
+  const debouncedSearchValue = useDebounce(searchValue, 1000)
+  
   const isFiltered =
     table.getState().columnFilters.length > 0 || table.getState().globalFilter
+
+  // Update table filter when debounced value changes
+  useEffect(() => {
+    if (searchKey) {
+      table.getColumn(searchKey)?.setFilterValue(debouncedSearchValue)
+    } else {
+      table.setGlobalFilter(debouncedSearchValue)
+    }
+  }, [debouncedSearchValue, searchKey, table])
 
   return (
     <div className='flex items-center justify-between'>
@@ -35,19 +54,15 @@ export function DataTableToolbar<TData>({
         {searchKey ? (
           <Input
             placeholder={searchPlaceholder}
-            value={
-              (table.getColumn(searchKey)?.getFilterValue() as string) ?? ''
-            }
-            onChange={(event) =>
-              table.getColumn(searchKey)?.setFilterValue(event.target.value)
-            }
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
             className='h-8 w-[150px] lg:w-[250px]'
           />
         ) : (
           <Input
             placeholder={searchPlaceholder}
-            value={table.getState().globalFilter ?? ''}
-            onChange={(event) => table.setGlobalFilter(event.target.value)}
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
             className='h-8 w-[150px] lg:w-[250px]'
           />
         )}
@@ -71,6 +86,7 @@ export function DataTableToolbar<TData>({
             onClick={() => {
               table.resetColumnFilters()
               table.setGlobalFilter('')
+              setSearchValue('')
             }}
             className='h-8 px-2 lg:px-3'
           >

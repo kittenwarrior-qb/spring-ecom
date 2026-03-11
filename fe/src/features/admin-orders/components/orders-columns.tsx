@@ -26,11 +26,11 @@ export const ordersColumns: ColumnDef<OrderResponse>[] = [
         enableHiding: false,
     },
     {
-        accessorKey: 'recipientName',
+        accessorKey: 'userEmail',
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Khách hàng' />
+            <DataTableColumnHeader column={column} title='Email khách hàng' />
         ),
-        cell: ({ row }) => <div>{row.getValue('recipientName')}</div>,
+        cell: ({ row }) => <div>{row.getValue('userEmail')}</div>,
     },
     {
         accessorKey: 'total',

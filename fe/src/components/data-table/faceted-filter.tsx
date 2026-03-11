@@ -2,6 +2,7 @@ import * as React from 'react'
 import { CheckIcon, PlusCircledIcon } from '@radix-ui/react-icons'
 import { type Column } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
+import { useDebounce } from '@/hooks/use-debounce'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -37,6 +38,8 @@ export function DataTableFacetedFilter<TData, TValue>({
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
   const selectedValues = new Set(column?.getFilterValue() as string[])
+  const [searchValue, setSearchValue] = React.useState('')
+  const debouncedSearchValue = useDebounce(searchValue, 1000)
 
   return (
     <Popover>
@@ -81,7 +84,11 @@ export function DataTableFacetedFilter<TData, TValue>({
       </PopoverTrigger>
       <PopoverContent className='w-[200px] p-0' align='start'>
         <Command>
-          <CommandInput placeholder={title} />
+          <CommandInput 
+            placeholder={title} 
+            value={searchValue}
+            onValueChange={setSearchValue}
+          />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>

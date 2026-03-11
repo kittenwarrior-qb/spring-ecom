@@ -225,6 +225,7 @@ export interface OrderResponse {
   id: number
   orderNumber: string
   userId: number
+  userEmail: string
   status: OrderStatus
   subtotal: number
   shippingFee: number
@@ -238,6 +239,7 @@ export interface OrderResponse {
   recipientName: string
   recipientPhone: string
   note: string | null
+  items: OrderItemResponse[]
   createdAt: string
   updatedAt: string
   cancelledAt: string | null
@@ -248,6 +250,7 @@ export interface OrderItemResponse {
   orderId: number
   productId: number
   productTitle: string
+  productImage: string | null
   quantity: number
   price: number
   subtotal: number

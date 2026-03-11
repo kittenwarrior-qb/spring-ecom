@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowRight, ChevronRight, Laptop, Moon, Sun } from 'lucide-react'
 import { useSearch } from '@/context/search-provider'
 import { useTheme } from '@/context/theme-provider'
+import { useDebounce } from '@/hooks/use-debounce'
 import {
   CommandDialog,
   CommandEmpty,
@@ -20,6 +21,8 @@ export function CommandMenu() {
   const { setTheme } = useTheme()
   const { open, setOpen } = useSearch()
   const sidebarData = getStaticSidebarData()
+  const [searchValue, setSearchValue] = useState('')
+  const debouncedSearchValue = useDebounce(searchValue, 1000)
 
   const runCommand = React.useCallback(
     (command: () => unknown) => {
@@ -31,7 +34,11 @@ export function CommandMenu() {
 
   return (
     <CommandDialog modal open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder='Type a command or search...' />
+      <CommandInput 
+        placeholder='Type a command or search...' 
+        value={searchValue}
+        onValueChange={setSearchValue}
+      />
       <CommandList>
         <ScrollArea type='hover' className='h-72 pe-1'>
           <CommandEmpty>No results found.</CommandEmpty>

@@ -1,1 +1,1 @@
-export * from './index'
+export { AdminOrders } from './index.tsx'

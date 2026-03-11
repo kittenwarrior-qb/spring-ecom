@@ -3,6 +3,7 @@ import { Search, Loader2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useProducts, useSearchProducts, useProductsByCategory } from '@/hooks/use-product'
 import { useCategories } from '@/hooks/use-category'
+import { useDebounce } from '@/hooks/use-debounce'
 import { ProductCard } from '@/features/products/components/product-card'
 import { Input } from '@/components/ui/input'
 
@@ -17,15 +18,7 @@ export const Route = createFileRoute('/products/')({
 function ProductsListPage() {
   const search = Route.useSearch()
   const [keyword, setKeyword] = useState(search.keyword || '')
-  const [debouncedKeyword, setDebouncedKeyword] = useState(search.keyword || '')
-
-  // Debounce search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedKeyword(keyword)
-    }, 500)
-    return () => clearTimeout(timer)
-  }, [keyword])
+  const debouncedKeyword = useDebounce(keyword, 1000)
 
   const { data: categories } = useCategories()
   const { data: allProducts, isLoading: isLoadingAll } = useProducts(0, 12)

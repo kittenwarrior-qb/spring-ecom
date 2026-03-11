@@ -123,7 +123,8 @@ function OrdersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Mã đơn hàng</TableHead>
+                    <TableHead>Đơn hàng</TableHead>
+                    <TableHead>Sản phẩm</TableHead>
                     <TableHead>Ngày đặt</TableHead>
                     <TableHead>Tổng</TableHead>
                     <TableHead>Trạng thái</TableHead>
@@ -133,11 +134,63 @@ function OrdersPage() {
                 <TableBody>
                   {filteredOrders.map((order) => (
                     <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                      <TableCell className="font-medium">
+                        <div>
+                          <div className="font-semibold">{order.orderNumber}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {order.userEmail}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          {order.items && order.items.length > 0 ? (
+                            order.items.slice(0, 2).map((item, index) => (
+                              <div key={index} className="flex items-center gap-3">
+                                {item.productImage ? (
+                                  <img 
+                                    src={item.productImage} 
+                                    alt={item.productTitle}
+                                    className="w-12 h-12 object-cover rounded-md border"
+                                    onError={(e) => {
+                                      e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAzNkMzMC42Mjc0IDM2IDM2IDMwLjYyNzQgMzYgMjRDMzYgMTcuMzcyNiAzMC42Mjc0IDEyIDI0IDEyQzE3LjM3MjYgMTIgMTIgMTcuMzcyNiAxMiAyNEMxMiAzMC42Mjc0IDE3LjM3MjYgMzYgMjQgMzZaIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0yNCAyOEMyNi4yMDkxIDI4IDI4IDI2LjIwOTEgMjggMjRDMjggMjEuNzkwOSAyNi4yMDkxIDIwIDI0IDIwQzIxLjc5MDkgMjAgMjAgMjEuNzkwOSAyMCAyNEMyMCAyNi4yMDkxIDIxLjc5MDkgMjggMjQgMjhaIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo='
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 bg-gray-100 rounded-md border flex items-center justify-center">
+                                    <span className="text-gray-400 text-xs">IMG</span>
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-sm truncate">
+                                    {item.productTitle}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    SL: {item.quantity} × {item.price.toLocaleString('vi-VN')}đ
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-sm text-muted-foreground">
+                              Không có sản phẩm
+                            </div>
+                          )}
+                          {order.items && order.items.length > 2 && (
+                            <div className="text-xs text-muted-foreground">
+                              +{order.items.length - 2} sản phẩm khác
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                       </TableCell>
-                      <TableCell>{order.total.toLocaleString('vi-VN')}đ</TableCell>
+                      <TableCell>
+                        <div className="font-semibold">
+                          {order.total.toLocaleString('vi-VN')}đ
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge className={statusColors[order.status]}>
                           {statusLabels[order.status] || order.status}

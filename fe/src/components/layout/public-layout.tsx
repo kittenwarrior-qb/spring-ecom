@@ -1,7 +1,9 @@
 import { Link } from '@tanstack/react-router'
 import { ShoppingCart, Search, User } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useDebounce } from '@/hooks/use-debounce'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +21,8 @@ interface PublicLayoutProps {
 export function PublicLayout({ children }: PublicLayoutProps) {
   const auth = useAuth()
   const user = useUser()
+  const [searchValue, setSearchValue] = useState('')
+  const debouncedSearchValue = useDebounce(searchValue, 1000)
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,6 +41,8 @@ export function PublicLayout({ children }: PublicLayoutProps) {
               <Input
                 placeholder="Search books..."
                 className="pl-10"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
               />
             </div>
           </div>

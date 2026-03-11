@@ -1,9 +1,11 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
+import { useState } from 'react'
 import { CaretSortIcon, CheckIcon } from '@radix-ui/react-icons'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { showSubmittedData } from '@/lib/show-submitted-data'
 import { cn } from '@/lib/utils'
+import { useDebounce } from '@/hooks/use-debounce'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -60,6 +62,9 @@ const defaultValues: Partial<AccountFormValues> = {
 }
 
 export function AccountForm() {
+  const [languageSearchValue, setLanguageSearchValue] = useState('')
+  const debouncedLanguageSearch = useDebounce(languageSearchValue, 1000)
+  
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
     defaultValues,
@@ -131,7 +136,11 @@ export function AccountForm() {
                 </PopoverTrigger>
                 <PopoverContent className='w-[200px] p-0'>
                   <Command>
-                    <CommandInput placeholder='Search language...' />
+                    <CommandInput 
+                      placeholder='Search language...' 
+                      value={languageSearchValue}
+                      onValueChange={setLanguageSearchValue}
+                    />
                     <CommandEmpty>No language found.</CommandEmpty>
                     <CommandGroup>
                       <CommandList>
