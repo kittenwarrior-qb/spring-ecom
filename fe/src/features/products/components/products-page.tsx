@@ -1,3 +1,4 @@
+import { getRouteApi } from '@tanstack/react-router'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -9,7 +10,12 @@ import { ProductsTable } from './products-table'
 import { ProductsPrimaryButtons } from './products-primary-buttons'
 import { ProductsDialogs } from './products-dialogs'
 
+const route = getRouteApi('/admin/products/')
+
 export function ProductsPage() {
+  const search = route.useSearch()
+  const navigate = route.useNavigate()
+
   return (
     <ProductsProvider>
       <Header fixed>
@@ -31,7 +37,7 @@ export function ProductsPage() {
           </div>
           <ProductsPrimaryButtons />
         </div>
-        <ProductsTable />
+        <ProductsTable search={search} navigate={navigate} />
       </Main>
 
       <ProductsDialogs />

@@ -2,6 +2,7 @@ package com.example.spring_ecom.core.util;
 
 import java.text.Normalizer;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class SlugUtil {
@@ -15,7 +16,7 @@ public class SlugUtil {
     }
 
     public static String toSlug(String input) {
-        if (input == null || input.isBlank()) {
+        if (Objects.isNull(input) || input.isBlank()) {
             return "";
         }
         

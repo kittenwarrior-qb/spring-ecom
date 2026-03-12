@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -31,13 +32,13 @@ public class ProductQueryService {
     
     public Optional<Product> findById(Long id) {
         return productRepository.findById(id)
-                .filter(entity -> entity.getDeletedAt() == null)
+                .filter(entity -> Objects.isNull(entity.getDeletedAt()))
                 .map(mapper::toDomain);
     }
     
     public Optional<ProductEntity> findEntityById(Long id) {
         return productRepository.findById(id)
-                .filter(entity -> entity.getDeletedAt() == null);
+                .filter(entity -> Objects.isNull(entity.getDeletedAt()));
     }
     
     public Optional<Product> findBySlug(String slug) {

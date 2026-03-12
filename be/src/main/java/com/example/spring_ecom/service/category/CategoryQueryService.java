@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -27,7 +28,7 @@ public class CategoryQueryService {
     
     public Optional<Category> findById(Long id) {
         return categoryRepository.findById(id)
-                .filter(entity -> entity.getDeletedAt() == null)
+                .filter(entity -> Objects.isNull(entity.getDeletedAt()))
                 .map(mapper::toDomain);
     }
     

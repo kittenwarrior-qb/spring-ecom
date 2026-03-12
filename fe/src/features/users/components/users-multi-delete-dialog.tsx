@@ -16,7 +16,7 @@ type UserMultiDeleteDialogProps<TData> = {
   table: Table<TData>
 }
 
-const CONFIRM_WORD = 'DELETE'
+const CONFIRM_WORD = 'XOA'
 
 export function UsersMultiDeleteDialog<TData>({
   open,
@@ -29,22 +29,22 @@ export function UsersMultiDeleteDialog<TData>({
 
   const handleDelete = () => {
     if (value.trim() !== CONFIRM_WORD) {
-      toast.error(`Please type "${CONFIRM_WORD}" to confirm.`)
+      toast.error(`Vui lòng nhập "${CONFIRM_WORD}" để xác nhận.`)
       return
     }
 
     onOpenChange(false)
 
     toast.promise(sleep(2000), {
-      loading: 'Deleting users...',
+      loading: 'Đang xóa người dùng...',
       success: () => {
         setValue('')
         table.resetRowSelection()
-        return `Deleted ${selectedRows.length} ${
-          selectedRows.length > 1 ? 'users' : 'user'
+        return `Đã xóa ${selectedRows.length} ${
+          selectedRows.length > 1 ? 'người dùng' : 'người dùng'
         }`
       },
-      error: 'Error',
+      error: 'Lỗi',
     })
   }
 
@@ -60,15 +60,15 @@ export function UsersMultiDeleteDialog<TData>({
             className='me-1 inline-block stroke-destructive'
             size={18}
           />{' '}
-          Delete {selectedRows.length}{' '}
-          {selectedRows.length > 1 ? 'users' : 'user'}
+          Xóa {selectedRows.length}{' '}
+          {selectedRows.length > 1 ? 'người dùng' : 'người dùng'}
         </span>
       }
       desc={
         <div className='space-y-4'>
           <p className='mb-2'>
-            Are you sure you want to delete the selected users? <br />
-            This action cannot be undone.
+            Bạn có chắc chắn muốn xóa những người dùng đã chọn? <br />
+            Hành động này không thể hoàn tác.
           </p>
 
           <Label className='my-4 flex flex-col items-start gap-1.5'>
@@ -88,7 +88,7 @@ export function UsersMultiDeleteDialog<TData>({
           </Alert>
         </div>
       }
-      confirmText='Delete'
+      confirmText='Xóa'
       destructive
     />
   )

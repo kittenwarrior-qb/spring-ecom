@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown, Edit, Trash2, MoreHorizontal, Loader2 } from 'lucide-react'
+import { ArrowUpDown, Edit, Trash2, MoreHorizontal, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { useProducts } from '@/hooks/use-product'
 import { Button } from '@/components/ui/button'
@@ -14,8 +14,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useProductsContext } from './products-provider'
 import type { ProductResponse } from '@/types/api'
+
+type ProductsTableProps = {
+  search: {
+    page: number
+    size: number
+    sort: string
+  }
+  navigate: (options: { search: { page?: number; size?: number; sort?: string } }) => void
+}
 
 /* react-compiler-ignore */
 const columns: ColumnDef<ProductResponse>[] = [
@@ -199,7 +209,7 @@ function ProductActions({ product }: { product: ProductResponse }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant='ghost' className='h-8 w-8 p-0'>
-          <span className='sr-only'>Open menu</span>
+          <span className='sr-only'>Mở menu</span>
           <MoreHorizontal className='h-4 w-4' />
         </Button>
       </DropdownMenuTrigger>
@@ -235,11 +245,14 @@ function ProductActions({ product }: { product: ProductResponse }) {
   )
 }
 
-export function ProductsTable() {
+export function ProductsTable({ search, navigate }: ProductsTableProps) {
   const [rowSelection, setRowSelection] = useState({})
-  const { data, isLoading, error } = useProducts()
+  const { data, isLoading, error } = useProducts(search.page, search.size, search.sort)
 
   const products = data?.content ?? []
+  const totalPages = data?.totalPages ?? 0
+  const totalElements = data?.totalElements ?? 0
+  const currentPage = search.page
 
   // React Compiler warning expected here - TanStack Table API returns functions that cannot be safely memoized
   // This is known limitation and doesn't affect functionality
@@ -263,50 +276,125 @@ export function ProductsTable() {
   }
 
   return (
-    <div className='rounded-md border'>
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={columns.length} className='h-24 text-center'>
-                <Loader2 className='mx-auto h-6 w-6 animate-spin' />
-              </TableCell>
-            </TableRow>
-          ) : table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && 'selected'}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+    <div className='space-y-4'>
+      <div className='rounded-md border'>
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
                 ))}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className='h-24 text-center'>
-                Không tìm thấy sản phẩm nào.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className='h-24 text-center'>
+                  <Loader2 className='mx-auto h-6 w-6 animate-spin' />
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className='h-24 text-center'>
+                  Không tìm thấy sản phẩm nào.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center space-x-2'>
+          <p className='text-sm font-medium'>Hiển thị</p>
+          <Select
+            value={search.size.toString()}
+            onValueChange={(value) => {
+              navigate({
+                search: {
+                  ...search,
+                  size: parseInt(value),
+                  page: 0, // Reset to first page when changing page size
+                },
+              })
+            }}
+          >
+            <SelectTrigger className='h-8 w-[70px]'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent side='top'>
+              {[5, 10, 20, 30, 50].map((pageSize) => (
+                <SelectItem key={pageSize} value={pageSize.toString()}>
+                  {pageSize}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className='text-sm font-medium'>
+            trên tổng số {totalElements} sản phẩm
+          </p>
+        </div>
+
+        <div className='flex items-center space-x-2'>
+          <p className='text-sm font-medium'>
+            Trang {currentPage + 1} / {Math.max(1, totalPages)}
+          </p>
+          <div className='flex items-center space-x-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => {
+                navigate({
+                  search: {
+                    ...search,
+                    page: currentPage - 1,
+                  },
+                })
+              }}
+              disabled={currentPage === 0}
+            >
+              <ChevronLeft className='h-4 w-4' />
+              Trước
+            </Button>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => {
+                navigate({
+                  search: {
+                    ...search,
+                    page: currentPage + 1,
+                  },
+                })
+              }}
+              disabled={currentPage >= totalPages - 1}
+            >
+              Sau
+              <ChevronRight className='h-4 w-4' />
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

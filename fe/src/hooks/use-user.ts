@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { userApi } from '@/api/user.api'
+import { getCookie } from '@/lib/cookies'
 import type { PageRequest, UserRequest, UserResponse, UpdateProfileRequest, UpdateAvatarRequest, ChangePasswordRequest } from '@/types/api'
 
 // Query keys
@@ -70,9 +71,15 @@ export function useDeleteUser() {
 // Profile hooks
 // Get current user profile
 export function useUserProfile() {
+  // Only fetch profile if user has access token
+  const hasToken = !!getCookie('accessToken')
+  
   return useQuery({
     queryKey: userKeys.profile(),
     queryFn: userApi.getProfile,
+    enabled: hasToken, // Only run query if user is authenticated
+    retry: false, // Don't retry on failure to avoid infinite loop
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   })
 }
 

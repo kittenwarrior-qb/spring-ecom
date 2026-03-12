@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useAuthStore } from '@/stores/auth-store'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { authApi } from '@/api/auth.api'
 
 interface SignOutDialogProps {
   open: boolean
@@ -12,15 +13,27 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   const location = useLocation()
   const { auth } = useAuthStore()
 
-  const handleSignOut = () => {
-    auth.reset()
-    // Preserve current location for redirect after sign-in
-    const currentPath = location.href
-    navigate({
-      to: '/sign-in',
-      search: { redirect: currentPath },
-      replace: true,
-    })
+  const handleSignOut = async () => {
+    try {
+      await authApi.logout()
+      auth.reset()
+      // Preserve current location for redirect after sign-in
+      const currentPath = location.href
+      navigate({
+        to: '/sign-in',
+        search: { redirect: currentPath },
+        replace: true,
+      })
+    } catch (error) {
+      // Even if API call fails, still logout locally
+      auth.reset()
+      const currentPath = location.href
+      navigate({
+        to: '/sign-in',
+        search: { redirect: currentPath },
+        replace: true,
+      })
+    }
   }
 
   return (

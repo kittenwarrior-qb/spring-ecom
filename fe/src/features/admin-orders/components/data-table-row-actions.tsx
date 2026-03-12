@@ -28,7 +28,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
                     className='flex h-8 w-8 p-0 data-[state=open]:bg-muted'
                 >
                     <DotsHorizontalIcon className='h-4 w-4' />
-                    <span className='sr-only'>Open menu</span>
+                    <span className='sr-only'>Mở menu</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-[180px]'>
@@ -38,7 +38,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
                         setOpen('detail')
                     }}
                 >
-                    View Details
+                    Xem Chi Tiết
                     <DropdownMenuShortcut>
                         <Eye size={16} />
                     </DropdownMenuShortcut>
@@ -49,7 +49,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
                         setOpen('status')
                     }}
                 >
-                    Update Status
+                    Cập Nhật Trạng Thái
                     <DropdownMenuShortcut>
                         <Settings2 size={16} />
                     </DropdownMenuShortcut>

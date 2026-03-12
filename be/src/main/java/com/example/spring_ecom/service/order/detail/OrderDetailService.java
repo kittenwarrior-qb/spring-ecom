@@ -6,6 +6,9 @@ import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.order.OrderWithUserDto;
 import com.example.spring_ecom.domain.order.OrderItemWithProductDto;
+import com.example.spring_ecom.domain.order.PaymentMethod;
+import com.example.spring_ecom.repository.dao.order.OrderWithUserDao;
+import com.example.spring_ecom.repository.dao.order.OrderItemWithProductDao;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,10 +24,16 @@ public class OrderDetailService {
     private final OrderItemRepository orderItemRepository;
     
     public OrderDetailResponse getOrderDetail(Long orderId) {
-        OrderWithUserDto order = orderRepository.findOrderWithUserById(orderId)
+        OrderWithUserDao orderDao = orderRepository.findOrderWithUserById(orderId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
         
-        List<OrderItemWithProductDto> orderItems = orderItemRepository.findOrderItemsWithProductByOrderId(orderId);
+        OrderWithUserDto order = toOrderWithUserDto(orderDao);
+        
+        List<OrderItemWithProductDao> orderItemDaos = orderItemRepository.findOrderItemsWithProductByOrderId(orderId);
+        
+        List<OrderItemWithProductDto> orderItems = orderItemDaos.stream()
+                .map(this::toOrderItemWithProductDto)
+                .toList();
         
         List<OrderItemResponse> items = orderItems.stream()
                 .map(this::toOrderItemResponse)
@@ -52,6 +61,46 @@ public class OrderDetailService {
                 order.createdAt(),
                 order.updatedAt(),
                 order.cancelledAt()
+        );
+    }
+    
+    private OrderWithUserDto toOrderWithUserDto(OrderWithUserDao dao) {
+        return new OrderWithUserDto(
+                dao.id(),
+                dao.orderNumber(),
+                dao.userId(),
+                dao.userEmail(),
+                dao.status(),
+                dao.paymentStatus(),
+                dao.subtotal(),
+                dao.shippingFee(),
+                dao.discount(),
+                dao.total(),
+                PaymentMethod.valueOf(dao.paymentMethod()),
+                dao.shippingAddress(),
+                dao.shippingCity(),
+                dao.shippingDistrict(),
+                dao.shippingWard(),
+                dao.recipientName(),
+                dao.recipientPhone(),
+                dao.note(),
+                dao.createdAt(),
+                dao.updatedAt(),
+                dao.cancelledAt()
+        );
+    }
+    
+    private OrderItemWithProductDto toOrderItemWithProductDto(OrderItemWithProductDao dao) {
+        return new OrderItemWithProductDto(
+                dao.id(),
+                dao.orderId(),
+                dao.productId(),
+                dao.productTitle(),
+                dao.productCoverImageUrl(),
+                dao.quantity(),
+                dao.price(),
+                dao.subtotal(),
+                dao.createdAt()
         );
     }
     

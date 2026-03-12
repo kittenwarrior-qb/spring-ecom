@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -24,15 +25,15 @@ public class CategoryCommandService {
     
     public Optional<Category> create(Category category) {
         // Check if parent exists
-        if (category.parentId() != null) {
+        if (Objects.nonNull(category.parentId())) {
             categoryRepository.findById(category.parentId())
-                    .filter(entity -> entity.getDeletedAt() == null)
+                    .filter(entity -> Objects.isNull(entity.getDeletedAt()))
                     .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Parent category not found"));
         }
         
         CategoryEntity entity = mapper.toEntity(category);
         
-        if (entity.getSlug() == null || entity.getSlug().isBlank()) {
+        if (Objects.isNull(entity.getSlug()) || entity.getSlug().isBlank()) {
             String baseSlug = SlugUtil.toSlug(entity.getName());
             String uniqueSlug = generateUniqueSlug(baseSlug);
             entity.setSlug(uniqueSlug);
@@ -41,12 +42,6 @@ public class CategoryCommandService {
                 throw new BaseException(ResponseCode.BAD_REQUEST, "Category slug already exists");
             }
         }
-        if (entity.getDisplayOrder() == null) {
-            entity.setDisplayOrder(0);
-        }
-        if (entity.getIsActive() == null) {
-            entity.setIsActive(true);
-        }
         
         CategoryEntity saved = categoryRepository.save(entity);
         return Optional.of(mapper.toDomain(saved));
@@ -54,7 +49,7 @@ public class CategoryCommandService {
     
     public Optional<Category> update(Long id, Category category) {
         CategoryEntity entity = categoryRepository.findById(id)
-                .filter(e -> e.getDeletedAt() == null)
+                .filter(e -> Objects.isNull(e.getDeletedAt()))
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Category not found"));
         
         if (!entity.getSlug().equals(category.slug()) && 
@@ -62,14 +57,14 @@ public class CategoryCommandService {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Category slug already exists");
         }
         
-        if (category.parentId() != null) {
+        if (Objects.nonNull(category.parentId())) {
             // Cannot set itself as parent
             if (category.parentId().equals(id)) {
                 throw new BaseException(ResponseCode.BAD_REQUEST, "Category cannot be its own parent");
             }
             
             categoryRepository.findById(category.parentId())
-                    .filter(e -> e.getDeletedAt() == null)
+                    .filter(e -> Objects.isNull(e.getDeletedAt()))
                     .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Parent category not found"));
         }
         
@@ -81,7 +76,7 @@ public class CategoryCommandService {
     
     public void delete(Long id) {
         CategoryEntity entity = categoryRepository.findById(id)
-                .filter(e -> e.getDeletedAt() == null)
+                .filter(e -> Objects.isNull(e.getDeletedAt()))
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Category not found"));
         
         entity.setDeletedAt(LocalDateTime.now());

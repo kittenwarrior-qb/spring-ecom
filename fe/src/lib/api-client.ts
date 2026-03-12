@@ -27,7 +27,7 @@ apiClient.interceptors.request.use(
 )
 
 // Response interceptor - handle errors and token refresh
-let isRefreshing = false
+const isRefreshing = false
 let failedQueue: Array<{
   resolve: (value: unknown) => void
   reject: (reason: unknown) => void
@@ -60,6 +60,8 @@ apiClient.interceptors.response.use(
     const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
                            originalRequest.url?.includes('/auth/register')
 
+    // TEMPORARILY DISABLED: Refresh token logic
+    /*
     // If error is 401 and we haven't tried to refresh yet and it's not an auth endpoint
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
@@ -104,6 +106,13 @@ apiClient.interceptors.response.use(
       } finally {
         isRefreshing = false
       }
+    }
+    */
+
+    // For now, just redirect to login on 401 errors (except auth endpoints)
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      document.cookie = 'accessToken=; path=/; max-age=0'
+      window.location.href = '/sign-in'
     }
 
     return Promise.reject(error)

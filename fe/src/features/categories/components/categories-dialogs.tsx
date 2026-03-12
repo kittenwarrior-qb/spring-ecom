@@ -277,8 +277,8 @@ function EditCategoryDialog() {
             }
           : undefined
       }
-      title='Edit Category'
-      description='Update category information.'
+      title='Chỉnh Sửa Danh Mục'
+      description='Cập nhật thông tin danh mục.'
       isLoading={updateCategory.isPending}
     />
   )
@@ -292,7 +292,7 @@ function DeleteCategoryDialog() {
     if (!selectedCategory) return
     try {
       await deleteCategory.mutateAsync(selectedCategory.id)
-      toast.success('Category deleted successfully')
+      toast.success('Danh mục đã được xóa thành công')
       setIsDeleteOpen(false)
       setSelectedCategory(null)
     } catch (error) {
@@ -304,20 +304,20 @@ function DeleteCategoryDialog() {
     <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Category</AlertDialogTitle>
+          <AlertDialogTitle>Xóa Danh Mục</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{selectedCategory?.name}"? This action cannot be undone.
+            Bạn có chắc chắn muốn xóa "{selectedCategory?.name}"? Hành động này không thể hoàn tác.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>Hủy</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             disabled={deleteCategory.isPending}
           >
             {deleteCategory.isPending && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-            Delete
+            Xóa
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

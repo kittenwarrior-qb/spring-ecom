@@ -30,7 +30,7 @@ export function UsersDeleteDialog({
 
     try {
       await deleteUser.mutateAsync(currentRow.id)
-      toast.success(`User "${currentRow.username}" has been deleted`)
+      toast.success(`Người dùng "${currentRow.username}" đã được xóa`)
       setValue('')
       onOpenChange(false)
     } catch (error) {
@@ -53,28 +53,28 @@ export function UsersDeleteDialog({
             className='me-1 inline-block stroke-destructive'
             size={18}
           />{' '}
-          Delete User
+          Xóa Người Dùng
         </span>
       }
       desc={
         <div className='space-y-4'>
           <p className='mb-2'>
-            Are you sure you want to delete{' '}
+            Bạn có chắc chắn muốn xóa{' '}
             <span className='font-bold'>{currentRow.username}</span>?
             <br />
-            This action will permanently remove the user with the role of{' '}
+            Hành động này sẽ xóa vĩnh viễn người dùng với vai trò{' '}
             <span className='font-bold'>
               {currentRow.role}
             </span>{' '}
-            from the system. This cannot be undone.
+            khỏi hệ thống. Điều này không thể hoàn tác.
           </p>
 
           <Label className='my-2'>
-            Username:
+            Tên đăng nhập:
             <Input
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder='Enter username to confirm deletion.'
+              placeholder='Nhập tên đăng nhập để xác nhận xóa.'
             />
           </Label>
 
@@ -86,7 +86,7 @@ export function UsersDeleteDialog({
           </Alert>
         </div>
       }
-      confirmText={deleteUser.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : 'Delete'}
+      confirmText={deleteUser.isPending ? <Loader2 className='h-4 w-4 animate-spin' /> : 'Xóa'}
       destructive
     />
   )

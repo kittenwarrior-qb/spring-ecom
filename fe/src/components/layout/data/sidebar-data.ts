@@ -1,9 +1,4 @@
 import {
-  Monitor,
-  Bell,
-  Palette,
-  Wrench,
-  UserCog,
   Command,
   GalleryVerticalEnd,
   FolderOpen,
@@ -48,36 +43,6 @@ export const getStaticSidebarData = () => ({
           title: 'Người Dùng',
           url: '/admin/users/',
           icon: Users,
-        },
-      ],
-    },
-    {
-      title: 'Cài Đặt',
-      items: [
-        {
-          title: 'Hồ Sơ',
-          url: '/settings',
-          icon: UserCog,
-        },
-        {
-          title: 'Tài Khoản',
-          url: '/settings/account',
-          icon: Wrench,
-        },
-        {
-          title: 'Giao Diện',
-          url: '/settings/appearance',
-          icon: Palette,
-        },
-        {
-          title: 'Thông Báo',
-          url: '/settings/notifications',
-          icon: Bell,
-        },
-        {
-          title: 'Hiển Thị',
-          url: '/settings/display',
-          icon: Monitor,
         },
       ],
     },

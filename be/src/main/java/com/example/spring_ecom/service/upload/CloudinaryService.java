@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +27,7 @@ public class CloudinaryService {
 
             // Validate file type
             String contentType = file.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
+            if (Objects.isNull(contentType) || !contentType.startsWith("image/")) {
                 throw new BaseException(ResponseCode.BAD_REQUEST, "File must be an image");
             }
 

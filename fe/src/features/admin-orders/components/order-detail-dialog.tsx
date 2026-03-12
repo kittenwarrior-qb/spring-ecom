@@ -58,7 +58,7 @@ export function OrderDetailDialog() {
                                 <p>Payment: {order.paymentMethod}</p>
                             </div>
                             <div className='space-y-1'>
-                                <p className='text-muted-foreground font-medium'>Status</p>
+                                <p className='text-muted-foreground font-medium'>Trạng thái</p>
                                 <Badge variant={statusStyles[order.status]?.variant || 'outline'}>
                                     {statusStyles[order.status]?.label || order.status}
                                 </Badge>

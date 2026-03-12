@@ -1,6 +1,8 @@
 package com.example.spring_ecom.config.security;
 
 import com.example.spring_ecom.core.util.JwtUtil;
+import com.example.spring_ecom.service.auth.session.RedisSessionService;
+import com.example.spring_ecom.service.auth.session.SessionData;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +25,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     private final JwtUtil jwtUtil;
+    private final RedisSessionService redisSessionService;
     
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -39,26 +42,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
             
             if (jwtUtil.validateToken(token)) {
-                String email = jwtUtil.extractEmail(token);
-                Long userId = jwtUtil.extractUserId(token);
-                String role = jwtUtil.extractRole(token);
+                String sessionId = jwtUtil.extractSessionId(token);
                 
-                List<SimpleGrantedAuthority> authorities = List.of(
-                    new SimpleGrantedAuthority("ROLE_" + role)
-                );
-                
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    email,
-                    null,
-                    authorities
-                );
-                
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                
-                // Set userId vào attribute để dùng trong controller
-                request.setAttribute("userId", userId);
-                
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                if (sessionId != null && redisSessionService.isSessionValid(sessionId)) {
+                    SessionData sessionData = redisSessionService.getSession(sessionId);
+                    
+                    List<SimpleGrantedAuthority> authorities = List.of(
+                        new SimpleGrantedAuthority("ROLE_" + sessionData.getRole())
+                    );
+                    
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        sessionData.getEmail(),
+                        null,
+                        authorities
+                    );
+                    
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    
+                    // Set user info vào attribute để dùng trong controller
+                    request.setAttribute("userId", sessionData.getUserId());
+                    request.setAttribute("sessionId", sessionId);
+                    
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
         } catch (Exception e) {
             log.error("Cannot set user authentication: {}", e.getMessage());

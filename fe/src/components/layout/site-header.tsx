@@ -16,6 +16,7 @@ import { useCartCount } from '@/hooks/use-cart'
 import { useUserProfile } from '@/hooks/use-user'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { authApi } from '@/api/auth.api'
 
 // Import logo
 import logoImg from '@/assets/images/logo.png'
@@ -90,10 +91,18 @@ export function SiteHeader() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const handleLogout = () => {
-    useAuthStore.getState().auth.reset()
-    toast.success('Đã đăng xuất')
-    navigate({ to: '/' })
+  const handleLogout = async () => {
+    try {
+      await authApi.logout()
+      useAuthStore.getState().auth.reset()
+      toast.success('Đã đăng xuất')
+      navigate({ to: '/' })
+    } catch (error) {
+      // Even if API call fails, still logout locally
+      useAuthStore.getState().auth.reset()
+      toast.success('Đã đăng xuất')
+      navigate({ to: '/' })
+    }
   }
 
   return (
@@ -125,12 +134,6 @@ export function SiteHeader() {
             >
               Sách
             </Link>
-            <a
-              href="#"
-              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-md font-medium transition-colors"
-            >
-              Giới thiệu
-            </a>
           </div>
 
           {/* Right Actions */}

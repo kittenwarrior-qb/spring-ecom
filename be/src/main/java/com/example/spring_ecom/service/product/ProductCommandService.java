@@ -14,8 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -28,107 +28,23 @@ public class ProductCommandService {
     private final ProductEntityMapper mapper;
     
     public Optional<Product> create(Product product) {
-        if (product.discountPrice() != null && 
-            product.discountPrice().compareTo(product.price()) > 0) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Discount price cannot be greater than price");
-        }
-        
-        // Validate category if provided
-        if (product.categoryId() != null) {
-            CategoryEntity category = categoryRepository.findById(product.categoryId())
-                    .filter(c -> c.getDeletedAt() == null)
-                    .orElseThrow(() -> new BaseException(ResponseCode.BAD_REQUEST, "Category not found"));
-            
-            if (!category.getIsActive()) {
-                throw new BaseException(ResponseCode.BAD_REQUEST, "Category is not active");
-            }
-        }
+        validateProduct(product);
+        validateCategory(product.categoryId());
         
         ProductEntity entity = mapper.toEntity(product);
-        
-        if (entity.getFormat() != null && !entity.getFormat().isBlank()) {
-            try {
-                ProductFormat.fromString(entity.getFormat());
-            } catch (IllegalArgumentException e) {
-                throw new BaseException(ResponseCode.BAD_REQUEST, e.getMessage());
-            }
-        }
-        
-        if (entity.getSlug() == null || entity.getSlug().isBlank()) {
-            String baseSlug = SlugUtil.toSlug(entity.getTitle());
-            String uniqueSlug = generateUniqueSlug(baseSlug);
-            entity.setSlug(uniqueSlug);
-        } else {
-            if (productRepository.existsBySlugAndDeletedAtIsNull(entity.getSlug())) {
-                throw new BaseException(ResponseCode.BAD_REQUEST, "Product slug already exists");
-            }
-        }
-        
-        if (entity.getLanguage() == null || entity.getLanguage().isBlank()) {
-            entity.setLanguage("Vietnamese");
-        }
-        if (entity.getFormat() == null || entity.getFormat().isBlank()) {
-            entity.setFormat("Paperback");
-        }
-        if (entity.getStockQuantity() == null) {
-            entity.setStockQuantity(0);
-        }
-        if (entity.getIsBestseller() == null) {
-            entity.setIsBestseller(false);
-        }
-        if (entity.getIsActive() == null) {
-            entity.setIsActive(true);
-        }
-        if (entity.getViewCount() == null) {
-            entity.setViewCount(0);
-        }
-        if (entity.getSoldCount() == null) {
-            entity.setSoldCount(0);
-        }
-        if (entity.getRatingAverage() == null) {
-            entity.setRatingAverage(BigDecimal.ZERO);
-        }
-        if (entity.getRatingCount() == null) {
-            entity.setRatingCount(0);
-        }
+        handleSlugGeneration(entity, null);
         
         ProductEntity saved = productRepository.save(entity);
         return Optional.of(mapper.toDomain(saved));
     }
     
     public Optional<Product> update(Long id, Product product) {
-        ProductEntity entity = productRepository.findById(id)
-                .filter(e -> e.getDeletedAt() == null)
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
+        ProductEntity entity = findActiveProductById(id);
         
-        // Validate category if provided
-        if (product.categoryId() != null) {
-            CategoryEntity category = categoryRepository.findById(product.categoryId())
-                    .filter(c -> c.getDeletedAt() == null)
-                    .orElseThrow(() -> new BaseException(ResponseCode.BAD_REQUEST, "Category not found"));
-            
-            if (!category.getIsActive()) {
-                throw new BaseException(ResponseCode.BAD_REQUEST, "Category is not active");
-            }
-        }
-        
-        if (product.format() != null && !product.format().isBlank()) {
-            try {
-                ProductFormat.fromString(product.format());
-            } catch (IllegalArgumentException e) {
-                throw new BaseException(ResponseCode.BAD_REQUEST, e.getMessage());
-            }
-        }
-        
-        if (!entity.getSlug().equals(product.slug()) && 
-            productRepository.existsBySlugAndDeletedAtIsNull(product.slug())) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Product slug already exists");
-        }
-        
-        if (product.discountPrice() != null && 
-            product.discountPrice().compareTo(product.price()) > 0) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Discount price cannot be greater than price");
-        }
+        validateProduct(product);
+        validateCategory(product.categoryId());
+        validateProductFormat(product.format());
+        handleSlugUpdate(product.slug(), entity.getSlug());
         
         mapper.update(entity, product);
         
@@ -137,14 +53,68 @@ public class ProductCommandService {
     }
     
     public void delete(Long id) {
-        ProductEntity entity = productRepository.findById(id)
-                .filter(e -> e.getDeletedAt() == null)
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
-        
+        ProductEntity entity = findActiveProductById(id);
         entity.setDeletedAt(LocalDateTime.now());
         productRepository.save(entity);
     }
 
+    private ProductEntity findActiveProductById(Long id) {
+        return productRepository.findById(id)
+                .filter(e -> Objects.isNull(e.getDeletedAt()))
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
+    }
+    
+    private void validateProduct(Product product) {
+        if (Objects.nonNull(product.discountPrice()) && 
+            product.discountPrice().compareTo(product.price()) > 0) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, "Discount price cannot be greater than price");
+        }
+    }
+    
+    private void validateCategory(Long categoryId) {
+        if (Objects.isNull(categoryId)) return;
+        
+        CategoryEntity category = categoryRepository.findById(categoryId)
+                .filter(c -> Objects.isNull(c.getDeletedAt()))
+                .orElseThrow(() -> new BaseException(ResponseCode.BAD_REQUEST, "Category not found"));
+        
+        if (!category.getIsActive()) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, "Category is not active");
+        }
+    }
+    
+    private void validateProductFormat(String format) {
+        if (Objects.isNull(format) || format.isBlank()) return;
+        
+        try {
+            ProductFormat.fromString(format);
+        } catch (IllegalArgumentException e) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+    
+    private void handleSlugGeneration(ProductEntity entity, String currentSlug) {
+        if (Objects.isNull(entity.getSlug()) || entity.getSlug().isBlank()) {
+            String baseSlug = SlugUtil.toSlug(entity.getTitle());
+            String uniqueSlug = generateUniqueSlug(baseSlug);
+            entity.setSlug(uniqueSlug);
+        } else {
+            validateSlugUniqueness(entity.getSlug());
+        }
+    }
+    
+    private void handleSlugUpdate(String newSlug, String currentSlug) {
+        if (Objects.nonNull(newSlug) && !newSlug.equals(currentSlug)) {
+            validateSlugUniqueness(newSlug);
+        }
+    }
+    
+    private void validateSlugUniqueness(String slug) {
+        if (productRepository.existsBySlugAndDeletedAtIsNull(slug)) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, "Product slug already exists");
+        }
+    }
+    
     private String generateUniqueSlug(String baseSlug) {
         String slug = baseSlug;
         int suffix = 0;

@@ -1,9 +1,9 @@
-package com.example.spring_ecom.domain.product;
+package com.example.spring_ecom.repository.database.product.dao;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record ProductWithCategoryDto(
+public record ProductWithCategoryDao(
     Long id,
     String title,
     String slug,

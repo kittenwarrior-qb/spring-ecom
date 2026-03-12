@@ -1,5 +1,6 @@
 package com.example.spring_ecom.repository.database.auth;
 
+import com.example.spring_ecom.repository.database.common.BaseTimestampEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RefreshTokenEntity {
+public class RefreshTokenEntity extends BaseTimestampEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,9 +28,6 @@ public class RefreshTokenEntity {
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
     
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-    
     @Column(name = "revoked_at")
     private LocalDateTime revokedAt;
     
@@ -41,11 +39,4 @@ public class RefreshTokenEntity {
     
     @Column(name = "ip_address", length = 45)
     private String ipAddress;
-    
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-    }
 }

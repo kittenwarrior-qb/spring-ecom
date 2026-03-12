@@ -31,7 +31,7 @@ import { useUpdateOrderStatus } from '@/hooks/use-orders'
 import { useOrders } from './orders-provider'
 
 const formSchema = z.object({
-    status: z.string().min(1, 'Status is required'),
+    status: z.string().min(1, 'Trạng thái là bắt buộc'),
 })
 
 export function OrderStatusDialog() {
@@ -53,10 +53,10 @@ export function OrderStatusDialog() {
                 id: currentRow.id,
                 status: data.status as OrderStatus,
             })
-            toast.success('Order status updated successfully')
+            toast.success('Trạng thái đơn hàng đã được cập nhật thành công')
             setOpen(null)
         } catch (error) {
-            toast.error('Failed to update order status')
+            toast.error('Không thể cập nhật trạng thái đơn hàng')
         }
     }
 
@@ -64,9 +64,9 @@ export function OrderStatusDialog() {
         <Dialog open={open === 'status'} onOpenChange={() => setOpen(null)}>
             <DialogContent className='sm:max-w-[425px]'>
                 <DialogHeader>
-                    <DialogTitle>Update Order Status</DialogTitle>
+                    <DialogTitle>Cập Nhật Trạng Thái Đơn Hàng</DialogTitle>
                     <DialogDescription>
-                        Change the status for order #{currentRow?.orderNumber}
+                        Thay đổi trạng thái cho đơn hàng #{currentRow?.orderNumber}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -76,23 +76,23 @@ export function OrderStatusDialog() {
                             name='status'
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Status</FormLabel>
+                                    <FormLabel>Trạng thái</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
                                         defaultValue={field.value}
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder='Select a status' />
+                                                <SelectValue placeholder='Chọn trạng thái' />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value='PENDING'>Pending</SelectItem>
-                                            <SelectItem value='CONFIRMED'>Confirmed</SelectItem>
-                                            <SelectItem value='PROCESSING'>Processing</SelectItem>
-                                            <SelectItem value='SHIPPED'>Shipped</SelectItem>
-                                            <SelectItem value='DELIVERED'>Delivered</SelectItem>
-                                            <SelectItem value='CANCELLED'>Cancelled</SelectItem>
+                                            <SelectItem value='PENDING'>Chờ xử lý</SelectItem>
+                                            <SelectItem value='CONFIRMED'>Đã xác nhận</SelectItem>
+                                            <SelectItem value='PROCESSING'>Đang xử lý</SelectItem>
+                                            <SelectItem value='SHIPPED'>Đã gửi</SelectItem>
+                                            <SelectItem value='DELIVERED'>Đã giao</SelectItem>
+                                            <SelectItem value='CANCELLED'>Đã hủy</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -101,7 +101,7 @@ export function OrderStatusDialog() {
                         />
                         <DialogFooter>
                             <Button type='submit' disabled={updateStatus.isPending}>
-                                Save changes
+                                Lưu thay đổi
                             </Button>
                         </DialogFooter>
                     </form>

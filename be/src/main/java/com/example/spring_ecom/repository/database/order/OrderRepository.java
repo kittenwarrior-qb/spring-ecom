@@ -1,7 +1,7 @@
 package com.example.spring_ecom.repository.database.order;
 
 import com.example.spring_ecom.domain.order.OrderStatus;
-import com.example.spring_ecom.domain.order.OrderWithUserDto;
+import com.example.spring_ecom.repository.dao.order.OrderWithUserDao;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,11 +17,11 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     Optional<OrderEntity> findByOrderNumber(String orderNumber);
     
     @Query("""
-        SELECT new com.example.spring_ecom.domain.order.OrderWithUserDto(
+        SELECT new com.example.spring_ecom.repository.dao.order.OrderWithUserDao(
                o.id, o.orderNumber, o.userId, u.email,
                o.status, o.paymentStatus, o.subtotal,
                o.shippingFee, o.discount, o.total,
-               o.paymentMethod, o.shippingAddress,
+               CAST(o.paymentMethod AS string), o.shippingAddress,
                o.shippingCity, o.shippingDistrict,
                o.shippingWard, o.recipientName,
                o.recipientPhone, o.note,
@@ -30,7 +30,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
         JOIN UserEntity u ON o.userId = u.id 
         WHERE o.id = :id
     """)
-    Optional<OrderWithUserDto> findOrderWithUserById(@Param("id") Long id);
+    Optional<OrderWithUserDao> findOrderWithUserById(@Param("id") Long id);
     
     Page<OrderEntity> findByUserId(Long userId, Pageable pageable);
     

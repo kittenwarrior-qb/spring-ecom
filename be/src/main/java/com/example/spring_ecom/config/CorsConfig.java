@@ -19,7 +19,7 @@ public class CorsConfig {
         // Allow frontend and internal service origins
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:5173",  // Frontend (Vite)
-            "http://localhost:3000",  // Frontend (React/Next.js)
+            "http://localhost:3000",
             "http://localhost:3001"  // SePay service
         ));
         

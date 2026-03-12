@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuth, useUser } from '@/stores/auth-store'
+import { authApi } from '@/api/auth.api'
 
 interface PublicLayoutProps {
   children: React.ReactNode
@@ -23,6 +24,18 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   const user = useUser()
   const [searchValue, setSearchValue] = useState('')
   const debouncedSearchValue = useDebounce(searchValue, 1000)
+
+  const handleLogout = async () => {
+    try {
+      await authApi.logout()
+      auth.reset()
+      window.location.href = '/'
+    } catch (error) {
+      // Even if API call fails, still logout locally
+      auth.reset()
+      window.location.href = '/'
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,10 +92,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => {
-                      auth.reset()
-                      window.location.href = '/'
-                    }}
+                    onClick={handleLogout}
                   >
                     Logout
                   </DropdownMenuItem>

@@ -3,6 +3,7 @@ package com.example.spring_ecom.core.exception;
 import com.example.spring_ecom.core.response.ApiResponse;
 import com.example.spring_ecom.core.response.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,6 +27,37 @@ public class GlobalExceptionHandler {
         log.warn("NoResourceFoundException: {}", ex.getMessage());
         ApiResponse<Void> response = ApiResponse.Error.of(ResponseCode.ENDPOINT_NOT_FOUND);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        log.error("DataIntegrityViolationException: {}", ex.getMessage(), ex);
+        
+        String message = "Data integrity violation";
+        String rootCauseMessage = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
+        
+        if (rootCauseMessage != null) {
+            if (rootCauseMessage.contains("duplicate key value violates unique constraint")) {
+                if (rootCauseMessage.contains("products_slug_key")) {
+                    message = "Product slug already exists";
+                } else if (rootCauseMessage.contains("users_email_key")) {
+                    message = "Email already exists";
+                } else if (rootCauseMessage.contains("users_username_key")) {
+                    message = "Username already exists";
+                } else if (rootCauseMessage.contains("categories_slug_key")) {
+                    message = "Category slug already exists";
+                } else {
+                    message = "This value already exists";
+                }
+            } else if (rootCauseMessage.contains("violates foreign key constraint")) {
+                message = "Referenced data does not exist";
+            } else if (rootCauseMessage.contains("violates not-null constraint")) {
+                message = "Required field is missing";
+            }
+        }
+        
+        ApiResponse<Void> response = ApiResponse.Error.of(ResponseCode.BAD_REQUEST, message);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(RuntimeException.class)

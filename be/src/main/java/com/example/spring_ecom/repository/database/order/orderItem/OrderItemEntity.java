@@ -1,10 +1,10 @@
 package com.example.spring_ecom.repository.database.order.orderItem;
 
+import com.example.spring_ecom.repository.database.common.BaseAuditEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "order_items")
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderItemEntity {
+public class OrderItemEntity extends BaseAuditEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,14 +36,4 @@ public class OrderItemEntity {
     
     @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
-    
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-    }
 }

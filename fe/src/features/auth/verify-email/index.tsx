@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { CheckCircle2, XCircle, Loader2, ArrowRight } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, ArrowRight, Mail, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     Card,
@@ -12,34 +12,59 @@ import {
 } from '@/components/ui/card'
 import { emailApi } from '@/api/email.api'
 import { AuthLayout } from '../auth-layout'
+import { toast } from 'sonner'
 
 export function VerifyEmail() {
-    const { token } = useSearch({ from: '/verify-email' })
+    const { token, email } = useSearch({ from: '/verify-email' })
     const navigate = useNavigate()
-    const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
+    const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'waiting'>('loading')
     const [message, setMessage] = useState('Verifying your email address...')
+    const [isResending, setIsResending] = useState(false)
 
     useEffect(() => {
-        const performVerification = async () => {
-            if (!token) {
-                setStatus('error')
-                setMessage('Invalid or missing verification token.')
-                return
-            }
+        // If no token provided, show waiting screen
+        if (!token) {
+            setStatus('waiting')
+            setMessage(email 
+                ? `Chúng tôi đã gửi email xác thực đến ${email}. Vui lòng kiểm tra hộp thư và nhấp vào liên kết xác thực.`
+                : 'Vui lòng kiểm tra email của bạn và nhấp vào liên kết xác thực để hoàn tất đăng ký.'
+            )
+            return
+        }
 
+        const performVerification = async () => {
             try {
                 await emailApi.verifyEmail(token)
                 setStatus('success')
-                setMessage('Your email has been successfully verified! You can now log into your account.')
+                setMessage('Email của bạn đã được xác thực thành công! Bây giờ bạn có thể đăng nhập vào tài khoản.')
             } catch (error: any) {
                 setStatus('error')
-                const errorMsg = error.response?.data?.message || 'Verification failed. The token might be expired or invalid.'
+                const errorMsg = error.response?.data?.message || 'Xác thực thất bại. Token có thể đã hết hạn hoặc không hợp lệ.'
                 setMessage(errorMsg)
             }
         }
 
         performVerification()
-    }, [token])
+    }, [token, email])
+
+    const handleResendEmail = async () => {
+        if (!email) {
+            toast.error('Không tìm thấy địa chỉ email')
+            return
+        }
+
+        setIsResending(true)
+        try {
+            // Call resend verification email API
+            await emailApi.resendVerification(email)
+            toast.success('Email xác thực đã được gửi lại!')
+        } catch (error: unknown) {
+            const errorMsg = error.response?.data?.message || 'Không thể gửi lại email xác thực'
+            toast.error(errorMsg)
+        } finally {
+            setIsResending(false)
+        }
+    }
 
     return (
         <AuthLayout>
@@ -49,6 +74,11 @@ export function VerifyEmail() {
                         {status === 'loading' && (
                             <div className='rounded-full bg-primary/10 p-3 ring-8 ring-primary/5'>
                                 <Loader2 className='h-10 w-10 animate-spin text-primary' />
+                            </div>
+                        )}
+                        {status === 'waiting' && (
+                            <div className='rounded-full bg-blue-500/10 p-3 ring-8 ring-blue-500/5 animate-in zoom-in duration-500'>
+                                <Mail className='h-10 w-10 text-blue-500' />
                             </div>
                         )}
                         {status === 'success' && (
@@ -63,9 +93,10 @@ export function VerifyEmail() {
                         )}
                     </div>
                     <CardTitle className='text-2xl font-bold tracking-tight'>
-                        {status === 'loading' && 'Verifying Email'}
-                        {status === 'success' && 'Verification Successful'}
-                        {status === 'error' && 'Verification Failed'}
+                        {status === 'loading' && 'Đang xác thực email'}
+                        {status === 'waiting' && 'Kiểm tra email của bạn'}
+                        {status === 'success' && 'Xác thực thành công'}
+                        {status === 'error' && 'Xác thực thất bại'}
                     </CardTitle>
                     <CardDescription className='text-balance text-muted-foreground mt-2'>
                         {message}
@@ -78,14 +109,50 @@ export function VerifyEmail() {
                             <div className='h-2 w-3/4 animate-pulse rounded-full bg-muted' />
                         </div>
                     )}
+                    {status === 'waiting' && (
+                        <div className='text-center space-y-4'>
+                            <div className='text-sm text-muted-foreground'>
+                                Không nhận được email? Kiểm tra thư mục spam hoặc
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
                 <CardFooter className='flex flex-col gap-3'>
+                    {status === 'waiting' && (
+                        <>
+                            <Button
+                                variant='outline'
+                                className='w-full'
+                                onClick={handleResendEmail}
+                                disabled={isResending}
+                            >
+                                {isResending ? (
+                                    <>
+                                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                                        Đang gửi...
+                                    </>
+                                ) : (
+                                    <>
+                                        <RefreshCw className='mr-2 h-4 w-4' />
+                                        Gửi lại email xác thực
+                                    </>
+                                )}
+                            </Button>
+                            <Button
+                                variant='ghost'
+                                className='w-full'
+                                onClick={() => navigate({ to: '/sign-in', search: { redirect: undefined } })}
+                            >
+                                Quay lại đăng nhập
+                            </Button>
+                        </>
+                    )}
                     {status === 'success' && (
                         <Button
                             className='w-full group'
                             onClick={() => navigate({ to: '/sign-in', search: { redirect: undefined } })}
                         >
-                            Back to Sign In
+                            Đăng nhập ngay
                             <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                         </Button>
                     )}
@@ -96,14 +163,14 @@ export function VerifyEmail() {
                                 className='w-full'
                                 onClick={() => navigate({ to: '/sign-up' })}
                             >
-                                Try Registering Again
+                                Thử đăng ký lại
                             </Button>
                             <Button
                                 variant='ghost'
                                 className='w-full'
                                 onClick={() => navigate({ to: '/sign-in', search: { redirect: undefined } })}
                             >
-                                Back to Sign In
+                                Quay lại đăng nhập
                             </Button>
                         </>
                     )}

@@ -78,14 +78,27 @@ export function SignUpForm({
         phoneNumber: data.phoneNumber || undefined,
       })
 
-      // Set user and access token from API response
-      auth.setUser(response.user)
-      auth.setAccessToken(response.accessToken, response.expiresIn)
+      // Check if registration requires email verification
+      if (!response.accessToken) {
+        // Registration successful but needs email verification
+        toast.success(response.message || 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.')
+        
+        // Redirect to verify email page or sign-in page
+        navigate({ 
+          to: '/verify-email', 
+          search: { email: data.email },
+          replace: true 
+        })
+      } else {
+        // Registration successful with immediate login
+        auth.setUser(response.userInfo)
+        auth.setAccessToken(response.accessToken, response.expiresIn)
 
-      toast.success(`Tạo tài khoản thành công! Chào mừng, ${response.user.username}!`)
+        toast.success(`Tạo tài khoản thành công! Chào mừng, ${response.userInfo.username}!`)
 
-      // Redirect to dashboard
-      navigate({ to: '/', replace: true })
+        // Redirect to dashboard
+        navigate({ to: '/', replace: true })
+      }
     } catch (error) {
       handleServerError(error)
     } finally {

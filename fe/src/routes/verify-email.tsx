@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 const verifyEmailSearchSchema = z.object({
     token: z.string().optional(),
+    email: z.string().optional(),
 })
 
 export const Route = createFileRoute('/verify-email')({

@@ -94,7 +94,7 @@ function HomePage() {
       )}
 
       {/* Categories Section */}
-      <div className="container mx-auto px-4 max-w-7xl">
+      <div className="hidden container mx-auto px-4 max-w-7xl">
         <h2 className="text-3xl font-bold mb-6 text-gray-900">Danh mục sản phẩm</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[

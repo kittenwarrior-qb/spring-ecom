@@ -1,5 +1,7 @@
 package com.example.spring_ecom.domain.product;
 
+import java.util.Objects;
+
 public enum ProductFormat {
     PAPERBACK("Paperback"),
     HARDCOVER("Hardcover"),
@@ -17,7 +19,7 @@ public enum ProductFormat {
     }
     
     public static ProductFormat fromString(String value) {
-        if (value == null) {
+        if (Objects.isNull(value)) {
             return null;
         }
         

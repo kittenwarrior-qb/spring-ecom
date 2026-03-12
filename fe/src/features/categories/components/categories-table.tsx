@@ -117,12 +117,12 @@ function CategoryActions({ category }: { category: CategoryResponse }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant='ghost' className='h-8 w-8 p-0'>
-          <span className='sr-only'>Open menu</span>
+          <span className='sr-only'>Mở menu</span>
           <MoreHorizontal className='h-4 w-4' />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end'>
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
         <DropdownMenuItem
           onClick={() => navigator.clipboard.writeText(category.id.toString())}
         >
@@ -136,7 +136,7 @@ function CategoryActions({ category }: { category: CategoryResponse }) {
           }}
         >
           <Edit className='mr-2 h-4 w-4' />
-          Edit
+          Chỉnh sửa
         </DropdownMenuItem>
         <DropdownMenuItem
           className='text-destructive'
@@ -146,7 +146,7 @@ function CategoryActions({ category }: { category: CategoryResponse }) {
           }}
         >
           <Trash2 className='mr-2 h-4 w-4' />
-          Delete
+          Xóa
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -16,37 +16,27 @@ export function SignUp() {
       <Card className='gap-4'>
         <CardHeader>
           <CardTitle className='text-lg tracking-tight'>
-            Create an account
+            Tạo tài khoản
           </CardTitle>
-          <CardDescription>
-            Enter your email and password to create an account. <br />
-            Already have an account?{' '}
-            <Link
-              to='/sign-in'
-              className='underline underline-offset-4 hover:text-primary'
-            >
-              Sign In
-            </Link>
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <SignUpForm />
         </CardContent>
         <CardFooter>
           <p className='px-8 text-center text-sm text-muted-foreground'>
-            By creating an account, you agree to our{' '}
+            Khi tạo tài khoản, bạn sẽ chấp thuận{' '}
             <a
               href='/terms'
               className='underline underline-offset-4 hover:text-primary'
             >
-              Terms of Service
+              Dịch vụ 
             </a>{' '}
-            and{' '}
+            Và{' '}
             <a
               href='/privacy'
               className='underline underline-offset-4 hover:text-primary'
             >
-              Privacy Policy
+              Bảo mật
             </a>
             .
           </p>

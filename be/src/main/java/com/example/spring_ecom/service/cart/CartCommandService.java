@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -33,7 +35,7 @@ public class CartCommandService {
         
         CartEntity cart = getOrCreateCart(userId);
         ProductEntity product = productRepository.findById(productId)
-                .filter(p -> p.getDeletedAt() == null && p.getIsActive())
+                .filter(p -> Objects.isNull(p.getDeletedAt()) && p.getIsActive())
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
         
         if (product.getStockQuantity() < quantity) {
@@ -53,7 +55,7 @@ public class CartCommandService {
                         .cartId(cart.getId())
                         .productId(product.getId())
                         .quantity(quantity)
-                        .price(product.getDiscountPrice() != null ? product.getDiscountPrice() : product.getPrice())
+                        .price(Objects.nonNull(product.getDiscountPrice()) ? product.getDiscountPrice() : product.getPrice())
                         .build());
         
         CartItemEntity saved = cartItemRepository.save(cartItem);

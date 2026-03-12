@@ -46,6 +46,7 @@ public class UserEntity extends BaseAuditEntity {
     private String avatarUrl;
 
     @Column(nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
     private UserRole role = UserRole.USER;
 
     @Column(name = "is_email_verified", nullable = false)

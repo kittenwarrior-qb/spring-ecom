@@ -33,9 +33,10 @@ export interface UserInfo {
 }
 
 export interface AuthResponse {
-  accessToken: string
+  accessToken: string | null
   expiresIn: number
   userInfo: UserInfo
+  message?: string
 }
 
 // Category types

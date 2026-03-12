@@ -24,11 +24,10 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes());
     }
     
-    public String generateToken(String email, Long userId, String role) {
+    public String generateToken(String sessionId) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", userId);
-        claims.put("role", role);
-        return createToken(claims, email);
+        claims.put("sessionId", sessionId);
+        return createToken(claims, sessionId);
     }
     
     private String createToken(Map<String, Object> claims, String subject) {
@@ -44,16 +43,12 @@ public class JwtUtil {
                 .compact();
     }
     
-    public String extractEmail(String token) {
+    public String extractSessionId(String token) {
+        return extractClaim(token, claims -> claims.get("sessionId", String.class));
+    }
+    
+    public String extractSubject(String token) {
         return extractClaim(token, Claims::getSubject);
-    }
-    
-    public Long extractUserId(String token) {
-        return extractClaim(token, claims -> claims.get("userId", Long.class));
-    }
-    
-    public String extractRole(String token) {
-        return extractClaim(token, claims -> claims.get("role", String.class));
     }
     
     public Date extractExpiration(String token) {
@@ -85,8 +80,8 @@ public class JwtUtil {
         }
     }
     
-    public Boolean validateToken(String token, String email) {
-        final String extractedEmail = extractEmail(token);
-        return (extractedEmail.equals(email) && !isTokenExpired(token));
+    public Boolean validateToken(String token, String sessionId) {
+        final String extractedSessionId = extractSessionId(token);
+        return (extractedSessionId != null && extractedSessionId.equals(sessionId) && !isTokenExpired(token));
     }
 }
