@@ -46,4 +46,10 @@ public class AuthUseCaseService implements AuthUseCase {
     public void logout(String refreshToken) {
         commandService.logout(refreshToken);
     }
+    
+    @Override
+    @Transactional
+    public void logoutBySessionId(String sessionId) {
+        commandService.logoutBySessionId(sessionId);
+    }
 }

@@ -24,15 +24,23 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes());
     }
     
-    public String generateToken(String sessionId) {
+    public String generateAccessToken(String sessionId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("sessionId", sessionId);
-        return createToken(claims, sessionId);
+        claims.put("type", "access");
+        return createToken(claims, sessionId, jwtConfig.getExpiration());
     }
     
-    private String createToken(Map<String, Object> claims, String subject) {
+    public String generateRefreshToken(String sessionId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("sessionId", sessionId);
+        claims.put("type", "refresh");
+        return createToken(claims, sessionId, jwtConfig.getRefreshExpiration());
+    }
+    
+    private String createToken(Map<String, Object> claims, String subject, long expiration) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtConfig.getExpiration());
+        Date expiryDate = new Date(now.getTime() + expiration);
         
         return Jwts.builder()
                 .setClaims(claims)
@@ -47,8 +55,8 @@ public class JwtUtil {
         return extractClaim(token, claims -> claims.get("sessionId", String.class));
     }
     
-    public String extractSubject(String token) {
-        return extractClaim(token, Claims::getSubject);
+    public String extractTokenType(String token) {
+        return extractClaim(token, claims -> claims.get("type", String.class));
     }
     
     public Date extractExpiration(String token) {

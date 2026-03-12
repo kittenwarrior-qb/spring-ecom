@@ -11,4 +11,5 @@ public interface AuthUseCase {
     AuthResponse register(RegisterDto command, HttpServletRequest request, HttpServletResponse response);
     AuthResponse refreshToken(String refreshToken, HttpServletRequest request, HttpServletResponse response);
     void logout(String refreshToken);
+    void logoutBySessionId(String sessionId);
 }

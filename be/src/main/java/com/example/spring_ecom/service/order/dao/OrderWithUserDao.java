@@ -1,4 +1,4 @@
-package com.example.spring_ecom.repository.dao.order;
+package com.example.spring_ecom.service.order.dao;
 
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentStatus;

@@ -1,8 +1,8 @@
 package com.example.spring_ecom.config.security;
 
-import com.example.spring_ecom.core.util.JwtUtil;
-import com.example.spring_ecom.service.auth.session.RedisSessionService;
-import com.example.spring_ecom.service.auth.session.SessionData;
+import com.example.spring_ecom.service.auth.token.TokenService;
+import com.example.spring_ecom.service.auth.token.TokenService;
+import com.example.spring_ecom.service.auth.token.TokenInfo;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,8 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
-    private final JwtUtil jwtUtil;
-    private final RedisSessionService redisSessionService;
+    private final TokenService tokenService;
     
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -41,31 +40,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String token = authHeader.substring(7);
             
-            if (jwtUtil.validateToken(token)) {
-                String sessionId = jwtUtil.extractSessionId(token);
-                
-                if (sessionId != null && redisSessionService.isSessionValid(sessionId)) {
-                    SessionData sessionData = redisSessionService.getSession(sessionId);
-                    
-                    List<SimpleGrantedAuthority> authorities = List.of(
-                        new SimpleGrantedAuthority("ROLE_" + sessionData.getRole())
-                    );
-                    
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        sessionData.getEmail(),
-                        null,
-                        authorities
-                    );
-                    
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    
-                    // Set user info vào attribute để dùng trong controller
-                    request.setAttribute("userId", sessionData.getUserId());
-                    request.setAttribute("sessionId", sessionId);
-                    
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                }
-            }
+            // Validate access token and get session info
+            TokenInfo tokenInfo = tokenService.validateAccessToken(token);
+            
+            List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + tokenInfo.getRole())
+            );
+            
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                tokenInfo.getEmail(),
+                null,
+                authorities
+            );
+            
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            
+            request.setAttribute("userId", tokenInfo.getUserId());
+            request.setAttribute("sessionId", tokenInfo.getSessionId());
+            
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (Exception e) {
             log.error("Cannot set user authentication: {}", e.getMessage());
         }

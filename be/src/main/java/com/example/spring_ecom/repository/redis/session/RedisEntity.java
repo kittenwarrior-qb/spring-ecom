@@ -1,6 +1,8 @@
-package com.example.spring_ecom.service.auth.session;
+package com.example.spring_ecom.repository.redis.session;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.TimeToLive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,19 +14,20 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SessionData {
+@RedisHash("sessions")
+public class RedisEntity {
     
+    @Id
     private String sessionId;
+    
     private Long userId;
     private String email;
     private String role;
     private String deviceInfo;
     private String ipAddress;
-    private String refreshToken;
-    
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
-    
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime lastAccessedAt;
+    
+    @TimeToLive
+    private Long ttl; // TTL in seconds
 }

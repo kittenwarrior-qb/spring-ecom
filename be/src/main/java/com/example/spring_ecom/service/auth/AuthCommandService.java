@@ -1,6 +1,5 @@
 package com.example.spring_ecom.service.auth;
 
-import com.example.spring_ecom.config.JwtConfig;
 import com.example.spring_ecom.controller.api.auth.model.AuthResponse;
 import com.example.spring_ecom.core.util.CookieUtil;
 import com.example.spring_ecom.domain.auth.LoginDto;
@@ -8,14 +7,13 @@ import com.example.spring_ecom.domain.auth.RegisterDto;
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.core.util.JwtUtil;
-import com.example.spring_ecom.domain.user.UserRole;
 import com.example.spring_ecom.repository.database.auth.AuthEntityMapper;
-import com.example.spring_ecom.domain.user.UserRole;
 import com.example.spring_ecom.repository.database.user.UserEntity;
 import com.example.spring_ecom.repository.database.user.UserRepository;
 import com.example.spring_ecom.service.auth.email.EmailUseCase;
-import com.example.spring_ecom.service.auth.session.RedisSessionService;
-import com.example.spring_ecom.service.auth.session.SessionData;
+import com.example.spring_ecom.service.auth.session.RedisService;
+import com.example.spring_ecom.service.auth.token.TokenInfo;
+import com.example.spring_ecom.service.auth.token.TokenService;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
@@ -33,8 +31,8 @@ public class AuthCommandService {
     private final AuthEntityMapper authEntityMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final JwtConfig jwtConfig;
-    private final RedisSessionService redisSessionService;
+    private final RedisService redisService;
+    private final TokenService tokenService;
     private final CookieUtil cookieUtil;
     private final EmailUseCase emailUseCase;
 
@@ -58,7 +56,7 @@ public class AuthCommandService {
         userRepository.save(userEntity);
 
         // Create session in Redis
-        String sessionId = redisSessionService.createSession(
+        String sessionId = redisService.createSession(
                 userEntity.getId(),
                 userEntity.getEmail(),
                 userEntity.getRole().name(),
@@ -66,23 +64,14 @@ public class AuthCommandService {
                 ipAddress
         );
 
-        // Generate JWT with sessionId
-        String accessToken = jwtUtil.generateToken(sessionId);
+        // Generate JWT tokens
+        String accessToken = jwtUtil.generateAccessToken(sessionId);
+        String refreshToken = jwtUtil.generateRefreshToken(sessionId);
         
-        // Get session data to extract refresh token
-        SessionData sessionData = redisSessionService.getSession(sessionId);
-        cookieUtil.addRefreshTokenCookie(response, sessionData.getRefreshToken());
-
-        AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
-                userEntity.getId(),
-                userEntity.getUsername(),
-                userEntity.getEmail(),
-                userEntity.getFirstName(),
-                userEntity.getLastName(),
-                userEntity.getRole()
-        );
+        // Set refresh token cookie
+        cookieUtil.addRefreshTokenCookie(response, refreshToken);
         
-        return AuthResponse.of(accessToken, jwtConfig.getExpiration(), userInfo);
+        return AuthResponse.of(accessToken, refreshToken);
     }
 
     public AuthResponse register(RegisterDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
@@ -108,21 +97,9 @@ public class AuthCommandService {
         }
 
         // Return response without tokens - user needs to verify email first
-        AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
-                userEntity.getId(),
-                userEntity.getUsername(),
-                userEntity.getEmail(),
-                userEntity.getFirstName(),
-                userEntity.getLastName(),
-                userEntity.getRole()
-        );
-
-        // Return a special response indicating email verification is needed
         return AuthResponse.builder()
                 .accessToken(null)
-                .expiresIn(0L)
-                .userInfo(userInfo)
-                .message("Registration successful. Please check your email to verify your account.")
+                .refreshToken(null)
                 .build();
     }
     
@@ -131,30 +108,45 @@ public class AuthCommandService {
             throw new BaseException(ResponseCode.UNAUTHORIZED, "Refresh token is missing");
         }
         
-        // Refresh session in Redis
-        SessionData sessionData = redisSessionService.refreshSession(oldRefreshToken, deviceInfo, ipAddress);
+        // Validate refresh token and get session info
+        TokenInfo tokenInfo = tokenService.validateRefreshToken(oldRefreshToken);
         
-        // Generate new JWT with new sessionId
-        String accessToken = jwtUtil.generateToken(sessionData.getSessionId());
-        
-        // Set new refresh token cookie
-        cookieUtil.addRefreshTokenCookie(response, sessionData.getRefreshToken());
-        
-        AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
-                sessionData.getUserId(),
-                null, // username not stored in session, could be fetched if needed
-                sessionData.getEmail(),
-                null, // firstName not stored in session
-                null, // lastName not stored in session
-                UserRole.valueOf(sessionData.getRole())
+        // Create new session
+        String newSessionId = redisService.createSession(
+                tokenInfo.getUserId(),
+                tokenInfo.getEmail(),
+                tokenInfo.getRole(),
+                deviceInfo,
+                ipAddress
         );
         
-        return AuthResponse.of(accessToken, jwtConfig.getExpiration(), userInfo);
+        // Revoke old session
+        redisService.revokeSession(tokenInfo.getSessionId());
+        
+        // Generate new tokens
+        String accessToken = jwtUtil.generateAccessToken(newSessionId);
+        String refreshToken = jwtUtil.generateRefreshToken(newSessionId);
+        
+        // Set new refresh token cookie
+        cookieUtil.addRefreshTokenCookie(response, refreshToken);
+        
+        return AuthResponse.of(accessToken, refreshToken);
     }
     
     public void logout(String refreshToken) {
         if (refreshToken != null) {
-            redisSessionService.revokeRefreshToken(refreshToken);
+            try {
+                String sessionId = tokenService.extractSessionId(refreshToken);
+                redisService.revokeSession(sessionId);
+            } catch (Exception e) {
+                log.warn("Failed to revoke session during logout: {}", e.getMessage());
+            }
+        }
+    }
+    
+    public void logoutBySessionId(String sessionId) {
+        if (sessionId != null) {
+            redisService.revokeSession(sessionId);
         }
     }
 }
