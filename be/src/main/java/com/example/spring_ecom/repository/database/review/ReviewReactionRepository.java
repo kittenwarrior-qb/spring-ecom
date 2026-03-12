@@ -12,11 +12,18 @@ public interface ReviewReactionRepository extends JpaRepository<ReviewReactionEn
     
     Optional<ReviewReactionEntity> findByReviewIdAndUserId(Long reviewId, Long userId);
     
-    @Query("SELECT COUNT(r) FROM ReviewReactionEntity r WHERE r.reviewId = :reviewId AND r.reactionType = 'LIKE'")
-    Long countLikesByReviewId(@Param("reviewId") Long reviewId);
+    // Unified method for counting reactions by type
+    @Query("SELECT COUNT(r) FROM ReviewReactionEntity r WHERE r.reviewId = :reviewId AND (:reactionType IS NULL OR r.reactionType = :reactionType)")
+    Long countReactionsByType(@Param("reviewId") Long reviewId, @Param("reactionType") String reactionType);
     
-    @Query("SELECT COUNT(r) FROM ReviewReactionEntity r WHERE r.reviewId = :reviewId AND r.reactionType = 'DISLIKE'")
-    Long countDislikesByReviewId(@Param("reviewId") Long reviewId);
+    // Convenience methods for backward compatibility
+    default Long countLikesByReviewId(Long reviewId) {
+        return countReactionsByType(reviewId, "LIKE");
+    }
+    
+    default Long countDislikesByReviewId(Long reviewId) {
+        return countReactionsByType(reviewId, "DISLIKE");
+    }
     
     void deleteByReviewIdAndUserId(Long reviewId, Long userId);
 }

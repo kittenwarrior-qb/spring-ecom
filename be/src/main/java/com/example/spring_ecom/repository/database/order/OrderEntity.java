@@ -31,19 +31,23 @@ public class OrderEntity extends BaseAuditEntity {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
+    @Builder.Default
     private OrderStatus status = OrderStatus.PENDING;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false)
+    @Builder.Default
     private PaymentStatus paymentStatus = PaymentStatus.UNPAID;
     
     @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
     
     @Column(name = "shipping_fee", nullable = false, precision = 10, scale = 2)
+    @Builder.Default
     private BigDecimal shippingFee = BigDecimal.ZERO;
     
     @Column(name = "discount", nullable = false, precision = 10, scale = 2)
+    @Builder.Default
     private BigDecimal discount = BigDecimal.ZERO;
     
     @Column(name = "total", nullable = false, precision = 10, scale = 2)

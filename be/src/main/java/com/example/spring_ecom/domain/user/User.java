@@ -1,6 +1,5 @@
 package com.example.spring_ecom.domain.user;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record User(
@@ -8,11 +7,6 @@ public record User(
     String username,
     String email,
     String password,
-    String firstName,
-    String lastName,
-    String phoneNumber,
-    LocalDate dateOfBirth,
-    String avatarUrl,
     UserRole role,
     Boolean isEmailVerified,
     String emailVerificationToken,

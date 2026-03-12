@@ -99,7 +99,8 @@ public class OrderController implements OrderAPI {
     
     @Override
     public ApiResponse<OrderDetailResponse> getOrderDetail(Long id) {
-        OrderDetailResponse detail = orderDetailService.getOrderDetail(id);
+        OrderDetailResponse detail = orderDetailService.getOrderDetail(id)
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
         return ApiResponse.Success.of(detail);
     }
     

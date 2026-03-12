@@ -1,18 +1,21 @@
-package com.example.spring_ecom.domain.address;
+package com.example.spring_ecom.domain.userInfo;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public record Address(
+public record UserInfo(
         Long id,
         Long userId,
-        String fullName,
+        String firstName,
+        String lastName,
         String phoneNumber,
-        String addressLine,
+        LocalDate dateOfBirth,
+        String avatarUrl,
+        String address,
         String ward,
         String district,
         String city,
         String postalCode,
-        Boolean isDefault,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime deletedAt

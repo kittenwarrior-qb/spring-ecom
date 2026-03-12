@@ -3,7 +3,6 @@ package com.example.spring_ecom.service.user;
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.core.util.PasswordUtil;
-import com.example.spring_ecom.core.util.SecurityUtil;
 import com.example.spring_ecom.domain.user.User;
 import com.example.spring_ecom.repository.database.user.UserEntity;
 import com.example.spring_ecom.repository.database.user.UserEntityMapper;
@@ -14,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.Objects;
 
 @Slf4j
@@ -57,35 +55,6 @@ public class UserCommandService {
         }
     }
     
-    protected User updateProfile(Long userId, String firstName, String lastName, String phoneNumber, LocalDate dateOfBirth) {
-        UserEntity entity = repository.findById(userId)
-                .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
-        if (Objects.nonNull(firstName)) {
-            entity.setFirstName(firstName);
-        }
-        if (Objects.nonNull(lastName)) {
-            entity.setLastName(lastName);
-        }
-        if (Objects.nonNull(phoneNumber)) {
-            entity.setPhoneNumber(phoneNumber);
-        }
-        if (Objects.nonNull(dateOfBirth)) {
-            entity.setDateOfBirth(dateOfBirth);
-        }
-        
-        UserEntity updated = repository.save(entity);
-        return mapper.toDomain(updated);
-    }
-    
-    protected User updateAvatar(Long userId, String avatarUrl) {
-        UserEntity entity = repository.findById(userId)
-                .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
-        
-        entity.setAvatarUrl(avatarUrl);
-        UserEntity updated = repository.save(entity);
-        return mapper.toDomain(updated);
-    }
-    
     protected void changePassword(Long userId, String currentPassword, String newPassword) {
         if (Objects.isNull(currentPassword) || currentPassword.trim().isEmpty()) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Current password is required");
@@ -107,31 +76,5 @@ public class UserCommandService {
         entity.setPassword(encodedPassword);
         repository.save(entity);
         log.info("Password changed successfully for user ID: {}", userId);
-    }
-    
-    // === Methods using SecurityContext - không cần truyền userId ===
-    
-    protected User updateCurrentUserProfile(String firstName, String lastName, String phoneNumber, LocalDate dateOfBirth) {
-        Long currentUserId = SecurityUtil.getCurrentUserId();
-        if (Objects.isNull(currentUserId)) {
-            throw new BaseException(ResponseCode.UNAUTHORIZED, "User not authenticated");
-        }
-        return updateProfile(currentUserId, firstName, lastName, phoneNumber, dateOfBirth);
-    }
-    
-    protected User updateCurrentUserAvatar(String avatarUrl) {
-        Long currentUserId = SecurityUtil.getCurrentUserId();
-        if (Objects.isNull(currentUserId)) {
-            throw new BaseException(ResponseCode.UNAUTHORIZED, "User not authenticated");
-        }
-        return updateAvatar(currentUserId, avatarUrl);
-    }
-    
-    protected void changeCurrentUserPassword(String currentPassword, String newPassword) {
-        Long currentUserId = SecurityUtil.getCurrentUserId();
-        if (Objects.isNull(currentUserId)) {
-            throw new BaseException(ResponseCode.UNAUTHORIZED, "User not authenticated");
-        }
-        changePassword(currentUserId, currentPassword, newPassword);
     }
 }

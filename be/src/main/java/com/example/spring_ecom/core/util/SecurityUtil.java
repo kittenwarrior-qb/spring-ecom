@@ -28,6 +28,17 @@ public class SecurityUtil {
         return null;
     }
     
+    public static String getCurrentSessionId() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            Object sessionId = attributes.getRequest().getAttribute("sessionId");
+            if (sessionId instanceof String) {
+                return (String) sessionId;
+            }
+        }
+        return null;
+    }
+    
     public static boolean hasRole(String role) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getAuthorities() != null) {

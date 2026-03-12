@@ -12,11 +12,28 @@ import java.util.Optional;
 @Repository
 public interface ProductReviewRepository extends JpaRepository<ProductReviewEntity, Long> {
     
-    @Query("SELECT r FROM ProductReviewEntity r WHERE r.productId = :productId AND r.deletedAt IS NULL ORDER BY r.createdAt DESC")
-    Page<ProductReviewEntity> findByProductId(@Param("productId") Long productId, Pageable pageable);
+    // Unified method for filtering reviews
+    @Query("""
+        SELECT r FROM ProductReviewEntity r 
+        WHERE r.deletedAt IS NULL
+        AND (:productId IS NULL OR r.productId = :productId)
+        AND (:userId IS NULL OR r.userId = :userId)
+        ORDER BY r.createdAt DESC
+    """)
+    Page<ProductReviewEntity> findReviewsWithFilters(
+        @Param("productId") Long productId,
+        @Param("userId") Long userId,
+        Pageable pageable
+    );
     
-    @Query("SELECT r FROM ProductReviewEntity r WHERE r.userId = :userId AND r.deletedAt IS NULL ORDER BY r.createdAt DESC")
-    Page<ProductReviewEntity> findByUserId(@Param("userId") Long userId, Pageable pageable);
+    // Convenience methods for backward compatibility
+    default Page<ProductReviewEntity> findByProductId(Long productId, Pageable pageable) {
+        return findReviewsWithFilters(productId, null, pageable);
+    }
+    
+    default Page<ProductReviewEntity> findByUserId(Long userId, Pageable pageable) {
+        return findReviewsWithFilters(null, userId, pageable);
+    }
     
     @Query("SELECT r FROM ProductReviewEntity r WHERE r.id = :id AND r.deletedAt IS NULL")
     Optional<ProductReviewEntity> findByIdAndNotDeleted(@Param("id") Long id);

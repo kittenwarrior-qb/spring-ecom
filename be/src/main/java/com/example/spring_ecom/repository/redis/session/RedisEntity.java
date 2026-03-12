@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@RedisHash("sessions")
+@RedisHash("redis")
 public class RedisEntity {
     
     @Id
@@ -23,11 +23,18 @@ public class RedisEntity {
     private Long userId;
     private String email;
     private String role;
+    private String firstName;
+    private String lastName;
+    private String phoneNumber;
+    private String address;
+    private String city;
+    private String district;
+    private String ward;
     private String deviceInfo;
     private String ipAddress;
     private LocalDateTime createdAt;
     private LocalDateTime lastAccessedAt;
     
     @TimeToLive
-    private Long ttl; // TTL in seconds
+    private Long ttl;
 }

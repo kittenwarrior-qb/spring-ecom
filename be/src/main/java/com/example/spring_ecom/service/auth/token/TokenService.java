@@ -4,7 +4,7 @@ import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.core.util.JwtUtil;
 import com.example.spring_ecom.repository.redis.session.RedisEntity;
-import com.example.spring_ecom.service.auth.session.RedisService;
+import com.example.spring_ecom.service.auth.redis.RedisServiceWithFallback;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 public class TokenService {
     
     private final JwtUtil jwtUtil;
-    private final RedisService redisService;
+    private final RedisServiceWithFallback redisService;
     
     public TokenInfo validateAccessToken(String token) {
         if (!jwtUtil.validateToken(token)) {

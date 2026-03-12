@@ -21,6 +21,26 @@ public record UpdateProfileRequest(
         String phoneNumber,
         
         @Schema(description = "Date of birth", example = "1990-01-01")
-        LocalDate dateOfBirth
+        LocalDate dateOfBirth,
+        
+        @Schema(description = "Address", example = "123 Đường ABC")
+        @Size(max = 255, message = "Address must not exceed 255 characters")
+        String address,
+        
+        @Schema(description = "Ward", example = "Phường 1")
+        @Size(max = 100, message = "Ward must not exceed 100 characters")
+        String ward,
+        
+        @Schema(description = "District", example = "Quận 1")
+        @Size(max = 100, message = "District must not exceed 100 characters")
+        String district,
+        
+        @Schema(description = "City", example = "TP. Hồ Chí Minh")
+        @Size(max = 100, message = "City must not exceed 100 characters")
+        String city,
+        
+        @Schema(description = "Postal code", example = "70000")
+        @Size(max = 20, message = "Postal code must not exceed 20 characters")
+        String postalCode
 ) {
 }

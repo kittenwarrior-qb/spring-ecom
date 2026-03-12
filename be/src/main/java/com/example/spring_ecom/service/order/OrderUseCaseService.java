@@ -27,7 +27,8 @@ public class OrderUseCaseService implements OrderUseCase {
     @Override
     @Transactional
     public Order createOrder(Order order) {
-        return commandService.createOrder(order);
+        return commandService.create(order)
+                .orElseThrow(() -> new RuntimeException("Failed to create order"));
     }
     
     @Override
@@ -63,25 +64,28 @@ public class OrderUseCaseService implements OrderUseCase {
     @Override
     @Transactional
     public Order updateOrderStatus(Long id, OrderStatus status) {
-        return commandService.updateOrderStatus(id, status);
+        return commandService.updateStatus(id, status)
+                .orElseThrow(() -> new RuntimeException("Failed to update order status"));
     }
     
     @Override
     @Transactional
     public Order updatePaymentStatus(Long id, PaymentStatus paymentStatus) {
-        return commandService.updatePaymentStatus(id, paymentStatus);
+        return commandService.updatePaymentStatus(id, paymentStatus)
+                .orElseThrow(() -> new RuntimeException("Failed to update payment status"));
     }
     
     @Override
     @Transactional
     public void cancelOrder(Long id) {
-        commandService.cancelOrder(id);
+        commandService.cancel(id);
     }
     
     @Override
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrderDetail(Long orderId) {
-        return orderDetailService.getOrderDetail(orderId);
+        return orderDetailService.getOrderDetail(orderId)
+                .orElseThrow(() -> new RuntimeException("Order detail not found"));
     }
     
     @Override

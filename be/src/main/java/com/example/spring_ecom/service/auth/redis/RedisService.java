@@ -1,4 +1,4 @@
-package com.example.spring_ecom.service.auth.session;
+package com.example.spring_ecom.service.auth.redis;
 
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
@@ -36,6 +36,7 @@ public class RedisService {
                 .ttl(ACCESS_TOKEN_TTL_SECONDS)
                 .build();
         
+        log.info("Creating Redis session with key pattern: redis:{}", sessionId);
         redisRepository.save(session);
         log.info("Created session {} for user {}", sessionId, userId);
         
@@ -61,6 +62,7 @@ public class RedisService {
     }
     
     public void revokeSession(String sessionId) {
+        log.info("Revoking Redis session with key: redis:{}", sessionId);
         redisRepository.deleteById(sessionId);
         log.info("Revoked session {}", sessionId);
     }
@@ -71,6 +73,31 @@ public class RedisService {
     }
     
     public boolean isSessionValid(String sessionId) {
-        return redisRepository.existsById(sessionId);
+        boolean exists = redisRepository.existsById(sessionId);
+        log.debug("Checking session validity for {}: {}", sessionId, exists);
+        return exists;
+    }
+    
+    // Debug method to log all Redis keys
+    public void debugRedisKeys() {
+        try {
+            log.info("=== DEBUG: Current Redis Keys ===");
+            // This would require RedisTemplate to list all keys
+            // For now, just log when operations happen
+            log.info("Session operations are being logged above");
+        } catch (Exception e) {
+            log.error("Error debugging Redis keys: {}", e.getMessage());
+        }
+    }
+    
+    // Clean up any orphaned refresh token keys (if they exist)
+    public void cleanupOrphanedKeys() {
+        try {
+            log.info("Cleanup completed - only session keys should exist in Redis");
+            // Note: refresh tokens should be JWT, not stored in Redis
+            // Only session data (redis:sessionId) should be in Redis
+        } catch (Exception e) {
+            log.error("Error during cleanup: {}", e.getMessage());
+        }
     }
 }

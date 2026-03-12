@@ -32,11 +32,31 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     """)
     Optional<OrderWithUserDao> findOrderWithUserById(@Param("id") Long id);
     
-    Page<OrderEntity> findByUserId(Long userId, Pageable pageable);
+    // Unified method for filtering orders
+    @Query("""
+        SELECT o FROM OrderEntity o 
+        WHERE (:userId IS NULL OR o.userId = :userId)
+        AND (:status IS NULL OR o.status = :status)
+        ORDER BY o.createdAt DESC
+    """)
+    Page<OrderEntity> findOrdersWithFilters(
+        @Param("userId") Long userId,
+        @Param("status") OrderStatus status,
+        Pageable pageable
+    );
     
-    Page<OrderEntity> findByUserIdAndStatus(Long userId, OrderStatus status, Pageable pageable);
+    // Convenience methods for backward compatibility
+    default Page<OrderEntity> findByUserId(Long userId, Pageable pageable) {
+        return findOrdersWithFilters(userId, null, pageable);
+    }
     
-    Page<OrderEntity> findByStatus(OrderStatus status, Pageable pageable);
+    default Page<OrderEntity> findByUserIdAndStatus(Long userId, OrderStatus status, Pageable pageable) {
+        return findOrdersWithFilters(userId, status, pageable);
+    }
+    
+    default Page<OrderEntity> findByStatus(OrderStatus status, Pageable pageable) {
+        return findOrdersWithFilters(null, status, pageable);
+    }
     
     boolean existsByOrderNumber(String orderNumber);
 }

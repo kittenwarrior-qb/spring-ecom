@@ -25,7 +25,9 @@ public abstract class OrderResponseMapper implements BaseModelMapper<OrderRespon
     protected java.util.List<OrderItemResponse> getOrderItems(Long orderId) {
         if (orderId == null) return java.util.Collections.emptyList();
         try {
-            return orderDetailService.getOrderDetail(orderId).items();
+            return orderDetailService.getOrderDetail(orderId)
+                    .map(OrderDetailResponse::items)
+                    .orElse(java.util.Collections.emptyList());
         } catch (Exception e) {
             return java.util.Collections.emptyList();
         }

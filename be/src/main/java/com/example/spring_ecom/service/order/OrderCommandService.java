@@ -14,7 +14,6 @@ import com.example.spring_ecom.repository.database.order.orderItem.OrderItemRepo
 import com.example.spring_ecom.repository.database.order.OrderRepository;
 import com.example.spring_ecom.repository.database.product.ProductEntity;
 import com.example.spring_ecom.repository.database.product.ProductRepository;
-import com.example.spring_ecom.repository.database.user.UserEntity;
 import com.example.spring_ecom.repository.database.user.UserRepository;
 import com.example.spring_ecom.service.cart.CartUseCase;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +23,10 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -42,33 +42,82 @@ public class OrderCommandService {
     private final CartUseCase cartUseCase;
     private final OrderEntityMapper mapper;
     
-    public Order createOrder(Order order) {
-        UserEntity user = userRepository.findById(order.userId())
+    public Optional<Order> create(Order order) {
+        validateUser(order.userId());
+        List<CartItem> cartItems = validateAndGetCartItems(order.userId());
+        
+        OrderEntity entity = mapper.toEntity(order);
+        entity.setOrderNumber(generateOrderNumber());
+        mapper.setInitialPaymentStatus(entity, order.paymentMethod());
+        
+        createOrderItems(entity, cartItems);
+        cartUseCase.clearCart(order.userId());
+        
+        OrderEntity saved = orderRepository.save(entity);
+        return Optional.of(mapper.toDomain(saved));
+    }
+    
+    public Optional<Order> updateStatus(Long id, OrderStatus status) {
+        OrderEntity entity = findOrderById(id);
+        validateStatusTransition(entity, status);
+        
+        mapper.updateOrderStatus(entity, status);
+        handleStatusChange(entity, status);
+        
+        OrderEntity updated = orderRepository.save(entity);
+        return Optional.of(mapper.toDomain(updated));
+    }
+    
+    public void cancel(Long id) {
+        OrderEntity entity = findOrderById(id);
+        validateCancellation(entity);
+        
+        mapper.cancelOrder(entity);
+        restoreStock(entity);
+        orderRepository.save(entity);
+    }
+    
+    public Optional<Order> updatePaymentStatus(Long id, PaymentStatus paymentStatus) {
+        OrderEntity entity = findOrderById(id);
+        validatePaymentStatusTransition(entity, paymentStatus);
+        
+        mapper.updatePaymentStatus(entity, paymentStatus);
+        
+        if (paymentStatus == PaymentStatus.PAID && entity.getStatus() == OrderStatus.PENDING) {
+            mapper.updateOrderStatus(entity, OrderStatus.CONFIRMED);
+        }
+        
+        OrderEntity updated = orderRepository.save(entity);
+        return Optional.of(mapper.toDomain(updated));
+    }
+    
+    private OrderEntity findOrderById(Long id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
+    }
+    
+    private void validateUser(Long userId) {
+        if (Objects.isNull(userId)) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, "User ID is required");
+        }
+        
+        userRepository.findById(userId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "User not found"));
-
-        List<CartItem> cartItems = cartUseCase.getCartItems(order.userId());
+    }
+    
+    private List<CartItem> validateAndGetCartItems(Long userId) {
+        List<CartItem> cartItems = cartUseCase.getCartItems(userId);
         if (cartItems.isEmpty()) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Cart is empty");
         }
-        
-        OrderEntity entity = mapper.toEntity(order);
-        entity.setUserId(user.getId());
-        entity.setOrderNumber(generateOrderNumber());
-        entity.setStatus(OrderStatus.PENDING);
-        
-        // Set payment status based on payment method
-        if (order.paymentMethod() == PaymentMethod.COD) {
-            entity.setPaymentStatus(PaymentStatus.UNPAID); 
-        } else if (order.paymentMethod() == PaymentMethod.BANK_TRANSFER) {
-            entity.setPaymentStatus(PaymentStatus.PENDING); 
-        }
-        
-        // Create order items from cart - Batch process
-        List<Long> productIds = cartItems.stream()
-                .map(CartItem::productId)
-                .toList();
-        
+        return cartItems;
+    }
+    
+
+    private void createOrderItems(OrderEntity orderEntity, List<CartItem> cartItems) {
+        List<Long> productIds = cartItems.stream().map(CartItem::productId).toList();
         List<ProductEntity> products = productRepository.findAllById(productIds);
+        
         if (products.size() != productIds.size()) {
             throw new BaseException(ResponseCode.NOT_FOUND, "Some products not found");
         }
@@ -76,75 +125,45 @@ public class OrderCommandService {
         Map<Long, ProductEntity> productMap = products.stream()
                 .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
         
-        List<OrderItemEntity> orderItems = new ArrayList<>();
-        for (CartItem cartItem : cartItems) {
-            ProductEntity product = productMap.get(cartItem.productId());
-            
-            if (product.getStockQuantity() < cartItem.quantity()) {
-                throw new BaseException(ResponseCode.BAD_REQUEST, 
-                        "Insufficient stock for product: " + product.getTitle());
-            }
-            
-            product.setStockQuantity(product.getStockQuantity() - cartItem.quantity());
-            OrderItemEntity orderItem = OrderItemEntity.builder()
-                    .orderId(entity.getId()) 
-                    .productId(product.getId())
-                    .productTitle(product.getTitle())
-                    .quantity(cartItem.quantity())
-                    .price(cartItem.price())
-                    .subtotal(cartItem.price().multiply(BigDecimal.valueOf(cartItem.quantity())))
-                    .build();
-            
-            orderItems.add(orderItem);
-        }
-        // Batch save all products
+        List<OrderItemEntity> orderItems = cartItems.stream()
+                .map(cartItem -> createOrderItem(orderEntity, cartItem, productMap))
+                .toList();
+        
         productRepository.saveAll(products);
-        OrderEntity saved = orderRepository.save(entity);
-        
-        orderItems.forEach(item -> item.setOrderId(saved.getId()));
         orderItemRepository.saveAll(orderItems);
-        cartUseCase.clearCart(order.userId());
-        
-        return mapper.toDomain(saved);
     }
     
-    public Order updateOrderStatus(Long id, OrderStatus status) {
-        OrderEntity entity = orderRepository.findById(id)
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
+    private OrderItemEntity createOrderItem(OrderEntity order, CartItem cartItem, Map<Long, ProductEntity> productMap) {
+        ProductEntity product = productMap.get(cartItem.productId());
         
+        if (product.getStockQuantity() < cartItem.quantity()) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, 
+                    "Insufficient stock for product: " + product.getTitle());
+        }
+        
+        product.setStockQuantity(product.getStockQuantity() - cartItem.quantity());
+        
+        return OrderItemEntity.builder()
+                .orderId(order.getId())
+                .productId(product.getId())
+                .productTitle(product.getTitle())
+                .quantity(cartItem.quantity())
+                .price(cartItem.price())
+                .subtotal(cartItem.price().multiply(BigDecimal.valueOf(cartItem.quantity())))
+                .build();
+    }
+    
+    private void validateStatusTransition(OrderEntity entity, OrderStatus newStatus) {
         if (entity.getStatus() == OrderStatus.CANCELLED) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Cannot update cancelled order");
         }
         
-        if (entity.getStatus() == OrderStatus.DELIVERED && status != OrderStatus.REFUNDED) {
+        if (entity.getStatus() == OrderStatus.DELIVERED && newStatus != OrderStatus.REFUNDED) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Delivered order can only be refunded");
         }
-        
-        entity.setStatus(status);
-        
-        if (status == OrderStatus.CANCELLED) {
-            entity.setCancelledAt(LocalDateTime.now());
-            restoreStock(entity);
-            // Update payment status if order is cancelled
-            if (entity.getPaymentStatus() == PaymentStatus.PAID) {
-                entity.setPaymentStatus(PaymentStatus.REFUNDED);
-            }
-        } else if (status == OrderStatus.DELIVERED) {
-            updateSoldCount(entity);
-            // For COD, mark as paid when delivered
-            if (entity.getPaymentMethod() == PaymentMethod.COD) {
-                entity.setPaymentStatus(PaymentStatus.PAID);
-            }
-        }
-        
-        OrderEntity updated = orderRepository.save(entity);
-        return mapper.toDomain(updated);
     }
     
-    public void cancelOrder(Long id) {
-        OrderEntity entity = orderRepository.findById(id)
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
-        
+    private void validateCancellation(OrderEntity entity) {
         if (entity.getStatus() == OrderStatus.CANCELLED) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Order already cancelled");
         }
@@ -152,45 +171,34 @@ public class OrderCommandService {
         if (entity.getStatus() == OrderStatus.DELIVERED) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Cannot cancel delivered order");
         }
-        
-        entity.setStatus(OrderStatus.CANCELLED);
-        entity.setCancelledAt(LocalDateTime.now());
-        
-        // Update payment status if order is cancelled
-        if (entity.getPaymentStatus() == PaymentStatus.PAID) {
-            entity.setPaymentStatus(PaymentStatus.REFUNDED);
-        }
-        
-        restoreStock(entity);
-        orderRepository.save(entity);
     }
     
-    public Order updatePaymentStatus(Long id, PaymentStatus paymentStatus) {
-        OrderEntity entity = orderRepository.findById(id)
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
-        
+    private void validatePaymentStatusTransition(OrderEntity entity, PaymentStatus newPaymentStatus) {
         if (entity.getStatus() == OrderStatus.CANCELLED) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Cannot update payment status for cancelled order");
         }
         
-        // Validate payment status transitions
-        if (entity.getPaymentStatus() == PaymentStatus.PAID && paymentStatus != PaymentStatus.REFUNDED) {
+        if (entity.getPaymentStatus() == PaymentStatus.PAID && newPaymentStatus != PaymentStatus.REFUNDED) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Paid order can only be refunded");
         }
         
         if (entity.getPaymentStatus() == PaymentStatus.REFUNDED) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Cannot update refunded payment");
         }
-        
-        entity.setPaymentStatus(paymentStatus);
-        
-        // If payment is confirmed for bank transfer, update order status
-        if (paymentStatus == PaymentStatus.PAID && entity.getStatus() == OrderStatus.PENDING) {
-            entity.setStatus(OrderStatus.CONFIRMED);
+    }
+    
+    private void handleStatusChange(OrderEntity entity, OrderStatus status) {
+        if (status == OrderStatus.CANCELLED) {
+            restoreStock(entity);
+            if (entity.getPaymentStatus() == PaymentStatus.PAID) {
+                mapper.updatePaymentStatus(entity, PaymentStatus.REFUNDED);
+            }
+        } else if (status == OrderStatus.DELIVERED) {
+            updateSoldCount(entity);
+            if (entity.getPaymentMethod() == PaymentMethod.COD) {
+                mapper.updatePaymentStatus(entity, PaymentStatus.PAID);
+            }
         }
-        
-        OrderEntity updated = orderRepository.save(entity);
-        return mapper.toDomain(updated);
     }
     
     private String generateOrderNumber() {
@@ -198,64 +206,38 @@ public class OrderCommandService {
         String random = String.format("%04d", (int) (Math.random() * 10000));
         String orderNumber = "ORD" + timestamp + random;
         
-        if (orderRepository.existsByOrderNumber(orderNumber)) {
-            return generateOrderNumber();
-        }
-        
-        return orderNumber;
+        return orderRepository.existsByOrderNumber(orderNumber) ? generateOrderNumber() : orderNumber;
     }
     
     private void restoreStock(OrderEntity order) {
-        // Get order items by order ID
-        List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(order.getId());
-        
-        // Get product IDs and fetch products
-        List<Long> productIds = orderItems.stream()
-                .map(OrderItemEntity::getProductId)
-                .toList();
-        
-        List<ProductEntity> products = productRepository.findAllById(productIds);
-        Map<Long, ProductEntity> productMap = products.stream()
-                .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
-        
-        // Update stock for each product
-        List<ProductEntity> productsToUpdate = orderItems.stream()
-                .map(item -> {
-                    ProductEntity product = productMap.get(item.getProductId());
-                    if (product != null) {
-                        product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
-                    }
-                    return product;
-                })
-                .filter(product -> product != null)
-                .toList();
-        
-        productRepository.saveAll(productsToUpdate);
+        updateProductQuantities(order, (product, quantity) -> {
+            product.setStockQuantity(product.getStockQuantity() + quantity);
+            return product;
+        });
     }
     
     private void updateSoldCount(OrderEntity order) {
-        // Get order items by order ID
+        updateProductQuantities(order, (product, quantity) -> {
+            product.setSoldCount(product.getSoldCount() + quantity);
+            return product;
+        });
+    }
+    
+    private void updateProductQuantities(OrderEntity order, 
+                                       java.util.function.BiFunction<ProductEntity, Integer, ProductEntity> productUpdater) {
         List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(order.getId());
-        
-        // Get product IDs and fetch products
-        List<Long> productIds = orderItems.stream()
-                .map(OrderItemEntity::getProductId)
-                .toList();
+        List<Long> productIds = orderItems.stream().map(OrderItemEntity::getProductId).toList();
         
         List<ProductEntity> products = productRepository.findAllById(productIds);
         Map<Long, ProductEntity> productMap = products.stream()
                 .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
         
-        // Update sold count for each product
         List<ProductEntity> productsToUpdate = orderItems.stream()
                 .map(item -> {
                     ProductEntity product = productMap.get(item.getProductId());
-                    if (product != null) {
-                        product.setSoldCount(product.getSoldCount() + item.getQuantity());
-                    }
-                    return product;
+                    return Objects.nonNull(product) ? productUpdater.apply(product, item.getQuantity()) : null;
                 })
-                .filter(product -> product != null)
+                .filter(Objects::nonNull)
                 .toList();
         
         productRepository.saveAll(productsToUpdate);
