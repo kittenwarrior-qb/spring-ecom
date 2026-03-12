@@ -11,11 +11,10 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { PaymentMethods } from '@/components/payment-methods'
-import { ShippingCalculator } from '@/components/shipping-calculator'
 import { useCartItems } from '@/hooks/use-cart'
 import { useCreateOrder } from '@/hooks/use-order'
 import { useProduct } from '@/hooks/use-product'
-import { useUserProfile, useUserSession } from '@/hooks/use-user'
+import { useUserSession } from '@/hooks/use-user'
 import { toast } from 'sonner'
 import type { CartItemResponse } from '@/types/api'
 
@@ -56,8 +55,8 @@ function CartSummary() {
   }
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const shipping = subtotal > 500000 ? 0 : 30000
-  const total = subtotal + shipping
+  // Bỏ phí ship - miễn phí vận chuyển cho tất cả đơn hàng
+  const total = subtotal
 
   return (
     <div className="space-y-4">
@@ -65,14 +64,18 @@ function CartSummary() {
         <CartItemSummary key={item.id} item={item} />
       ))}
       
-      <div className="space-y-2">
-        <span className="text-muted-foreground text-sm">Tạm tính: {subtotal.toLocaleString('vi-VN')}đ</span>
-      </div>
-      
       <Separator />
       
-      <ShippingCalculator subtotal={subtotal} />
-      
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Tạm tính</span>
+          <span>{subtotal.toLocaleString('vi-VN')}đ</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Phí vận chuyển</span>
+          <span className="text-green-600">Miễn phí</span>
+        </div>
+      </div>
       <Separator />
       
       <div className="flex justify-between font-bold text-lg">
@@ -200,7 +203,7 @@ function PaymentPage() {
           }
         })
       } catch (error) {
-        console.error('Error loading saved form data:', error)
+        
       }
     }
   }, [])

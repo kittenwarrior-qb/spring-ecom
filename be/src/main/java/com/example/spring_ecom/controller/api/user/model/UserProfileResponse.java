@@ -32,6 +32,21 @@ public record UserProfileResponse(
         @Schema(description = "Avatar URL")
         String avatarUrl,
         
+        @Schema(description = "Address", example = "123 Đường ABC")
+        String address,
+        
+        @Schema(description = "Ward", example = "Phường 1")
+        String ward,
+        
+        @Schema(description = "District", example = "Quận 1")
+        String district,
+        
+        @Schema(description = "City", example = "TP. Hồ Chí Minh")
+        String city,
+        
+        @Schema(description = "Postal code", example = "70000")
+        String postalCode,
+        
         @Schema(description = "User role", example = "USER")
         UserRole role,
         

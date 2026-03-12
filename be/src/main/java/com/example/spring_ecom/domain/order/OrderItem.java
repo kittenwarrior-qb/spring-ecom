@@ -11,6 +11,9 @@ public record OrderItem(
     Integer quantity,
     BigDecimal price,
     BigDecimal subtotal,
-    LocalDateTime createdAt
+    OrderItemStatus status,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt,
+    LocalDateTime cancelledAt
 ) {
 }

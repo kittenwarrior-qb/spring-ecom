@@ -1,36 +1,37 @@
 package com.example.spring_ecom.controller.api.user.model;
 
+import com.example.spring_ecom.config.MapStructGlobalConfig;
 import com.example.spring_ecom.domain.user.User;
 import com.example.spring_ecom.domain.userInfo.UserInfo;
 import com.example.spring_ecom.service.userInfo.UserInfoUseCase;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.springframework.beans.factory.annotation.Autowired;
 
-@Component
-@RequiredArgsConstructor
-public class UserProfileResponseMapper {
+@Mapper(config = MapStructGlobalConfig.class)
+public abstract class UserProfileResponseMapper {
     
-    private final UserInfoUseCase userInfoUseCase;
+    @Autowired
+    protected UserInfoUseCase userInfoUseCase;
     
-    public UserProfileResponse toResponse(User user) {
-        // Get user info from UserInfo table
-        UserInfo userInfo = userInfoUseCase.findByUserId(user.id()).orElse(null);
-        
-        return new UserProfileResponse(
-                user.id(),
-                user.username(),
-                user.email(),
-                userInfo != null ? userInfo.firstName() : null,
-                userInfo != null ? userInfo.lastName() : null,
-                userInfo != null ? userInfo.phoneNumber() : null,
-                userInfo != null ? userInfo.dateOfBirth() : null,
-                userInfo != null ? userInfo.avatarUrl() : null,
-                user.role(),
-                user.isEmailVerified(),
-                user.isActive(),
-                user.lastLoginAt(),
-                user.createdAt(),
-                user.updatedAt()
+    @Mapping(target = "firstName", expression = "java(getUserInfo(user).firstName())")
+    @Mapping(target = "lastName", expression = "java(getUserInfo(user).lastName())")
+    @Mapping(target = "phoneNumber", expression = "java(getUserInfo(user).phoneNumber())")
+    @Mapping(target = "dateOfBirth", expression = "java(getUserInfo(user).dateOfBirth())")
+    @Mapping(target = "avatarUrl", expression = "java(getUserInfo(user).avatarUrl())")
+    @Mapping(target = "address", expression = "java(getUserInfo(user).address())")
+    @Mapping(target = "ward", expression = "java(getUserInfo(user).ward())")
+    @Mapping(target = "district", expression = "java(getUserInfo(user).district())")
+    @Mapping(target = "city", expression = "java(getUserInfo(user).city())")
+    @Mapping(target = "postalCode", expression = "java(getUserInfo(user).postalCode())")
+    public abstract UserProfileResponse toResponse(User user);
+    
+    protected UserInfo getUserInfo(User user) {
+        if (user == null || user.id() == null) {
+            return new UserInfo(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        }
+        return userInfoUseCase.findByUserId(user.id()).orElse(
+            new UserInfo(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)
         );
     }
 }

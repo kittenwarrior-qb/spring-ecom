@@ -1,10 +1,12 @@
 package com.example.spring_ecom.repository.database.order.orderItem;
 
+import com.example.spring_ecom.domain.order.OrderItemStatus;
 import com.example.spring_ecom.repository.database.common.BaseAuditEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "order_items")
@@ -36,4 +38,12 @@ public class OrderItemEntity extends BaseAuditEntity {
     
     @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private OrderItemStatus status = OrderItemStatus.ACTIVE;
+    
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
 }
