@@ -200,6 +200,11 @@ export interface UserProfileResponse {
   phoneNumber: string | null
   dateOfBirth: string | null
   avatarUrl: string | null
+  address: string | null
+  ward: string | null
+  district: string | null
+  city: string | null
+  postalCode: string | null
   role: UserRole
   isEmailVerified: boolean
   isActive: boolean

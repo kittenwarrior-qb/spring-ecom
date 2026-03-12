@@ -16,8 +16,8 @@ public record UpdateProfileRequest(
         @Size(max = 50, message = "Last name must not exceed 50 characters")
         String lastName,
         
-        @Schema(description = "Phone number (10-11 digits)", example = "0901234567")
-        @Pattern(regexp = "^[0-9]{10,11}$", message = "Phone number must be 10-11 digits")
+        @Schema(description = "Phone number (1-11 digits)", example = "0901234567")
+        @Pattern(regexp = "^[0-11}$", message = "Phone number must be 1-11 digits")
         String phoneNumber,
         
         @Schema(description = "Date of birth", example = "1990-01-01")
