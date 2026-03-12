@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { User, Lock, Bell, Shield } from 'lucide-react'
+import { User, Lock, Bell, Shield, MapPin } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -118,9 +118,81 @@ function SettingsPage() {
                 onChange={(e) => handleProfileChange('phoneNumber', e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="dateOfBirth">Ngày sinh</Label>
+              <Input 
+                id="dateOfBirth" 
+                type="date" 
+                defaultValue={profile?.dateOfBirth || ''} 
+                onChange={(e) => handleProfileChange('dateOfBirth', e.target.value)}
+              />
+            </div>
           </div>
           <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
             {updateProfile.isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Address Settings */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            <CardTitle>Địa chỉ</CardTitle>
+          </div>
+          <CardDescription>Cập nhật địa chỉ giao hàng mặc định</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="address">Địa chỉ cụ thể</Label>
+              <Input 
+                id="address" 
+                placeholder="Số nhà, tên đường..."
+                defaultValue={profile?.address || ''} 
+                onChange={(e) => handleProfileChange('address', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ward">Phường/Xã</Label>
+              <Input 
+                id="ward" 
+                placeholder="Phường 1"
+                defaultValue={profile?.ward || ''} 
+                onChange={(e) => handleProfileChange('ward', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="district">Quận/Huyện</Label>
+              <Input 
+                id="district" 
+                placeholder="Quận 1"
+                defaultValue={profile?.district || ''} 
+                onChange={(e) => handleProfileChange('district', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="city">Tỉnh/Thành phố</Label>
+              <Input 
+                id="city" 
+                placeholder="TP. Hồ Chí Minh"
+                defaultValue={profile?.city || ''} 
+                onChange={(e) => handleProfileChange('city', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="postalCode">Mã bưu điện</Label>
+              <Input 
+                id="postalCode" 
+                placeholder="700000"
+                defaultValue={profile?.postalCode || ''} 
+                onChange={(e) => handleProfileChange('postalCode', e.target.value)}
+              />
+            </div>
+          </div>
+          <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
+            {updateProfile.isPending ? 'Đang lưu...' : 'Lưu địa chỉ'}
           </Button>
         </CardContent>
       </Card>

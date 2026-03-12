@@ -140,15 +140,17 @@ function ProfilePage() {
           </Card>
         </Link>
 
-        <Card className="transition-shadow hover:shadow-md cursor-pointer">
-          <CardHeader className="flex flex-row items-center gap-4 pb-2">
-            <MapPin className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Địa chỉ</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CardDescription>Quản lý địa chỉ giao hàng</CardDescription>
-          </CardContent>
-        </Card>
+        <Link to="/profile/settings">
+          <Card className="transition-shadow hover:shadow-md">
+            <CardHeader className="flex flex-row items-center gap-4 pb-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Địa chỉ</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription>Quản lý địa chỉ giao hàng</CardDescription>
+            </CardContent>
+          </Card>
+        </Link>
 
         <Card className="transition-shadow hover:shadow-md cursor-pointer">
           <CardHeader className="flex flex-row items-center gap-4 pb-2">

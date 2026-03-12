@@ -7,6 +7,7 @@ import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/stores/auth-store'
 import { authApi } from '@/api/auth.api'
+import { userApi } from '@/api/user.api'
 import { handleServerError } from '@/lib/handle-server-error'
 import { useSyncCart } from '@/hooks/use-cart'
 import { useCartStore } from '@/stores/cart-store'
@@ -65,14 +66,26 @@ export function UserAuthForm({
         password: data.password,
       })
 
-      // Set user and access token from API response
-      // Support both userInfo and user fields for compatibility
-      const userData = response.userInfo || (response as any).user
-
-      if (userData) {
-        auth.setUser(userData)
+      // Set access token first
+      if (response.accessToken) {
+        auth.setAccessToken(response.accessToken)
+        
+        // Now fetch user profile to get user info
+        try {
+          const userProfile = await userApi.getProfile()
+          auth.setUser({
+            id: userProfile.id,
+            username: userProfile.username,
+            email: userProfile.email,
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+            role: userProfile.role
+          })
+        } catch (profileError) {
+          console.error('Failed to fetch user profile:', profileError)
+          // Continue with login even if profile fetch fails
+        }
       }
-      auth.setAccessToken(response.accessToken, response.expiresIn)
 
       // Sync cart if there are items
       if (localCartItems.length > 0) {
@@ -89,8 +102,7 @@ export function UserAuthForm({
         }
       }
 
-      const displayName = userData?.username || userData?.email || 'User'
-      toast.success(`Welcome back, ${displayName}!`)
+      toast.success(`Welcome back!`)
 
       // Redirect to the stored location or default to dashboard
       const targetPath = (redirectTo as any) || '/'

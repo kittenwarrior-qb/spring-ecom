@@ -6,6 +6,7 @@ import { useNavigate, Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useAuth } from '@/stores/auth-store'
 import { authApi } from '@/api/auth.api'
+import { userApi } from '@/api/user.api'
 import { handleServerError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -91,10 +92,25 @@ export function SignUpForm({
         })
       } else {
         // Registration successful with immediate login
-        auth.setUser(response.userInfo)
-        auth.setAccessToken(response.accessToken, response.expiresIn)
-
-        toast.success(`Tạo tài khoản thành công! Chào mừng, ${response.userInfo.username}!`)
+        auth.setAccessToken(response.accessToken)
+        
+        // Fetch user profile after successful registration
+        try {
+          const userProfile = await userApi.getProfile()
+          auth.setUser({
+            id: userProfile.id,
+            username: userProfile.username,
+            email: userProfile.email,
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+            role: userProfile.role
+          })
+          
+          toast.success(`Tạo tài khoản thành công! Chào mừng, ${userProfile.username}!`)
+        } catch (profileError) {
+          console.error('Failed to fetch user profile:', profileError)
+          toast.success('Tạo tài khoản thành công!')
+        }
 
         // Redirect to dashboard
         navigate({ to: '/', replace: true })

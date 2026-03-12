@@ -1,5 +1,5 @@
 import apiClient from '@/lib/api-client'
-import type { ApiResponse, PageResponse, UserRequest, UserResponse, UserProfileResponse, UpdateProfileRequest, UpdateAvatarRequest, ChangePasswordRequest } from '@/types/api'
+import type { ApiResponse, PageResponse, UserRequest, UserResponse, UserProfileResponse, UpdateProfileRequest, UpdateAvatarRequest, ChangePasswordRequest, UserSessionResponse } from '@/types/api'
 
 const USER_BASE_URL = '/v1/api/users'
 const PROFILE_BASE_URL = '/v1/api/user'
@@ -55,5 +55,11 @@ export const userApi = {
   // Change password
   changePassword: async (data: ChangePasswordRequest): Promise<void> => {
     await apiClient.put<ApiResponse<void>>(`${PROFILE_BASE_URL}/me/password`, data)
+  },
+
+  // Get current user session info
+  getSession: async (): Promise<UserSessionResponse> => {
+    const response = await apiClient.get<ApiResponse<UserSessionResponse>>(`${PROFILE_BASE_URL}/me/session`)
+    return response.data.data
   },
 }

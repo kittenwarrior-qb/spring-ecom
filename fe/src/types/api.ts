@@ -34,8 +34,7 @@ export interface UserInfo {
 
 export interface AuthResponse {
   accessToken: string | null
-  expiresIn: number
-  userInfo: UserInfo
+  refreshToken: string | null
   message?: string
 }
 
@@ -73,12 +72,6 @@ export interface UserResponse {
   id: number
   username: string
   email: string
-  password: string
-  firstName: string | null
-  lastName: string | null
-  phoneNumber: string | null
-  dateOfBirth: string | null
-  avatarUrl: string | null
   role: UserRole
   isEmailVerified: boolean
   emailVerificationToken: string | null
@@ -90,6 +83,17 @@ export interface UserResponse {
   createdAt: string
   updatedAt: string
   deletedAt: string | null
+  // User info fields (from user_info table)
+  firstName: string | null
+  lastName: string | null
+  phoneNumber: string | null
+  dateOfBirth: string | null
+  avatarUrl: string | null
+  address: string | null
+  ward: string | null
+  district: string | null
+  city: string | null
+  postalCode: string | null
 }
 
 // Product types
@@ -209,6 +213,11 @@ export interface UpdateProfileRequest {
   lastName?: string
   phoneNumber?: string
   dateOfBirth?: string
+  address?: string
+  ward?: string
+  district?: string
+  city?: string
+  postalCode?: string
 }
 
 export interface UpdateAvatarRequest {
@@ -219,6 +228,20 @@ export interface ChangePasswordRequest {
   currentPassword: string
   newPassword: string
   confirmPassword: string
+}
+
+// User Session types
+export interface UserSessionResponse {
+  userId: number
+  email: string
+  role: UserRole
+  firstName: string | null
+  lastName: string | null
+  phoneNumber: string | null
+  address: string | null
+  city: string | null
+  district: string | null
+  ward: string | null
 }
 
 // Order types

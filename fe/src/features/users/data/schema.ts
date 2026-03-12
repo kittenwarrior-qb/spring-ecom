@@ -12,12 +12,6 @@ const userSchema = z.object({
   id: z.number(),
   username: z.string(),
   email: z.string(),
-  password: z.string(),
-  firstName: z.string().nullable(),
-  lastName: z.string().nullable(),
-  phoneNumber: z.string().nullable(),
-  dateOfBirth: z.string().nullable(),
-  avatarUrl: z.string().nullable(),
   role: userRoleSchema,
   isEmailVerified: z.boolean(),
   emailVerificationToken: z.string().nullable(),
@@ -29,6 +23,17 @@ const userSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   deletedAt: z.string().nullable(),
+  // User info fields (from user_info table)
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  phoneNumber: z.string().nullable(),
+  dateOfBirth: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
+  address: z.string().nullable(),
+  ward: z.string().nullable(),
+  district: z.string().nullable(),
+  city: z.string().nullable(),
+  postalCode: z.string().nullable(),
 })
 export type User = z.infer<typeof userSchema>
 

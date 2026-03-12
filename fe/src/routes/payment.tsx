@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import React from 'react'
 import { ArrowLeft, CreditCard, Truck, MapPin, Phone, User, FileText, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,6 +15,7 @@ import { ShippingCalculator } from '@/components/shipping-calculator'
 import { useCartItems } from '@/hooks/use-cart'
 import { useCreateOrder } from '@/hooks/use-order'
 import { useProduct } from '@/hooks/use-product'
+import { useUserProfile, useUserSession } from '@/hooks/use-user'
 import { toast } from 'sonner'
 import type { CartItemResponse } from '@/types/api'
 
@@ -116,6 +118,7 @@ function CartItemSummary({ item }: { item: CartItemResponse }) {
 function PaymentPage() {
   const navigate = useNavigate()
   const { data: cartItems, isLoading: cartLoading } = useCartItems()
+  const { data: userSession, isLoading: sessionLoading } = useUserSession()
   const createOrder = useCreateOrder()
 
   const form = useForm<PaymentFormData>({
@@ -126,6 +129,82 @@ function PaymentPage() {
     },
   })
 
+  // Function to fill sample data for testing
+  const fillSampleData = () => {
+    form.setValue('recipientName', 'Nguyễn Văn A')
+    form.setValue('recipientPhone', '0123456789')
+    form.setValue('shippingAddress', '123 Đường ABC')
+    form.setValue('shippingWard', 'Phường 1')
+    form.setValue('shippingDistrict', 'Quận 1')
+    form.setValue('shippingCity', 'TP. Hồ Chí Minh')
+    form.setValue('note', 'Giao hàng trong giờ hành chính')
+    toast.success('Đã điền thông tin mẫu!')
+  }
+
+  // Function to clear saved data
+  const clearSavedData = () => {
+    localStorage.removeItem('payment-form-data')
+    form.reset({
+      paymentMethod: 'COD',
+      note: '',
+    })
+    toast.success('Đã xóa dữ liệu đã lưu!')
+  }
+
+  // Auto-fill form when user session data is available
+  React.useEffect(() => {
+    if (userSession) {
+      const fullName = [userSession.firstName, userSession.lastName]
+        .filter(Boolean)
+        .join(' ')
+      
+      // Only set values if they're not already filled
+      if (!form.getValues('recipientName') && fullName) {
+        form.setValue('recipientName', fullName)
+      }
+      if (!form.getValues('recipientPhone') && userSession.phoneNumber) {
+        form.setValue('recipientPhone', userSession.phoneNumber)
+      }
+      if (!form.getValues('shippingAddress') && userSession.address) {
+        form.setValue('shippingAddress', userSession.address)
+      }
+      if (!form.getValues('shippingCity') && userSession.city) {
+        form.setValue('shippingCity', userSession.city)
+      }
+      if (!form.getValues('shippingDistrict') && userSession.district) {
+        form.setValue('shippingDistrict', userSession.district)
+      }
+      if (!form.getValues('shippingWard') && userSession.ward) {
+        form.setValue('shippingWard', userSession.ward)
+      }
+    }
+  }, [userSession, form])
+
+  // Auto-save form data to localStorage
+  React.useEffect(() => {
+    const subscription = form.watch((value) => {
+      localStorage.setItem('payment-form-data', JSON.stringify(value))
+    })
+    return () => subscription.unsubscribe()
+  }, [form])
+
+  // Load saved form data from localStorage
+  React.useEffect(() => {
+    const savedData = localStorage.getItem('payment-form-data')
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData)
+        Object.keys(parsedData).forEach((key) => {
+          if (parsedData[key] && !form.getValues(key as keyof PaymentFormData)) {
+            form.setValue(key as keyof PaymentFormData, parsedData[key])
+          }
+        })
+      } catch (error) {
+        console.error('Error loading saved form data:', error)
+      }
+    }
+  }, [])
+
   // Redirect if cart is empty
   if (!cartLoading && (!cartItems || cartItems.length === 0)) {
     navigate({ to: '/cart' })
@@ -135,6 +214,8 @@ function PaymentPage() {
   const onSubmit = async (data: PaymentFormData) => {
     try {
       const order = await createOrder.mutateAsync(data)
+      // Clear saved form data after successful order
+      localStorage.removeItem('payment-form-data')
       toast.success('Đặt hàng thành công!')
       navigate({ 
         to: '/payment-success',
@@ -145,7 +226,7 @@ function PaymentPage() {
     }
   }
 
-  if (cartLoading) {
+  if (cartLoading || sessionLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -156,15 +237,37 @@ function PaymentPage() {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate({ to: '/cart' })}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-bold">Thanh toán</h1>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate({ to: '/cart' })}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-2xl font-bold">Thanh toán</h1>
+        </div>
+        
+        {/* Control buttons for testing */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fillSampleData}
+            className="text-xs"
+          >
+            Điền thông tin mẫu
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearSavedData}
+            className="text-xs"
+          >
+            Xóa dữ liệu
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
@@ -321,7 +424,7 @@ function PaymentPage() {
                         <FormControl>
                           <Textarea
                             placeholder="Ghi chú thêm cho đơn hàng (tùy chọn)"
-                            className="min-h-[100px]"
+                            className="min-h-25"
                             {...field}
                           />
                         </FormControl>

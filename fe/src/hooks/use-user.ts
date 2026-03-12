@@ -113,3 +113,17 @@ export function useChangePassword() {
     mutationFn: (data: ChangePasswordRequest) => userApi.changePassword(data),
   })
 }
+
+// Get current user session info
+export function useUserSession() {
+  // Only fetch session if user has access token
+  const hasToken = !!getCookie('accessToken')
+  
+  return useQuery({
+    queryKey: [...userKeys.all, 'session'],
+    queryFn: userApi.getSession,
+    enabled: hasToken, // Only run query if user is authenticated
+    retry: false, // Don't retry on failure to avoid infinite loop
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  })
+}
