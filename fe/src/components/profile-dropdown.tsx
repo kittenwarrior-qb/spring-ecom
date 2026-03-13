@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
+import { Package, Settings, CreditCard, MapPin, LogOut } from 'lucide-react'
 import useDialogState from '@/hooks/use-dialog-state'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -9,13 +10,18 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { SignOutDialog } from '@/components/sign-out-dialog'
+import { useUserProfile } from '@/hooks/use-user'
 
 export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
+  const { data: profile } = useUserProfile()
+
+  const displayName = profile 
+    ? [profile.firstName, profile.lastName].filter(Boolean).join(' ') || profile.username
+    : 'User'
 
   return (
     <>
@@ -23,48 +29,51 @@ export function ProfileDropdown() {
         <DropdownMenuTrigger asChild>
           <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
             <Avatar className='h-8 w-8'>
-              <AvatarImage src='/avatars/01.png' alt='@shadcn' />
-              <AvatarFallback>SN</AvatarFallback>
+              <AvatarFallback className="bg-primary text-white">
+                {profile?.username?.charAt(0).toUpperCase() || 'U'}
+              </AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className='w-56' align='end' forceMount>
+        <DropdownMenuContent className='w-64' align='end' forceMount>
           <DropdownMenuLabel className='font-normal'>
             <div className='flex flex-col gap-1.5'>
-              <p className='text-sm leading-none font-medium'>satnaing</p>
+              <p className='text-sm leading-none font-medium'>{displayName}</p>
               <p className='text-xs leading-none text-muted-foreground'>
-                satnaingdev@gmail.com
+                {profile?.email || 'user@example.com'}
               </p>
+              {profile?.createdAt && (
+                <p className='text-xs leading-none text-muted-foreground'>
+                  Thành viên từ {new Date(profile.createdAt).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}
+                </p>
+              )}
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
-              <Link to='/settings'>
-                Profile
-                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+              <Link to='/profile'>
+                <Package className="mr-2 h-4 w-4" />
+                Trang cá nhân
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to='/settings'>
-                Billing
-                <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
+              <Link to='/profile/orders'>
+                <Package className="mr-2 h-4 w-4" />
+                Đơn hàng của tôi
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to='/settings'>
-                Settings
-                <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+              <Link to='/profile/settings'>
+                <Settings className="mr-2 h-4 w-4" />
+                Cài đặt tài khoản
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>New Team</DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant='destructive' onClick={() => setOpen(true)}>
-            Sign out
-            <DropdownMenuShortcut className='text-current'>
-              ⇧⌘Q
-            </DropdownMenuShortcut>
+            <LogOut className="mr-2 h-4 w-4" />
+            Đăng xuất
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

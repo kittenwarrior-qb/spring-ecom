@@ -27,7 +27,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { OrderStatus } from '@/types/api'
-import { useUpdateOrderStatus } from '@/hooks/use-orders'
+import { useUpdateOrderStatus } from '@/hooks/use-order'
 import { useOrders } from './orders-provider'
 
 const formSchema = z.object({
@@ -90,9 +90,9 @@ export function OrderStatusDialog() {
                                             <SelectItem value='PENDING'>Chờ xử lý</SelectItem>
                                             <SelectItem value='CONFIRMED'>Đã xác nhận</SelectItem>
                                             <SelectItem value='PROCESSING'>Đang xử lý</SelectItem>
-                                            <SelectItem value='SHIPPED'>Đã gửi</SelectItem>
                                             <SelectItem value='DELIVERED'>Đã giao</SelectItem>
                                             <SelectItem value='CANCELLED'>Đã hủy</SelectItem>
+                                            <SelectItem value='PARTIALLY_CANCELLED'>Đã hủy 1 phần</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />

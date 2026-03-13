@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -120,9 +120,11 @@ function CartItemSummary({ item }: { item: CartItemResponse }) {
 
 function PaymentPage() {
   const navigate = useNavigate()
+  const router = useRouter()
   const { data: cartItems, isLoading: cartLoading } = useCartItems()
   const { data: userProfile, isLoading: profileLoading } = useUserProfile()
   const createOrder = useCreateOrder()
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
@@ -210,40 +212,45 @@ function PaymentPage() {
         })
       } catch (error) { /* empty */ }
     }
-  }, [])
+  }, [form])
 
-  // Redirect if cart is empty
+  // Redirect if cart is empty (but not when submitting)
   React.useEffect(() => {
-    if (!cartLoading && (!cartItems || cartItems.length === 0)) {
+    if (!cartLoading && !isSubmitting && (!cartItems || cartItems.length === 0)) {
       navigate({ to: '/cart' })
     }
-  }, [cartLoading, cartItems, navigate])
+  }, [cartLoading, cartItems, navigate, isSubmitting])
 
-  // Don't render if cart is empty
-  if (!cartLoading && (!cartItems || cartItems.length === 0)) {
+  // Don't render if cart is empty (but allow rendering when submitting)
+  if (!cartLoading && !isSubmitting && (!cartItems || cartItems.length === 0)) {
     return null
   }
 
   const onSubmit = async (data: PaymentFormData) => {
     try {
-      console.log('Submitting order:', data)
+      setIsSubmitting(true)
       const order = await createOrder.mutateAsync(data)
-      console.log('Order created successfully:', order)
+      
       // Clear saved form data after successful order
       localStorage.removeItem('payment-form-data')
-      toast.success('Đặt hàng thành công!')
-      console.log('Navigating to payment-success with orderNumber:', order.orderNumber)
       
-      // Use setTimeout to avoid setState during render
-      setTimeout(() => {
-        navigate({ 
-          to: '/payment-success',
-          search: { orderNumber: order.orderNumber }
-        })
-      }, 0)
+      
+      // Show success message and redirect after a short delay
+      toast.success('Đặt hàng thành công! Đang chuyển hướng...')
+      
+      // Wait a bit for toast to show and state to update
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      // Force navigation with window.location.replace
+      const url = `/payment-success?orderNumber=${encodeURIComponent(order.orderNumber)}`
+      
+      // Use replace to avoid back button issues
+      window.location.replace(url)
+      
     } catch (error) {
-      console.error('Order creation failed:', error)
+      
       toast.error('Có lỗi xảy ra khi đặt hàng')
+      setIsSubmitting(false)
     }
   }
 

@@ -2,9 +2,8 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
-
-import type { OrderResponse, OrderStatus } from '@/types/api'
-import { DataTableRowActions } from './data-table-row-actions'
+import type { OrderDetailResponse, OrderStatus } from '@/types/api'
+import { UserOrderRowActions } from './user-order-row-actions'
 
 export const statusStyles: Record<OrderStatus, { label: string; variant: 'outline' | 'default' | 'secondary' | 'destructive' }> = {
     PENDING: { label: 'Chờ xử lý', variant: 'outline' },
@@ -16,7 +15,7 @@ export const statusStyles: Record<OrderStatus, { label: string; variant: 'outlin
     PARTIALLY_CANCELLED: { label: 'Đã hủy 1 phần', variant: 'outline' },
 }
 
-export const ordersColumns: ColumnDef<OrderResponse>[] = [
+export const userOrdersColumns: ColumnDef<OrderDetailResponse>[] = [
     {
         accessorKey: 'orderNumber',
         header: ({ column }) => (
@@ -25,13 +24,6 @@ export const ordersColumns: ColumnDef<OrderResponse>[] = [
         cell: ({ row }) => <div className='font-medium'>{row.getValue('orderNumber')}</div>,
         enableSorting: true,
         enableHiding: false,
-    },
-    {
-        accessorKey: 'userEmail',
-        header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Email khách hàng' />
-        ),
-        cell: ({ row }) => <div>{row.getValue('userEmail')}</div>,
     },
     {
         accessorKey: 'total',
@@ -68,7 +60,7 @@ export const ordersColumns: ColumnDef<OrderResponse>[] = [
     {
         accessorKey: 'createdAt',
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title='Ngày tạo' />
+            <DataTableColumnHeader column={column} title='Ngày đặt' />
         ),
         cell: ({ row }) => {
             return (
@@ -81,6 +73,6 @@ export const ordersColumns: ColumnDef<OrderResponse>[] = [
     },
     {
         id: 'actions',
-        cell: ({ row }) => <DataTableRowActions row={row} />,
+        cell: ({ row }) => <UserOrderRowActions row={row} />,
     },
 ]

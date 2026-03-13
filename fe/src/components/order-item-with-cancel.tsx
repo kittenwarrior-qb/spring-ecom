@@ -60,7 +60,7 @@ export function OrderItemWithCancel({
               <div className="flex items-center gap-2">
                 <span className="text-sm">Số lượng đặt: {item.quantity}</span>
                 {item.cancelledQuantity > 0 && (
-                  <Badge variant="destructive" className="text-xs">
+                  <Badge variant="default" className="text-xs">
                     Đã hủy: {item.cancelledQuantity}
                   </Badge>
                 )}
@@ -78,7 +78,7 @@ export function OrderItemWithCancel({
               )}
               
               {availableQuantity === 0 && (
-                <Badge variant="destructive">Đã hủy hoàn toàn</Badge>
+                <Badge variant="default">Đã hủy hoàn toàn</Badge>
               )}
             </div>
 

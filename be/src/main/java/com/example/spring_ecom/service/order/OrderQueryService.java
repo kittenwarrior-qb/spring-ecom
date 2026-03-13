@@ -1,5 +1,7 @@
 package com.example.spring_ecom.service.order;
 
+import com.example.spring_ecom.controller.api.order.model.OrderResponse;
+import com.example.spring_ecom.controller.api.order.model.OrderResponseMapper;
 import com.example.spring_ecom.controller.api.order.orderItem.model.OrderDetailResponse;
 import com.example.spring_ecom.controller.api.order.orderItem.model.OrderDetailResponseMapper;
 import com.example.spring_ecom.controller.api.order.orderItem.model.OrderItemResponse;
@@ -27,7 +29,8 @@ public class OrderQueryService {
     
     private final OrderRepository orderRepository;
     private final OrderItemUseCase orderItemUseCase;
-    private final OrderDetailResponseMapper mapper;
+    private final OrderDetailResponseMapper detailMapper;
+    private final OrderResponseMapper orderResponseMapper;
     private final OrderEntityMapper orderEntityMapper;
     
     // ========== MAIN QUERY METHODS ==========
@@ -57,14 +60,19 @@ public class OrderQueryService {
                 .map(orderEntityMapper::toDomain);
     }
     
+    public Page<OrderResponse> findAllWithUser(Pageable pageable) {
+        return orderRepository.findAllOrdersWithUser(pageable)
+                .map(orderResponseMapper::toResponse);
+    }
+    
     public Optional<OrderDetailResponse> getOrderDetail(Long orderId) {
         OrderWithUserDao orderDao = findOrderWithUserById(orderId);
         List<OrderItemWithProductDao> orderItemDaos = orderItemUseCase.findOrderItemsWithProductByOrderId(orderId);
         
-        List<OrderItemWithProductDto> orderItems = mapper.toDtoList(orderItemDaos);
-        List<OrderItemResponse> items = mapper.toResponseList(orderItems);
+        List<OrderItemWithProductDto> orderItems = detailMapper.toDtoList(orderItemDaos);
+        List<OrderItemResponse> items = detailMapper.toResponseList(orderItems);
         
-        OrderDetailResponse response = mapper.toDetailResponse(orderDao, items);
+        OrderDetailResponse response = detailMapper.toDetailResponse(orderDao, items);
         return Optional.of(response);
     }
     

@@ -20,6 +20,7 @@ public enum ResponseCode {
     NOT_FOUND(404, "Resource not found"),
     ENDPOINT_NOT_FOUND(404, "API endpoint not found"),
     CONFLICT(409, "Resource already exists"),
+    TOO_MANY_REQUESTS(429, "Too many requests"),
     
     // User
     USER_GET(200, "User retrieved successfully"),

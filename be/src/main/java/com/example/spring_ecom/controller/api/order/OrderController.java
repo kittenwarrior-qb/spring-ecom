@@ -11,11 +11,8 @@ import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ApiResponse;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.core.util.SecurityUtil;
-import com.example.spring_ecom.domain.cart.CartItem;
 import com.example.spring_ecom.domain.order.Order;
 import com.example.spring_ecom.domain.order.OrderStatus;
-import com.example.spring_ecom.service.cart.CartUseCase;
-
 import com.example.spring_ecom.service.order.payment.PaymentQRService;
 import com.example.spring_ecom.service.order.OrderUseCase;
 
@@ -25,68 +22,26 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 @Slf4j
 @RestController
 @RequiredArgsConstructor
 public class OrderController implements OrderAPI {
     
     private final OrderUseCase orderUseCase;
-    private final CartUseCase cartUseCase;
     private final OrderResponseMapper responseMapper;
     private final PaymentQRService paymentQRService;
     
     @Override
     public ApiResponse<OrderResponse> createOrder(CreateOrderRequest request) {
-        return createOrderInternal(request);
+        Long userId = SecurityUtil.getCurrentUserId();
+        Order created = orderUseCase.createOrderFromCart(userId, request);
+        return ApiResponse.Success.of(responseMapper.toResponse(created));
     }
     
     @Override
     public ApiResponse<OrderResponse> createOrderFromCart(CreateOrderRequest request) {
-        return createOrderInternal(request);
-    }
-    
-    private ApiResponse<OrderResponse> createOrderInternal(CreateOrderRequest request) {
         Long userId = SecurityUtil.getCurrentUserId();
-        
-        List<CartItem> cartItems = cartUseCase.getCartItems(userId);
-        if (cartItems.isEmpty()) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Cart is empty");
-        }
-        
-        BigDecimal subtotal = cartItems.stream()
-                .map(item -> item.price().multiply(BigDecimal.valueOf(item.quantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        BigDecimal shippingFee = BigDecimal.ZERO;
-        BigDecimal total = subtotal.add(shippingFee);
-        
-        Order order = new Order(
-                null,
-                null,
-                userId,
-                OrderStatus.PENDING,
-                null, 
-                subtotal,
-                shippingFee,
-                BigDecimal.ZERO,
-                total,
-                request.paymentMethod(),
-                request.shippingAddress(),
-                request.shippingCity(),
-                request.shippingDistrict(),
-                request.shippingWard(),
-                request.recipientName(),
-                request.recipientPhone(),
-                request.note(),
-                null,
-                null,
-                null
-        );
-        
-        Order created = orderUseCase.createOrder(order);
+        Order created = orderUseCase.createOrderFromCart(userId, request);
         return ApiResponse.Success.of(responseMapper.toResponse(created));
     }
     
@@ -154,8 +109,7 @@ public class OrderController implements OrderAPI {
     
     @Override
     public ApiResponse<Page<OrderResponse>> getAllOrders(Pageable pageable) {
-        Page<OrderResponse> orders = orderUseCase.findAll(pageable)
-                .map(responseMapper::toResponse);
+        Page<OrderResponse> orders = orderUseCase.findAllWithUser(pageable);
         return ApiResponse.Success.of(orders);
     }
     
@@ -170,16 +124,7 @@ public class OrderController implements OrderAPI {
         Long currentUserId = SecurityUtil.getCurrentUserId();
         boolean isAdmin = SecurityUtil.hasRole("ADMIN");
         
-        if (!isAdmin) {
-            Order order = orderUseCase.findById(id)
-                    .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
-            
-            if (!order.userId().equals(currentUserId)) {
-                throw new BaseException(ResponseCode.FORBIDDEN, "You can only cancel your own orders");
-            }
-        }
-        
-        orderUseCase.cancelOrder(id);
+        orderUseCase.cancelOrder(id, currentUserId, isAdmin);
         return ApiResponse.Success.of(ResponseCode.ORDER_CANCELLED);
     }
     
@@ -188,16 +133,7 @@ public class OrderController implements OrderAPI {
         Long currentUserId = SecurityUtil.getCurrentUserId();
         boolean isAdmin = SecurityUtil.hasRole("ADMIN");
         
-        if (!isAdmin) {
-            Order order = orderUseCase.findById(id)
-                    .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
-            
-            if (!order.userId().equals(currentUserId)) {
-                throw new BaseException(ResponseCode.FORBIDDEN, "You can only cancel your own orders");
-            }
-        }
-        
-        Order updatedOrder = orderUseCase.cancelPartialOrder(id, request.items());
+        Order updatedOrder = orderUseCase.cancelPartialOrder(id, request.items(), currentUserId, isAdmin);
         return ApiResponse.Success.of(responseMapper.toResponse(updatedOrder));
     }
     

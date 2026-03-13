@@ -2,18 +2,20 @@ import { useLayout } from '@/context/layout-provider'
 import { useUser, useAuthStore } from '@/stores/auth-store'
 import { useUserProfile } from '@/hooks/use-user'
 import { useEffect } from 'react'
+import { Command } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
 } from '@/components/ui/sidebar'
-// import { AppTitle } from './app-title'
 import { getStaticSidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
-import { TeamSwitcher } from './team-switcher'
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
@@ -47,7 +49,19 @@ export function AppSidebar() {
     return (
       <Sidebar collapsible={collapsible} variant={variant}>
         <SidebarHeader>
-          <TeamSwitcher teams={sidebarData.teams} />
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <Command className="size-4" />
+                </div>
+                <div className="grid flex-1 text-start text-sm leading-tight">
+                  <span className="truncate font-semibold">Spring Ecom</span>
+                  <span className="truncate text-xs">Bảng Quản Trị</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
           {sidebarData.navGroups.map((props) => (
@@ -67,11 +81,19 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
-        <TeamSwitcher teams={sidebarData.teams} />
-
-        {/* Replace <TeamSwitch /> with the following <AppTitle />
-         /* if you want to use the normal app title instead of TeamSwitch dropdown */}
-        {/* <AppTitle /> */}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <Command className="size-4" />
+              </div>
+              <div className="grid flex-1 text-start text-sm leading-tight">
+                <span className="truncate font-semibold">Spring Ecom</span>
+                <span className="truncate text-xs">Bảng Quản Trị</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         {sidebarData.navGroups.map((props) => (

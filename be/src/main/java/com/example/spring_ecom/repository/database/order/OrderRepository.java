@@ -18,7 +18,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     Optional<OrderEntity> findByOrderNumber(String orderNumber);
     
     @Query("""
-        SELECT new com.example.spring_ecom.service.order.dao.OrderWithUserDao(
+        SELECT new com.example.spring_ecom.repository.database.order.dao.OrderWithUserDao(
                o.id, o.orderNumber, o.userId, u.email,
                o.status, o.paymentStatus, o.subtotal,
                o.shippingFee, o.discount, o.total,
@@ -32,6 +32,22 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
         WHERE o.id = :id
     """)
     Optional<OrderWithUserDao> findOrderWithUserById(@Param("id") Long id);
+    
+    @Query("""
+        SELECT new com.example.spring_ecom.repository.database.order.dao.OrderWithUserDao(
+               o.id, o.orderNumber, o.userId, u.email,
+               o.status, o.paymentStatus, o.subtotal,
+               o.shippingFee, o.discount, o.total,
+               CAST(o.paymentMethod AS string), o.shippingAddress,
+               o.shippingCity, o.shippingDistrict,
+               o.shippingWard, o.recipientName,
+               o.recipientPhone, o.note,
+               o.createdAt, o.updatedAt, o.cancelledAt)
+        FROM OrderEntity o 
+        JOIN UserEntity u ON o.userId = u.id 
+        ORDER BY o.createdAt DESC
+    """)
+    Page<OrderWithUserDao> findAllOrdersWithUser(Pageable pageable);
     
     // Unified method for filtering orders
     @Query("""

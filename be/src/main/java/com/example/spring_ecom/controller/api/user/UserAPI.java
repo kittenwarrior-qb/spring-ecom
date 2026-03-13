@@ -35,7 +35,7 @@ public interface UserAPI {
                     description = "Unauthorized"
             )
     })
-    ApiResponse<UserProfileResponse> getCurrentUserProfile(
+    ApiResponse<UserInfoResponse> getCurrentUserProfile(
             @Parameter(hidden = true) Authentication authentication
     );
     
@@ -58,7 +58,7 @@ public interface UserAPI {
                     description = "Unauthorized"
             )
     })
-    ApiResponse<UserProfileResponse> updateProfile(
+    ApiResponse<UserInfoResponse> updateProfile(
             @Valid @RequestBody UserInfoRequest request,
             @Parameter(hidden = true) Authentication authentication
     );
@@ -82,7 +82,7 @@ public interface UserAPI {
                     description = "Unauthorized"
             )
     })
-    ApiResponse<UserProfileResponse> updateAvatar(
+    ApiResponse<UserInfoResponse> updateAvatar(
             @Valid @RequestBody UserInfoRequest request,
             @Parameter(hidden = true) Authentication authentication
     );

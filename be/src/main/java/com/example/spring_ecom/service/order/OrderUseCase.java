@@ -1,5 +1,8 @@
 package com.example.spring_ecom.service.order;
 
+import com.example.spring_ecom.controller.api.order.model.CreateOrderRequest;
+import com.example.spring_ecom.controller.api.order.model.OrderResponse;
+import com.example.spring_ecom.controller.api.order.orderItem.model.OrderDetailResponse;
 import com.example.spring_ecom.controller.api.order.orderItem.model.PartialCancelRequestItem;
 import com.example.spring_ecom.domain.order.Order;
 import com.example.spring_ecom.domain.order.OrderStatus;
@@ -17,11 +20,13 @@ public interface OrderUseCase {
     
     Order createOrder(Order order);
     
+    Order createOrderFromCart(Long userId, CreateOrderRequest request);
+    
     Order updateOrderStatus(Long id, OrderStatus status);
     
-    void cancelOrder(Long id);
+    void cancelOrder(Long id, Long currentUserId, boolean isAdmin);
     
-    Order cancelPartialOrder(Long orderId, List<PartialCancelRequestItem> cancelItems);
+    Order cancelPartialOrder(Long orderId, List<PartialCancelRequestItem> cancelItems, Long currentUserId, boolean isAdmin);
     
     Order updatePaymentStatus(Long id, PaymentStatus paymentStatus);
     
@@ -37,7 +42,9 @@ public interface OrderUseCase {
     
     Page<Order> findAll(Pageable pageable);
     
-    com.example.spring_ecom.controller.api.order.orderItem.model.OrderDetailResponse getOrderDetail(Long orderId);
+    Page<OrderResponse> findAllWithUser(Pageable pageable);
+    
+    OrderDetailResponse getOrderDetail(Long orderId);
     
     OrderStatisticsDao getOrderStatistics();
 }

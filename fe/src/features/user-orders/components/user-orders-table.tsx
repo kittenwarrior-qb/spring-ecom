@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
     type SortingState,
     type VisibilityState,
+    type ColumnFiltersState,
+    type PaginationState,
     flexRender,
     getCoreRowModel,
     getFacetedRowModel,
@@ -12,9 +14,7 @@ import {
     useReactTable,
 } from '@tanstack/react-table'
 import { Loader2 } from 'lucide-react'
-import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
-
-import { useAdminOrders } from '@/hooks/use-order'
+import { useMyOrdersWithItems } from '@/hooks/use-order'
 import {
     Table,
     TableBody,
@@ -24,44 +24,27 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { ordersColumns as columns, statusStyles } from './orders-columns'
-import { type OrderResponse } from '@/types/api'
+import { userOrdersColumns as columns, statusStyles } from './user-orders-columns'
+import type { OrderDetailResponse } from '@/types/api'
 
-interface OrdersTableProps {
-    search: Record<string, unknown>
-    navigate: NavigateFn
-}
-
-export function OrdersTable({ search, navigate }: OrdersTableProps) {
+export function UserOrdersTable() {
     const [rowSelection, setRowSelection] = useState({})
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [sorting, setSorting] = useState<SortingState>([
         { id: 'createdAt', desc: true } // Default sort by newest orders first
     ])
-
-    const {
-        columnFilters,
-        onColumnFiltersChange,
-        pagination,
-        onPaginationChange,
-        ensurePageInRange,
-    } = useTableUrlState({
-        search,
-        navigate,
-        pagination: { defaultPage: 1, defaultPageSize: 10 },
-        globalFilter: { enabled: false },
-        columnFilters: [
-            { columnId: 'orderNumber', searchKey: 'orderNumber', type: 'string' },
-            { columnId: 'status', searchKey: 'status', type: 'array' },
-        ],
+    const [pagination, setPagination] = useState<PaginationState>({
+        pageIndex: 0,
+        pageSize: 10,
     })
 
-    const { data: pageData, isLoading, error } = useAdminOrders({
+    const { data: pageData, isLoading, error } = useMyOrdersWithItems({
         page: pagination.pageIndex,
         size: pagination.pageSize,
     })
 
-    const data: OrderResponse[] = pageData?.content ?? []
+    const data: OrderDetailResponse[] = pageData?.content ?? []
 
     const table = useReactTable({
         data,
@@ -74,8 +57,8 @@ export function OrdersTable({ search, navigate }: OrdersTableProps) {
             columnVisibility,
         },
         enableRowSelection: true,
-        onPaginationChange,
-        onColumnFiltersChange,
+        onPaginationChange: setPagination,
+        onColumnFiltersChange: setColumnFilters,
         onRowSelectionChange: setRowSelection,
         onSortingChange: setSorting,
         onColumnVisibilityChange: setColumnVisibility,
@@ -88,10 +71,6 @@ export function OrdersTable({ search, navigate }: OrdersTableProps) {
         manualPagination: true,
         pageCount: pageData?.totalPages ?? -1,
     })
-
-    useEffect(() => {
-        ensurePageInRange(table.getPageCount())
-    }, [table, ensurePageInRange])
 
     if (error) {
         return (

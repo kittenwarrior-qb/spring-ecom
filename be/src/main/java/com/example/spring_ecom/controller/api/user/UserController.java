@@ -21,7 +21,7 @@ public class UserController implements UserAPI {
     private final UserUseCase userUseCase;
     private final UserInfoUseCase userInfoUseCase;
     private final UserResponseMapper responseMapper;
-    private final UserProfileResponseMapper profileResponseMapper;
+    private final UserInfoResponseMapper userInfoResponseMapper;
     private final UserInfoRequestMapper userInfoRequestMapper;
     private final RedisServiceWithFallback redisService;
 
@@ -34,17 +34,16 @@ public class UserController implements UserAPI {
     }
     
     @Override
-    public ApiResponse<UserProfileResponse> getCurrentUserProfile(Authentication authentication) {
+    public ApiResponse<UserInfoResponse> getCurrentUserProfile(Authentication authentication) {
         String sessionId = SecurityUtil.getCurrentSessionId();
         RedisEntity session = redisService.validateSession(sessionId);
         
-        // Convert Redis session to UserProfileResponse
-        UserProfileResponse response = profileResponseMapper.sessionToResponse(session);
+        UserInfoResponse response = userInfoResponseMapper.sessionToResponse(session);
         return ApiResponse.Success.of(response);
     }
     
     @Override
-    public ApiResponse<UserProfileResponse> updateProfile(@Valid UserInfoRequest request, Authentication authentication) {
+    public ApiResponse<UserInfoResponse> updateProfile(@Valid UserInfoRequest request, Authentication authentication) {
         Long userId = SecurityUtil.getCurrentUserId();
         
         userInfoUseCase.createOrUpdate(userId, userInfoRequestMapper.toDomain(userId, request));
@@ -52,11 +51,11 @@ public class UserController implements UserAPI {
         User user = userUseCase.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
         
-        return ApiResponse.Success.of(ResponseCode.OK, "Profile updated successfully", profileResponseMapper.toResponse(user));
+        return ApiResponse.Success.of(ResponseCode.OK, "Profile updated successfully", userInfoResponseMapper.toResponse(user));
     }
     
     @Override
-    public ApiResponse<UserProfileResponse> updateAvatar(@Valid UserInfoRequest request, Authentication authentication) {
+    public ApiResponse<UserInfoResponse> updateAvatar(@Valid UserInfoRequest request, Authentication authentication) {
         Long userId = SecurityUtil.getCurrentUserId();
         
         userInfoUseCase.createOrUpdate(userId, userInfoRequestMapper.toDomain(userId, request));
@@ -64,7 +63,7 @@ public class UserController implements UserAPI {
         User user = userUseCase.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
         
-        return ApiResponse.Success.of(ResponseCode.OK, "Avatar updated successfully", profileResponseMapper.toResponse(user));
+        return ApiResponse.Success.of(ResponseCode.OK, "Avatar updated successfully", userInfoResponseMapper.toResponse(user));
     }
     
     @Override

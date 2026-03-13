@@ -13,7 +13,6 @@ export const Route = createFileRoute('/profile/')({
 
 const statusColors: Record<string, string> = {
   DELIVERED: 'bg-green-100 text-green-800',
-  SHIPPED: 'bg-blue-100 text-blue-800',
   PROCESSING: 'bg-yellow-100 text-yellow-800',
   CONFIRMED: 'bg-cyan-100 text-cyan-800',
   PENDING: 'bg-gray-100 text-gray-800',
@@ -22,7 +21,6 @@ const statusColors: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   DELIVERED: 'Đã giao',
-  SHIPPED: 'Đang giao',
   PROCESSING: 'Đang xử lý',
   CONFIRMED: 'Đã xác nhận',
   PENDING: 'Chờ xác nhận',
@@ -115,7 +113,7 @@ function ProfilePage() {
       </Card>
 
       {/* Quick Actions */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
         <Link to="/profile/orders">
           <Card className="transition-shadow hover:shadow-md">
             <CardHeader className="flex flex-row items-center gap-4 pb-2">
@@ -140,27 +138,6 @@ function ProfilePage() {
           </Card>
         </Link>
 
-        <Link to="/profile/settings">
-          <Card className="transition-shadow hover:shadow-md">
-            <CardHeader className="flex flex-row items-center gap-4 pb-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Địa chỉ</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>Quản lý địa chỉ giao hàng</CardDescription>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Card className="transition-shadow hover:shadow-md cursor-pointer">
-          <CardHeader className="flex flex-row items-center gap-4 pb-2">
-            <CreditCard className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Thanh toán</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CardDescription>Quản lý phương thức thanh toán</CardDescription>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Recent Orders */}

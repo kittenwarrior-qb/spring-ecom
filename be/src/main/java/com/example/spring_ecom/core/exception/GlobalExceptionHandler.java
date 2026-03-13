@@ -18,6 +18,20 @@ import java.io.IOException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleRateLimitExceededException(RateLimitExceededException ex) {
+        log.warn("Rate limit exceeded: {}", ex.getMessage());
+        
+        ApiResponse<Void> response = ApiResponse.Error.of(ResponseCode.TOO_MANY_REQUESTS, ex.getMessage());
+        
+        // Thêm headers cho rate limit info
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("X-RateLimit-Limit", String.valueOf(ex.getMaxRequests()))
+                .header("X-RateLimit-Remaining", String.valueOf(Math.max(0, ex.getMaxRequests() - ex.getCurrentRequests())))
+                .header("X-RateLimit-Reset", String.valueOf(ex.getRemainingTimeSeconds()))
+                .body(response);
+    }
+
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<ApiResponse<Void>> handleBaseException(BaseException ex) {
         log.error("BaseException: {}", ex.getMessage(), ex);

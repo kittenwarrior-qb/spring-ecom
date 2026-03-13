@@ -22,7 +22,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItemEntity, Long
     List<OrderItemEntity> findByOrderIdIn(@Param("orderIds") List<Long> orderIds);
     
     @Query("""
-        SELECT new com.example.spring_ecom.service.order.dao.OrderItemWithProductDao(
+        SELECT new com.example.spring_ecom.repository.database.order.dao.OrderItemWithProductDao(
                oi.id, oi.orderId, oi.productId,
                oi.productTitle, p.coverImageUrl,
                oi.quantity, oi.cancelledQuantity, oi.price, oi.subtotal,

@@ -32,6 +32,14 @@ export function useMyOrders(page = 0, size = 10) {
   })
 }
 
+// Get my orders with items
+export function useMyOrdersWithItems(params: { page: number; size: number }) {
+  return useQuery({
+    queryKey: [...orderKeys.all, 'my', 'withItems', params],
+    queryFn: () => orderApi.getMyOrdersWithItems(params.page, params.size),
+  })
+}
+
 // Get my orders by status
 export function useMyOrdersByStatus(status: OrderStatus | undefined, page = 0, size = 10) {
   return useQuery({
@@ -78,6 +86,26 @@ export function usePartialCancelOrder() {
   return useMutation({
     mutationFn: ({ id, request }: { id: number; request: orderApi.PartialCancelRequest }) => 
       orderApi.partialCancelOrder(id, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.all })
+    },
+  })
+}
+
+// Admin hooks
+export function useAdminOrders(params: { page: number; size: number }) {
+  return useQuery({
+    queryKey: [...orderKeys.all, 'admin', params],
+    queryFn: () => orderApi.getAllOrders(params.page, params.size),
+  })
+}
+
+export function useUpdateOrderStatus() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: OrderStatus }) => 
+      orderApi.updateOrderStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: orderKeys.all })
     },
