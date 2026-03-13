@@ -39,7 +39,7 @@ public class UsersController implements UsersAPI {
             pageable.getSort()
         );
         Page<User> users = useCase.findAll(pageRequest);
-        Page<UserResponse> response = users.map(responseMapper::toResDto);
+        Page<UserResponse> response = users.map(responseMapper::toResponse);
         return ApiResponse.Success.of(ResponseCode.USER_LIST, response);
     }
 }

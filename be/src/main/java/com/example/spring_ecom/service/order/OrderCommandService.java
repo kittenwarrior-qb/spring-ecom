@@ -11,10 +11,8 @@ import com.example.spring_ecom.domain.order.PaymentMethod;
 import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.OrderEntityMapper;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
-import com.example.spring_ecom.repository.database.order.orderItem.OrderItemRepository;
+import com.example.spring_ecom.service.order.orderItem.OrderItemUseCase;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
-import com.example.spring_ecom.repository.database.product.ProductEntity;
-import com.example.spring_ecom.repository.database.product.ProductRepository;
 import com.example.spring_ecom.repository.database.user.UserRepository;
 import com.example.spring_ecom.service.cart.CartUseCase;
 import lombok.RequiredArgsConstructor;
@@ -25,11 +23,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -37,25 +32,21 @@ import java.util.stream.Collectors;
 public class OrderCommandService {
     
     private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final OrderItemRepository orderItemRepository;
+    private final OrderItemUseCase orderItemUseCase;
     private final CartUseCase cartUseCase;
     private final OrderEntityMapper mapper;
+    
+    // ========== MAIN COMMAND METHODS ==========
     
     public Optional<Order> create(Order order) {
         validateUser(order.userId());
         List<CartItem> cartItems = validateAndGetCartItems(order.userId());
         
-        OrderEntity entity = mapper.toEntity(order);
-        entity.setOrderNumber(generateOrderNumber());
-        mapper.setInitialPaymentStatus(entity, order.paymentMethod());
-        
-        // Save order first to get ID
+        OrderEntity entity = createOrderEntity(order);
         OrderEntity saved = orderRepository.save(entity);
         
-        // Then create order items with the saved order ID
-        createOrderItems(saved, cartItems);
+        orderItemUseCase.createOrderItems(saved, cartItems);
         cartUseCase.clearCart(order.userId());
         
         return Optional.of(mapper.toDomain(saved));
@@ -77,7 +68,7 @@ public class OrderCommandService {
         validateCancellation(entity);
         
         mapper.cancelOrder(entity);
-        restoreStock(entity);
+        orderItemUseCase.restoreStockForOrder(id);
         orderRepository.save(entity);
     }
     
@@ -85,20 +76,7 @@ public class OrderCommandService {
         OrderEntity entity = findOrderById(orderId);
         validatePartialCancellation(entity);
         
-        List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(orderId);
-        Map<Long, OrderItemEntity> itemMap = orderItems.stream()
-                .collect(Collectors.toMap(OrderItemEntity::getId, Function.identity()));
-        
-        for (PartialCancelRequestItem cancelItem : cancelItems) {
-            OrderItemEntity orderItem = itemMap.get(cancelItem.orderItemId());
-            if (orderItem == null) {
-                throw new BaseException(ResponseCode.BAD_REQUEST, 
-                        "Order item not found: " + cancelItem.orderItemId());
-            }
-            
-            processCancelItem(orderItem, cancelItem.quantityToCancel());
-        }
-        orderItemRepository.saveAll(orderItems);
+        List<OrderItemEntity> orderItems = orderItemUseCase.processPartialCancellation(orderId, cancelItems);
         recalculateOrderTotals(entity, orderItems);
         updateOrderStatusAfterPartialCancel(entity, orderItems);
         
@@ -106,51 +84,30 @@ public class OrderCommandService {
         return Optional.of(mapper.toDomain(updated));
     }
     
-    private void processCancelItem(OrderItemEntity orderItem, Integer quantityToCancel) {
-        int availableQuantity = orderItem.getQuantity() - orderItem.getCancelledQuantity();
-        
-        if (quantityToCancel <= 0) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, 
-                    "Quantity to cancel must be greater than 0");
-        }
-        
-        if (quantityToCancel > availableQuantity) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, 
-                    "Cannot cancel more than available quantity. Available: " + availableQuantity);
-        }
-        
-        orderItem.setCancelledQuantity(orderItem.getCancelledQuantity() + quantityToCancel);
-        
-        if (orderItem.getCancelledQuantity().equals(orderItem.getQuantity())) {
-            orderItem.setStatus(com.example.spring_ecom.domain.order.OrderItem.OrderItemStatus.CANCELLED);
-            orderItem.setCancelledAt(LocalDateTime.now());
-        }
-        
-        restoreStockForQuantity(orderItem.getProductId(), quantityToCancel);
-    }
-    
-    private void restoreStockForQuantity(Long productId, Integer quantity) {
-        ProductEntity product = productRepository.findById(productId)
-                .orElse(null);
-        
-        if (product != null) {
-            product.setStockQuantity(product.getStockQuantity() + quantity);
-            productRepository.save(product);
-        }
-    }
-    
     public Optional<Order> updatePaymentStatus(Long id, PaymentStatus paymentStatus) {
         OrderEntity entity = findOrderById(id);
         validatePaymentStatusTransition(entity, paymentStatus);
         
         mapper.updatePaymentStatus(entity, paymentStatus);
-        
-        if (paymentStatus == PaymentStatus.PAID && entity.getStatus() == OrderStatus.PENDING) {
-            mapper.updateOrderStatus(entity, OrderStatus.CONFIRMED);
-        }
+        handlePaymentStatusChange(entity, paymentStatus);
         
         OrderEntity updated = orderRepository.save(entity);
         return Optional.of(mapper.toDomain(updated));
+    }
+
+    // ========== HELPER METHODS ==========
+    
+    private OrderEntity createOrderEntity(Order order) {
+        OrderEntity entity = mapper.toEntity(order);
+        entity.setOrderNumber(generateOrderNumber());
+        mapper.setInitialPaymentStatus(entity, order.paymentMethod());
+        return entity;
+    }
+    
+    private void handlePaymentStatusChange(OrderEntity entity, PaymentStatus paymentStatus) {
+        if (paymentStatus == PaymentStatus.PAID && entity.getStatus() == OrderStatus.PENDING) {
+            mapper.updateOrderStatus(entity, OrderStatus.CONFIRMED);
+        }
     }
     
     private OrderEntity findOrderById(Long id) {
@@ -173,46 +130,6 @@ public class OrderCommandService {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Cart is empty");
         }
         return cartItems;
-    }
-    
-
-    private void createOrderItems(OrderEntity orderEntity, List<CartItem> cartItems) {
-        List<Long> productIds = cartItems.stream().map(CartItem::productId).toList();
-        List<ProductEntity> products = productRepository.findAllById(productIds);
-        
-        if (products.size() != productIds.size()) {
-            throw new BaseException(ResponseCode.NOT_FOUND, "Some products not found");
-        }
-        
-        Map<Long, ProductEntity> productMap = products.stream()
-                .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
-        
-        List<OrderItemEntity> orderItems = cartItems.stream()
-                .map(cartItem -> createOrderItem(orderEntity, cartItem, productMap))
-                .toList();
-        
-        productRepository.saveAll(products);
-        orderItemRepository.saveAll(orderItems);
-    }
-    
-    private OrderItemEntity createOrderItem(OrderEntity order, CartItem cartItem, Map<Long, ProductEntity> productMap) {
-        ProductEntity product = productMap.get(cartItem.productId());
-        
-        if (product.getStockQuantity() < cartItem.quantity()) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, 
-                    "Insufficient stock for product: " + product.getTitle());
-        }
-        
-        product.setStockQuantity(product.getStockQuantity() - cartItem.quantity());
-        
-        return OrderItemEntity.builder()
-                .orderId(order.getId())
-                .productId(product.getId())
-                .productTitle(product.getTitle())
-                .quantity(cartItem.quantity())
-                .price(cartItem.price())
-                .subtotal(cartItem.price().multiply(BigDecimal.valueOf(cartItem.quantity())))
-                .build();
     }
     
     private void validateStatusTransition(OrderEntity entity, OrderStatus newStatus) {
@@ -251,57 +168,19 @@ public class OrderCommandService {
         // PARTIALLY_CANCELLED is allowed - users can continue cancelling remaining items
     }
     
-    private void cancelOrderItems(List<OrderItemEntity> itemsToCancel) {
-        LocalDateTime now = LocalDateTime.now();
-        
-        for (OrderItemEntity item : itemsToCancel) {
-            if (item.getStatus() == com.example.spring_ecom.domain.order.OrderItem.OrderItemStatus.CANCELLED) {
-                continue; // Skip already cancelled items
-            }
-            
-            item.setStatus(com.example.spring_ecom.domain.order.OrderItem.OrderItemStatus.CANCELLED);
-            item.setCancelledAt(now);
-            item.setCancelledQuantity(item.getQuantity()); // Cancel all quantity
-            
-            // Restore stock for cancelled item
-            restoreStockForItem(item);
-        }
-        
-        orderItemRepository.saveAll(itemsToCancel);
-    }
-    
-    private void restoreStockForItem(OrderItemEntity item) {
-        // Only restore quantity that wasn't already cancelled
-        int quantityToRestore = item.getQuantity() - item.getCancelledQuantity();
-        if (quantityToRestore > 0) {
-            restoreStockForQuantity(item.getProductId(), quantityToRestore);
-        }
-    }
-    
     private void recalculateOrderTotals(OrderEntity order, List<OrderItemEntity> allItems) {
-        BigDecimal newSubtotal = allItems.stream()
-                .map(item -> {
-                    int activeQuantity = item.getQuantity() - item.getCancelledQuantity();
-                    return item.getPrice().multiply(BigDecimal.valueOf(activeQuantity));
-                })
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
+        BigDecimal newSubtotal = orderItemUseCase.calculateOrderSubtotal(allItems);
         order.setSubtotal(newSubtotal);
         order.setTotal(newSubtotal.add(order.getShippingFee()).subtract(order.getDiscount()));
     }
     
     private void updateOrderStatusAfterPartialCancel(OrderEntity order, List<OrderItemEntity> allItems) {
-        boolean hasActiveItems = allItems.stream()
-                .anyMatch(item -> item.getQuantity() > item.getCancelledQuantity());
-        
-        boolean hasCancelledItems = allItems.stream()
-                .anyMatch(item -> item.getCancelledQuantity() > 0);
+        boolean hasActiveItems = orderItemUseCase.hasActiveItems(allItems);
+        boolean hasCancelledItems = orderItemUseCase.hasCancelledItems(allItems);
         
         if (!hasActiveItems) {
-            // All items cancelled - cancel entire order
             mapper.cancelOrder(order);
         } else if (hasCancelledItems) {
-            // Some items cancelled - mark as partially cancelled
             mapper.updateOrderStatus(order, OrderStatus.PARTIALLY_CANCELLED);
         }
     }
@@ -322,12 +201,12 @@ public class OrderCommandService {
     
     private void handleStatusChange(OrderEntity entity, OrderStatus status) {
         if (status == OrderStatus.CANCELLED) {
-            restoreStock(entity);
+            orderItemUseCase.restoreStockForOrder(entity.getId());
             if (entity.getPaymentStatus() == PaymentStatus.PAID) {
                 mapper.updatePaymentStatus(entity, PaymentStatus.REFUNDED);
             }
         } else if (status == OrderStatus.DELIVERED) {
-            updateSoldCount(entity);
+            orderItemUseCase.updateSoldCountForOrder(entity.getId());
             if (entity.getPaymentMethod() == PaymentMethod.COD) {
                 mapper.updatePaymentStatus(entity, PaymentStatus.PAID);
             }
@@ -340,43 +219,5 @@ public class OrderCommandService {
         String orderNumber = "ORD" + timestamp + random;
         
         return orderRepository.existsByOrderNumber(orderNumber) ? generateOrderNumber() : orderNumber;
-    }
-    
-    private void restoreStock(OrderEntity order) {
-        updateProductQuantities(order, (product, quantity) -> {
-            product.setStockQuantity(product.getStockQuantity() + quantity);
-            return product;
-        });
-    }
-    
-    private void updateSoldCount(OrderEntity order) {
-        updateProductQuantities(order, (product, quantity) -> {
-            product.setSoldCount(product.getSoldCount() + quantity);
-            return product;
-        });
-    }
-    
-    private void updateProductQuantities(OrderEntity order, 
-                                       java.util.function.BiFunction<ProductEntity, Integer, ProductEntity> productUpdater) {
-        List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(order.getId());
-        List<Long> productIds = orderItems.stream().map(OrderItemEntity::getProductId).toList();
-        
-        List<ProductEntity> products = productRepository.findAllById(productIds);
-        Map<Long, ProductEntity> productMap = products.stream()
-                .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
-        
-        List<ProductEntity> productsToUpdate = orderItems.stream()
-                .map(item -> {
-                    ProductEntity product = productMap.get(item.getProductId());
-                    // Only restore/update quantity that wasn't already cancelled
-                    int activeQuantity = item.getQuantity() - item.getCancelledQuantity();
-                    return Objects.nonNull(product) && activeQuantity > 0 
-                        ? productUpdater.apply(product, activeQuantity) 
-                        : null;
-                })
-                .filter(Objects::nonNull)
-                .toList();
-        
-        productRepository.saveAll(productsToUpdate);
     }
 }

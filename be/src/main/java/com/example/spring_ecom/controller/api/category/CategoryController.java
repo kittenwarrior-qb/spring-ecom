@@ -25,7 +25,7 @@ public class CategoryController implements CategoryAPI {
     public ApiResponse<List<CategoryResponse>> getAllCategories() {
         List<CategoryResponse> categories = categoryUseCase.findAll()
                 .stream()
-                .map(responseMapper::toResDto)
+                .map(responseMapper::toResponse)
                 .toList();
         return ApiResponse.Success.of(categories);
     }
@@ -33,7 +33,7 @@ public class CategoryController implements CategoryAPI {
     @Override
     public ApiResponse<CategoryResponse> getCategoryById(Long id) {
         CategoryResponse category = categoryUseCase.findById(id)
-                .map(responseMapper::toResDto)
+                .map(responseMapper::toResponse)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Category not found"));
         return ApiResponse.Success.of(category);
     }
@@ -41,7 +41,7 @@ public class CategoryController implements CategoryAPI {
     @Override
     public ApiResponse<CategoryResponse> getCategoryBySlug(String slug) {
         CategoryResponse category = categoryUseCase.findBySlug(slug)
-                .map(responseMapper::toResDto)
+                .map(responseMapper::toResponse)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Category not found"));
         return ApiResponse.Success.of(category);
     }
@@ -50,7 +50,7 @@ public class CategoryController implements CategoryAPI {
     public ApiResponse<List<CategoryResponse>> getCategoriesByParentId(Long parentId) {
         List<CategoryResponse> categories = categoryUseCase.findByParentId(parentId)
                 .stream()
-                .map(responseMapper::toResDto)
+                .map(responseMapper::toResponse)
                 .toList();
         return ApiResponse.Success.of(categories);
     }
@@ -58,7 +58,7 @@ public class CategoryController implements CategoryAPI {
     @Override
     public ApiResponse<CategoryResponse> createCategory(CategoryRequest request) {
         CategoryResponse category = categoryUseCase.create(requestMapper.toDomain(request))
-                .map(responseMapper::toResDto)
+                .map(responseMapper::toResponse)
                 .orElseThrow(() -> new BaseException(ResponseCode.BAD_REQUEST, "Failed to create category"));
         return ApiResponse.Success.of(category);
     }
@@ -66,7 +66,7 @@ public class CategoryController implements CategoryAPI {
     @Override
     public ApiResponse<CategoryResponse> updateCategory(Long id, CategoryRequest request) {
         CategoryResponse category = categoryUseCase.update(id, requestMapper.toDomain(request))
-                .map(responseMapper::toResDto)
+                .map(responseMapper::toResponse)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Category not found"));
         return ApiResponse.Success.of(category);
     }

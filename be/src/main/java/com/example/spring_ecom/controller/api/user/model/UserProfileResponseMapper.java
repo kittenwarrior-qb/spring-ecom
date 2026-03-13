@@ -2,13 +2,11 @@ package com.example.spring_ecom.controller.api.user.model;
 
 import com.example.spring_ecom.config.MapStructGlobalConfig;
 import com.example.spring_ecom.domain.user.User;
-import com.example.spring_ecom.domain.user.UserRole;
 import com.example.spring_ecom.domain.userInfo.UserInfo;
 import com.example.spring_ecom.repository.redis.session.RedisEntity;
 import com.example.spring_ecom.service.userInfo.UserInfoUseCase;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(config = MapStructGlobalConfig.class)
@@ -38,7 +36,7 @@ public abstract class UserProfileResponseMapper {
     @Mapping(target = "isActive", ignore = true)
     @Mapping(target = "lastLoginAt", ignore = true)
     @Mapping(target = "updatedAt", source = "lastAccessedAt")
-    public abstract UserProfileResponse fromSessionToUserProfileResponse(RedisEntity session);
+    public abstract UserProfileResponse sessionToResponse(RedisEntity session);
     
     protected UserInfo getUserInfo(User user) {
         if (user == null || user.id() == null) {

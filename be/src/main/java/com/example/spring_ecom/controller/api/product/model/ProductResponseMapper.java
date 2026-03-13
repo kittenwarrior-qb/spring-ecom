@@ -9,5 +9,5 @@ import org.mapstruct.Mapper;
 @Mapper(config = MapStructGlobalConfig.class)
 public interface ProductResponseMapper extends BaseModelMapper<ProductResponse, Product> {
     
-    ProductResponse fromEntity(ProductEntity entity);
+    ProductResponse toResponse(ProductEntity entity);
 }

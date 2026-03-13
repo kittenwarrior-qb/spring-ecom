@@ -27,7 +27,7 @@ public class UserController implements UserAPI {
     @Override
     public ApiResponse<UserResponse> findById(String userId) {
         UserResponse response = userUseCase.findByUserId(Long.parseLong(userId))
-                .map(responseMapper::toResDto)
+                .map(responseMapper::toResponse)
                 .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
         return ApiResponse.Success.of(response);
     }
@@ -38,7 +38,7 @@ public class UserController implements UserAPI {
         RedisEntity session = redisService.validateSession(sessionId);
         
         // Convert Redis session to UserProfileResponse
-        UserProfileResponse response = profileResponseMapper.fromSessionToUserProfileResponse(session);
+        UserProfileResponse response = profileResponseMapper.sessionToResponse(session);
         return ApiResponse.Success.of(response);
     }
     

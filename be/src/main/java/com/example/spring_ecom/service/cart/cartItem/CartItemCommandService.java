@@ -26,6 +26,8 @@ public class CartItemCommandService {
     private final ProductRepository productRepository;
     private final CartItemEntityMapper cartItemMapper;
     
+    // ========================== MAIN METHODS ================================
+
     public CartItem addItemToCart(CartEntity cart, CartItem cartItemRequest) {
         validateQuantity(cartItemRequest.quantity());
         ProductEntity product = validateAndGetProduct(cartItemRequest.productId(), cartItemRequest.quantity());
@@ -71,6 +73,9 @@ public class CartItemCommandService {
         }
     }
     
+
+    // ========================== SUPPORT METHODS ================================
+
     private ProductEntity validateAndGetProduct(Long productId, Integer quantity) {
         ProductEntity product = productRepository.findById(productId)
                 .filter(p -> Objects.isNull(p.getDeletedAt()) && p.getIsActive())

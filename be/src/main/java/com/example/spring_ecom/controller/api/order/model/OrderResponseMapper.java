@@ -11,5 +11,5 @@ public interface OrderResponseMapper extends BaseModelMapper<OrderResponse, Orde
     
     @Mapping(target = "items", ignore = true)
     @Mapping(target = "userEmail", ignore = true)
-    OrderResponse toResDto(Order order);
+    OrderResponse toResponse(Order order);
 }

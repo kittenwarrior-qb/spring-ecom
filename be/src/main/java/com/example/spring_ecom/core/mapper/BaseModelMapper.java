@@ -6,16 +6,13 @@ import java.util.List;
 // D = request, T = dto domain
 public interface BaseModelMapper<D, T> {
 
-    // chuyển dto từ request thành dto domain
-    T toDomain(D resDto);
+    T toDomain(D response);
 
-    // ngược lại
-    D toResDto(T domain);
+    D toResponse(T domain);
 
-    // dùng cho read/get query
-    List<T> toDomain(List<D> resDtoList);
-    List<D> toResDto(List<T> domainList);
+    List<T> toDomain(List<D> responseList);
+    List<D> toResponse(List<T> domainList);
 
-    // Update data từ dto
-    void update(@MappingTarget T domain, D resDto);
+    // Update data từ domain
+    void update(@MappingTarget T domain, D response);
 }

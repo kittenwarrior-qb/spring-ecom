@@ -10,5 +10,5 @@ import org.mapstruct.Mapping;
 public interface CategoryResponseMapper extends BaseModelMapper<CategoryResponse, Category> {
     
     @Mapping(target = "parentName", ignore = true)
-    CategoryResponse toResDto(Category domain);
+    CategoryResponse toResponse(Category domain);
 }

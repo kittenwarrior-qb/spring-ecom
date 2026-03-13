@@ -28,7 +28,7 @@ public class CartController implements CartAPI {
     public ApiResponse<List<CartItemResponse>> getCartItems() {
         Long userId = SecurityUtil.getCurrentUserId();
         List<CartItemResponse> items = cartUseCase.getCartItems(userId).stream()
-                .map(responseMapper::toResDto)
+                .map(responseMapper::toResponse)
                 .toList();
         return ApiResponse.Success.of(items);
     }
@@ -39,7 +39,7 @@ public class CartController implements CartAPI {
         
         CartItem cartItemRequest = addToCartRequestMapper.toDomain(request);
         
-        CartItemResponse item = responseMapper.toResDto(
+        CartItemResponse item = responseMapper.toResponse(
                 cartUseCase.addItemToCart(userId, cartItemRequest));
         return ApiResponse.Success.of(item);
     }
@@ -50,7 +50,7 @@ public class CartController implements CartAPI {
         
         CartItem updateRequest = updateCartItemRequestMapper.toDomain(request);
         
-        CartItemResponse item = responseMapper.toResDto(
+        CartItemResponse item = responseMapper.toResponse(
                 cartUseCase.updateCartItemQuantity(userId, productId, updateRequest));
         return ApiResponse.Success.of(item);
     }

@@ -5,8 +5,7 @@ import com.example.spring_ecom.domain.cart.CartItem;
 import com.example.spring_ecom.repository.database.cart.CartEntity;
 import com.example.spring_ecom.repository.database.cart.CartEntityMapper;
 import com.example.spring_ecom.repository.database.cart.CartRepository;
-import com.example.spring_ecom.repository.database.cart.cartItem.CartItemEntityMapper;
-import com.example.spring_ecom.repository.database.cart.cartItem.CartItemRepository;
+import com.example.spring_ecom.service.cart.cartItem.CartItemUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,22 +19,28 @@ import java.util.Optional;
 public class CartQueryService {
     
     private final CartRepository cartRepository;
-    private final CartItemRepository cartItemRepository;
     private final CartEntityMapper cartMapper;
-    private final CartItemEntityMapper cartItemMapper;
+    private final CartItemUseCase cartItemUseCase;
+    
+    // ========== MAIN QUERY METHODS ==========
     
     public Optional<Cart> findByUserId(Long userId) {
         return cartRepository.findByUserId(userId)
                 .map(cartMapper::toDomain);
     }
     
-    public Optional<CartEntity> findEntityByUserId(Long userId) {
-        return cartRepository.findByUserId(userId);
+    public List<CartItem> findCartItems(Long userId) {
+        Optional<CartEntity> cartEntity = cartRepository.findByUserId(userId);
+        if (cartEntity.isEmpty()) {
+            return List.of();
+        }
+        
+        return cartItemUseCase.findByCartId(cartEntity.get().getId());
     }
     
-    public List<CartItem> findCartItems(Long cartId) {
-        return cartItemRepository.findByCartId(cartId).stream()
-                .map(cartItemMapper::toDomain)
-                .toList();
+    // ========== HELPER METHODS ==========
+    
+    public Optional<CartEntity> findEntityByUserId(Long userId) {
+        return cartRepository.findByUserId(userId);
     }
 }

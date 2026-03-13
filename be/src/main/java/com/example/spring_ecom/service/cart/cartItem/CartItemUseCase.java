@@ -1,18 +1,59 @@
 package com.example.spring_ecom.service.cart.cartItem;
 
+import com.example.spring_ecom.core.exception.BaseException;
+import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.cart.CartItem;
+import com.example.spring_ecom.repository.database.cart.CartEntity;
+import com.example.spring_ecom.repository.database.cart.CartRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-public interface CartItemUseCase {
+@Service
+@RequiredArgsConstructor
+public class CartItemUseCase {
     
-    List<CartItem> getCartItems(Long cartId);
+    private final CartItemCommandService commandService;
+    private final CartItemQueryService queryService;
+    private final CartRepository cartRepository;
     
-    CartItem addItemToCart(Long userId, CartItem cartItemRequest);
+    // ========== COMMAND OPERATIONS ==========
     
-    CartItem updateCartItemQuantity(Long userId, Long productId, CartItem updateRequest);
+    public CartItem addItemToCart(Long userId, CartItem cartItemRequest) {
+        CartEntity cart = getOrCreateCart(userId);
+        return commandService.addItemToCart(cart, cartItemRequest);
+    }
     
-    void removeItemFromCart(Long userId, Long productId);
+    public CartItem updateCartItemQuantity(Long userId, Long productId, CartItem updateRequest) {
+        CartEntity cart = getCartByUserId(userId);
+        return commandService.updateCartItemQuantity(cart.getId(), productId, updateRequest);
+    }
     
-    void clearCartItems(Long userId);
+    public void removeItemFromCart(Long userId, Long productId) {
+        CartEntity cart = getCartByUserId(userId);
+        commandService.removeItemFromCart(cart.getId(), productId);
+    }
+    
+    public void clearCartItems(Long cartId) {
+        commandService.clearCartItems(cartId);
+    }
+    
+    // ========== QUERY OPERATIONS ==========
+    
+    public List<CartItem> findByCartId(Long cartId) {
+        return queryService.findByCartId(cartId);
+    }
+    
+    // ========== HELPER METHODS ==========
+    
+    private CartEntity getCartByUserId(Long userId) {
+        return cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Cart not found for user: " + userId));
+    }
+    
+    private CartEntity getOrCreateCart(Long userId) {
+        // This should create cart if not exists - implement based on your business logic
+        return getCartByUserId(userId);
+    }
 }

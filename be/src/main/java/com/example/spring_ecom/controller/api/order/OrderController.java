@@ -15,9 +15,10 @@ import com.example.spring_ecom.domain.cart.CartItem;
 import com.example.spring_ecom.domain.order.Order;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.service.cart.CartUseCase;
-import com.example.spring_ecom.service.order.detail.OrderDetailService;
+
+import com.example.spring_ecom.service.order.payment.PaymentQRService;
 import com.example.spring_ecom.service.order.OrderUseCase;
-import com.example.spring_ecom.service.payment.PaymentQRService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -34,7 +35,6 @@ public class OrderController implements OrderAPI {
     
     private final OrderUseCase orderUseCase;
     private final CartUseCase cartUseCase;
-    private final OrderDetailService orderDetailService;
     private final OrderResponseMapper responseMapper;
     private final PaymentQRService paymentQRService;
     
@@ -87,28 +87,27 @@ public class OrderController implements OrderAPI {
         );
         
         Order created = orderUseCase.createOrder(order);
-        return ApiResponse.Success.of(responseMapper.toResDto(created));
+        return ApiResponse.Success.of(responseMapper.toResponse(created));
     }
     
     @Override
     public ApiResponse<OrderResponse> getOrderById(Long id) {
         OrderResponse order = orderUseCase.findById(id)
-                .map(responseMapper::toResDto)
+                .map(responseMapper::toResponse)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
         return ApiResponse.Success.of(order);
     }
     
     @Override
     public ApiResponse<OrderDetailResponse> getOrderDetail(Long id) {
-        OrderDetailResponse detail = orderDetailService.getOrderDetail(id)
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
+        OrderDetailResponse detail = orderUseCase.getOrderDetail(id);
         return ApiResponse.Success.of(detail);
     }
     
     @Override
     public ApiResponse<OrderResponse> getOrderByNumber(String orderNumber) {
         OrderResponse order = orderUseCase.findByOrderNumber(orderNumber)
-                .map(responseMapper::toResDto)
+                .map(responseMapper::toResponse)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
         return ApiResponse.Success.of(order);
     }
@@ -117,7 +116,7 @@ public class OrderController implements OrderAPI {
     public ApiResponse<Page<OrderResponse>> getMyOrders(Pageable pageable) {
         Long userId = SecurityUtil.getCurrentUserId();
         Page<OrderResponse> orders = orderUseCase.findByUserId(userId, pageable)
-                .map(responseMapper::toResDto);
+                .map(responseMapper::toResponse);
         return ApiResponse.Success.of(orders);
     }
     
@@ -127,8 +126,7 @@ public class OrderController implements OrderAPI {
         Page<Order> orders = orderUseCase.findByUserId(userId, pageable);
         
         Page<OrderDetailResponse> ordersWithItems = orders.map(order -> 
-            orderDetailService.getOrderDetail(order.id())
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order detail not found"))
+            orderUseCase.getOrderDetail(order.id())
         );
         
         return ApiResponse.Success.of(ordersWithItems);
@@ -138,7 +136,7 @@ public class OrderController implements OrderAPI {
     public ApiResponse<Page<OrderResponse>> getMyOrdersByStatus(OrderStatus status, Pageable pageable) {
         Long userId = SecurityUtil.getCurrentUserId();
         Page<OrderResponse> orders = orderUseCase.findByUserIdAndStatus(userId, status, pageable)
-                .map(responseMapper::toResDto);
+                .map(responseMapper::toResponse);
         return ApiResponse.Success.of(orders);
     }
     
@@ -148,8 +146,7 @@ public class OrderController implements OrderAPI {
         Page<Order> orders = orderUseCase.findByUserIdAndStatus(userId, status, pageable);
         
         Page<OrderDetailResponse> ordersWithItems = orders.map(order -> 
-            orderDetailService.getOrderDetail(order.id())
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order detail not found"))
+            orderUseCase.getOrderDetail(order.id())
         );
         
         return ApiResponse.Success.of(ordersWithItems);
@@ -158,14 +155,14 @@ public class OrderController implements OrderAPI {
     @Override
     public ApiResponse<Page<OrderResponse>> getAllOrders(Pageable pageable) {
         Page<OrderResponse> orders = orderUseCase.findAll(pageable)
-                .map(responseMapper::toResDto);
+                .map(responseMapper::toResponse);
         return ApiResponse.Success.of(orders);
     }
     
     @Override
     public ApiResponse<OrderResponse> updateOrderStatus(Long id, UpdateOrderStatusRequest request) {
         Order order = orderUseCase.updateOrderStatus(id, request.status());
-        return ApiResponse.Success.of(responseMapper.toResDto(order));
+        return ApiResponse.Success.of(responseMapper.toResponse(order));
     }
     
     @Override
@@ -173,7 +170,6 @@ public class OrderController implements OrderAPI {
         Long currentUserId = SecurityUtil.getCurrentUserId();
         boolean isAdmin = SecurityUtil.hasRole("ADMIN");
         
-        // Nếu không phải admin, kiểm tra xem order có thuộc về user hiện tại không
         if (!isAdmin) {
             Order order = orderUseCase.findById(id)
                     .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
@@ -202,7 +198,7 @@ public class OrderController implements OrderAPI {
         }
         
         Order updatedOrder = orderUseCase.cancelPartialOrder(id, request.items());
-        return ApiResponse.Success.of(responseMapper.toResDto(updatedOrder));
+        return ApiResponse.Success.of(responseMapper.toResponse(updatedOrder));
     }
     
     // Payment related endpoints

@@ -1,4 +1,4 @@
-package com.example.spring_ecom.service.payment;
+package com.example.spring_ecom.service.order.payment;
 
 import com.example.spring_ecom.controller.api.payment.model.PaymentInfoResponse;
 import com.example.spring_ecom.core.exception.BaseException;
