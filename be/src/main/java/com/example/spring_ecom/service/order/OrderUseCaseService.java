@@ -1,8 +1,9 @@
 package com.example.spring_ecom.service.order;
 
+import com.example.spring_ecom.controller.api.order.dao.OrderStatisticsDto;
 import com.example.spring_ecom.controller.api.order.model.OrderDetailResponse;
+import com.example.spring_ecom.controller.api.order.model.PartialCancelRequest.PartialCancelItem;
 import com.example.spring_ecom.domain.order.Order;
-import com.example.spring_ecom.domain.order.OrderStatistics;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentStatus;
 import com.example.spring_ecom.service.order.detail.OrderDetailService;
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -90,7 +92,14 @@ public class OrderUseCaseService implements OrderUseCase {
     
     @Override
     @Transactional(readOnly = true)
-    public OrderStatistics getOrderStatistics() {
+    public OrderStatisticsDto getOrderStatistics() {
         return orderStatisticsService.getStatistics();
+    }
+    
+    @Override
+    @Transactional
+    public Order cancelPartialOrder(Long orderId, List<PartialCancelItem> cancelItems) {
+        return commandService.cancelPartial(orderId, cancelItems)
+                .orElseThrow(() -> new RuntimeException("Failed to cancel partial order"));
     }
 }

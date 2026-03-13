@@ -10,8 +10,15 @@ public record OrderItemResponse(
     String productTitle,
     String productImage,
     Integer quantity,
+    Integer cancelledQuantity,
     BigDecimal price,
     BigDecimal subtotal,
-    LocalDateTime createdAt
+    String status,
+    LocalDateTime createdAt,
+    LocalDateTime cancelledAt
 ) {
+    public Integer getAvailableQuantity() {
+        int cancelled = cancelledQuantity != null ? cancelledQuantity : 0;
+        return quantity - cancelled;
+    }
 }

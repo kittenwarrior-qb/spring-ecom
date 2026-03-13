@@ -1,5 +1,6 @@
 package com.example.spring_ecom.service.order;
 
+import com.example.spring_ecom.controller.api.order.model.PartialCancelRequest.PartialCancelItem;
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.cart.CartItem;
@@ -50,10 +51,13 @@ public class OrderCommandService {
         entity.setOrderNumber(generateOrderNumber());
         mapper.setInitialPaymentStatus(entity, order.paymentMethod());
         
-        createOrderItems(entity, cartItems);
+        // Save order first to get ID
+        OrderEntity saved = orderRepository.save(entity);
+        
+        // Then create order items with the saved order ID
+        createOrderItems(saved, cartItems);
         cartUseCase.clearCart(order.userId());
         
-        OrderEntity saved = orderRepository.save(entity);
         return Optional.of(mapper.toDomain(saved));
     }
     
@@ -75,6 +79,64 @@ public class OrderCommandService {
         mapper.cancelOrder(entity);
         restoreStock(entity);
         orderRepository.save(entity);
+    }
+    
+    public Optional<Order> cancelPartial(Long orderId, List<PartialCancelItem> cancelItems) {
+        OrderEntity entity = findOrderById(orderId);
+        validatePartialCancellation(entity);
+        
+        List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(orderId);
+        Map<Long, OrderItemEntity> itemMap = orderItems.stream()
+                .collect(Collectors.toMap(OrderItemEntity::getId, Function.identity()));
+        
+        for (PartialCancelItem cancelItem : cancelItems) {
+            OrderItemEntity orderItem = itemMap.get(cancelItem.orderItemId());
+            if (orderItem == null) {
+                throw new BaseException(ResponseCode.BAD_REQUEST, 
+                        "Order item not found: " + cancelItem.orderItemId());
+            }
+            
+            processCancelItem(orderItem, cancelItem.quantityToCancel());
+        }
+        orderItemRepository.saveAll(orderItems);
+        recalculateOrderTotals(entity, orderItems);
+        updateOrderStatusAfterPartialCancel(entity, orderItems);
+        
+        OrderEntity updated = orderRepository.save(entity);
+        return Optional.of(mapper.toDomain(updated));
+    }
+    
+    private void processCancelItem(OrderItemEntity orderItem, Integer quantityToCancel) {
+        int availableQuantity = orderItem.getQuantity() - orderItem.getCancelledQuantity();
+        
+        if (quantityToCancel <= 0) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, 
+                    "Quantity to cancel must be greater than 0");
+        }
+        
+        if (quantityToCancel > availableQuantity) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, 
+                    "Cannot cancel more than available quantity. Available: " + availableQuantity);
+        }
+        
+        orderItem.setCancelledQuantity(orderItem.getCancelledQuantity() + quantityToCancel);
+        
+        if (orderItem.getCancelledQuantity().equals(orderItem.getQuantity())) {
+            orderItem.setStatus(com.example.spring_ecom.domain.order.OrderItemStatus.CANCELLED);
+            orderItem.setCancelledAt(LocalDateTime.now());
+        }
+        
+        restoreStockForQuantity(orderItem.getProductId(), quantityToCancel);
+    }
+    
+    private void restoreStockForQuantity(Long productId, Integer quantity) {
+        ProductEntity product = productRepository.findById(productId)
+                .orElse(null);
+        
+        if (product != null) {
+            product.setStockQuantity(product.getStockQuantity() + quantity);
+            productRepository.save(product);
+        }
     }
     
     public Optional<Order> updatePaymentStatus(Long id, PaymentStatus paymentStatus) {
@@ -158,8 +220,8 @@ public class OrderCommandService {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Cannot update cancelled order");
         }
         
-        if (entity.getStatus() == OrderStatus.DELIVERED && newStatus != OrderStatus.REFUNDED) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Delivered order can only be refunded");
+        if (entity.getStatus() == OrderStatus.DELIVERED && newStatus != OrderStatus.CANCELLED) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, "Delivered order can only be cancelled for return");
         }
     }
     
@@ -173,13 +235,84 @@ public class OrderCommandService {
         }
     }
     
+    private void validatePartialCancellation(OrderEntity entity) {
+        if (entity.getStatus() == OrderStatus.CANCELLED) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, "Order already cancelled");
+        }
+        
+        if (entity.getStatus() == OrderStatus.DELIVERED) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, "Cannot cancel items from delivered order");
+        }
+        
+        if (entity.getStatus() == OrderStatus.SHIPPED) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, "Cannot cancel items from shipped order");
+        }
+        
+        // PARTIALLY_CANCELLED is allowed - users can continue cancelling remaining items
+    }
+    
+    private void cancelOrderItems(List<OrderItemEntity> itemsToCancel) {
+        LocalDateTime now = LocalDateTime.now();
+        
+        for (OrderItemEntity item : itemsToCancel) {
+            if (item.getStatus() == com.example.spring_ecom.domain.order.OrderItemStatus.CANCELLED) {
+                continue; // Skip already cancelled items
+            }
+            
+            item.setStatus(com.example.spring_ecom.domain.order.OrderItemStatus.CANCELLED);
+            item.setCancelledAt(now);
+            item.setCancelledQuantity(item.getQuantity()); // Cancel all quantity
+            
+            // Restore stock for cancelled item
+            restoreStockForItem(item);
+        }
+        
+        orderItemRepository.saveAll(itemsToCancel);
+    }
+    
+    private void restoreStockForItem(OrderItemEntity item) {
+        // Only restore quantity that wasn't already cancelled
+        int quantityToRestore = item.getQuantity() - item.getCancelledQuantity();
+        if (quantityToRestore > 0) {
+            restoreStockForQuantity(item.getProductId(), quantityToRestore);
+        }
+    }
+    
+    private void recalculateOrderTotals(OrderEntity order, List<OrderItemEntity> allItems) {
+        BigDecimal newSubtotal = allItems.stream()
+                .map(item -> {
+                    int activeQuantity = item.getQuantity() - item.getCancelledQuantity();
+                    return item.getPrice().multiply(BigDecimal.valueOf(activeQuantity));
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        order.setSubtotal(newSubtotal);
+        order.setTotal(newSubtotal.add(order.getShippingFee()).subtract(order.getDiscount()));
+    }
+    
+    private void updateOrderStatusAfterPartialCancel(OrderEntity order, List<OrderItemEntity> allItems) {
+        boolean hasActiveItems = allItems.stream()
+                .anyMatch(item -> item.getQuantity() > item.getCancelledQuantity());
+        
+        boolean hasCancelledItems = allItems.stream()
+                .anyMatch(item -> item.getCancelledQuantity() > 0);
+        
+        if (!hasActiveItems) {
+            // All items cancelled - cancel entire order
+            mapper.cancelOrder(order);
+        } else if (hasCancelledItems) {
+            // Some items cancelled - mark as partially cancelled
+            mapper.updateOrderStatus(order, OrderStatus.PARTIALLY_CANCELLED);
+        }
+    }
+    
     private void validatePaymentStatusTransition(OrderEntity entity, PaymentStatus newPaymentStatus) {
         if (entity.getStatus() == OrderStatus.CANCELLED) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Cannot update payment status for cancelled order");
         }
         
         if (entity.getPaymentStatus() == PaymentStatus.PAID && newPaymentStatus != PaymentStatus.REFUNDED) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Paid order can only be refunded");
+            throw new BaseException(ResponseCode.BAD_REQUEST, "Paid order payment can only be refunded");
         }
         
         if (entity.getPaymentStatus() == PaymentStatus.REFUNDED) {
@@ -235,7 +368,11 @@ public class OrderCommandService {
         List<ProductEntity> productsToUpdate = orderItems.stream()
                 .map(item -> {
                     ProductEntity product = productMap.get(item.getProductId());
-                    return Objects.nonNull(product) ? productUpdater.apply(product, item.getQuantity()) : null;
+                    // Only restore/update quantity that wasn't already cancelled
+                    int activeQuantity = item.getQuantity() - item.getCancelledQuantity();
+                    return Objects.nonNull(product) && activeQuantity > 0 
+                        ? productUpdater.apply(product, activeQuantity) 
+                        : null;
                 })
                 .filter(Objects::nonNull)
                 .toList();

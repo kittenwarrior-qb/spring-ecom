@@ -1,13 +1,15 @@
 package com.example.spring_ecom.service.order;
 
+import com.example.spring_ecom.controller.api.order.dao.OrderStatisticsDto;
 import com.example.spring_ecom.controller.api.order.model.OrderDetailResponse;
+import com.example.spring_ecom.controller.api.order.model.PartialCancelRequest.PartialCancelItem;
 import com.example.spring_ecom.domain.order.Order;
-import com.example.spring_ecom.domain.order.OrderStatistics;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface OrderUseCase {
@@ -32,5 +34,7 @@ public interface OrderUseCase {
     
     OrderDetailResponse getOrderDetail(Long orderId);
     
-    OrderStatistics getOrderStatistics();
+    OrderStatisticsDto getOrderStatistics();
+    
+    Order cancelPartialOrder(Long orderId, List<PartialCancelItem> cancelItems);
 }

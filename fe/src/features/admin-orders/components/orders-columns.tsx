@@ -76,6 +76,7 @@ export const ordersColumns: ColumnDef<OrderResponse>[] = [
                 </div>
             )
         },
+        enableSorting: true,
     },
     {
         id: 'actions',

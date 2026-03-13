@@ -10,8 +10,11 @@ public record OrderItemWithProductDao(
     String productTitle,
     String productCoverImageUrl,
     Integer quantity,
+    Integer cancelledQuantity,
     BigDecimal price,
     BigDecimal subtotal,
-    LocalDateTime createdAt
+    String status,
+    LocalDateTime createdAt,
+    LocalDateTime cancelledAt
 ) {
 }

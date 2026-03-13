@@ -35,7 +35,9 @@ interface OrdersTableProps {
 export function OrdersTable({ search, navigate }: OrdersTableProps) {
     const [rowSelection, setRowSelection] = useState({})
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-    const [sorting, setSorting] = useState<SortingState>([])
+    const [sorting, setSorting] = useState<SortingState>([
+        { id: 'createdAt', desc: true } // Default sort by newest orders first
+    ])
 
     const {
         columnFilters,

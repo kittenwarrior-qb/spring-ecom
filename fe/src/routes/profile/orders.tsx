@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Search, Eye, Truck, X } from 'lucide-react'
+import { Search, Eye, Truck, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,18 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { useMyOrdersByStatus, useCancelOrder } from '@/hooks/use-order'
+import { OrderItemWithCancel } from '@/components/order-item-with-cancel'
+import { useMyOrdersByStatus, useCancelOrder, usePartialCancelOrder } from '@/hooks/use-order'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import type { OrderStatus } from '@/types/api'
+import type { OrderStatus, OrderDetailResponse } from '@/types/api'
 
 export const Route = createFileRoute('/profile/orders')({
   component: OrdersPage,
@@ -49,8 +42,10 @@ const statusLabels: Record<string, string> = {
 function OrdersPage() {
   const [status, setStatus] = useState<OrderStatus | undefined>(undefined)
   const [searchQuery, setSearchQuery] = useState('')
+  const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set())
   const { data: ordersData, isLoading } = useMyOrdersByStatus(status)
   const cancelOrder = useCancelOrder()
+  const partialCancelOrder = usePartialCancelOrder()
 
   const orders = ordersData?.content || []
 
@@ -58,8 +53,18 @@ function OrdersPage() {
     order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const toggleOrderExpansion = (orderId: number) => {
+    const newExpanded = new Set(expandedOrders)
+    if (newExpanded.has(orderId)) {
+      newExpanded.delete(orderId)
+    } else {
+      newExpanded.add(orderId)
+    }
+    setExpandedOrders(newExpanded)
+  }
+
   const handleCancelOrder = (orderId: number) => {
-    if (confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
+    if (confirm('Bạn có chắc muốn hủy toàn bộ đơn hàng này?')) {
       cancelOrder.mutate(orderId, {
         onSuccess: () => {
           toast.success('Đã hủy đơn hàng thành công')
@@ -69,6 +74,29 @@ function OrdersPage() {
         }
       })
     }
+  }
+
+  const handlePartialCancel = (orderId: number, itemId: number, quantity: number) => {
+    const request = {
+      items: [{ orderItemId: itemId, quantityToCancel: quantity }]
+    }
+    
+    partialCancelOrder.mutate({ id: orderId, request }, {
+      onSuccess: () => {
+        toast.success(`Đã hủy ${quantity} sản phẩm thành công`)
+      },
+      onError: () => {
+        toast.error('Không thể hủy sản phẩm')
+      }
+    })
+  }
+
+  const canCancelOrder = (order: OrderDetailResponse) => {
+    return ['PENDING', 'CONFIRMED', 'PARTIALLY_CANCELLED'].includes(order.status)
+  }
+
+  const canPartialCancel = (order: OrderDetailResponse) => {
+    return ['PENDING', 'CONFIRMED', 'PARTIALLY_CANCELLED'].includes(order.status)
   }
 
   return (
@@ -110,123 +138,105 @@ function OrdersPage() {
         </CardContent>
       </Card>
 
-      {/* Orders Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lịch sử đơn hàng</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Đang tải...</div>
-          ) : filteredOrders.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Đơn hàng</TableHead>
-                    <TableHead>Sản phẩm</TableHead>
-                    <TableHead>Ngày đặt</TableHead>
-                    <TableHead>Tổng</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead className="text-right">Thao tác</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">
-                        <div>
-                          <div className="font-semibold">{order.orderNumber}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {order.userEmail}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
-                          {order.items && order.items.length > 0 ? (
-                            order.items.slice(0, 2).map((item, index) => (
-                              <div key={index} className="flex items-center gap-3">
-                                {item.productImage ? (
-                                  <img 
-                                    src={item.productImage} 
-                                    alt={item.productTitle}
-                                    className="w-12 h-12 object-cover rounded-md border"
-                                    onError={(e) => {
-                                      e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNCAzNkMzMC42Mjc0IDM2IDM2IDMwLjYyNzQgMzYgMjRDMzYgMTcuMzcyNiAzMC42Mjc0IDEyIDI0IDEyQzE3LjM3MjYgMTIgMTIgMTcuMzcyNiAxMiAyNEMxMiAzMC42Mjc0IDE3LjM3MjYgMzYgMjQgMzZaIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxwYXRoIGQ9Ik0yNCAyOEMyNi4yMDkxIDI4IDI4IDI2LjIwOTEgMjggMjRDMjggMjEuNzkwOSAyNi4yMDkxIDIwIDI0IDIwQzIxLjc5MDkgMjAgMjAgMjEuNzkwOSAyMCAyNEMyMCAyNi4yMDkxIDIxLjc5MDkgMjggMjQgMjhaIiBzdHJva2U9IiM5Q0EzQUYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo='
-                                    }}
-                                  />
-                                ) : (
-                                  <div className="w-12 h-12 bg-gray-100 rounded-md border flex items-center justify-center">
-                                    <span className="text-gray-400 text-xs">IMG</span>
-                                  </div>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-sm truncate">
-                                    {item.productTitle}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    SL: {item.quantity} × {item.price.toLocaleString('vi-VN')}đ
-                                  </div>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="text-sm text-muted-foreground">
-                              Không có sản phẩm
-                            </div>
-                          )}
-                          {order.items && order.items.length > 2 && (
-                            <div className="text-xs text-muted-foreground">
-                              +{order.items.length - 2} sản phẩm khác
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(order.createdAt).toLocaleDateString('vi-VN')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-semibold">
-                          {order.total.toLocaleString('vi-VN')}đ
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={statusColors[order.status]}>
-                          {statusLabels[order.status] || order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" title="Xem chi tiết">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {(order.status === 'PENDING' || order.status === 'CONFIRMED') && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              title="Hủy đơn hàng"
-                              onClick={() => handleCancelOrder(order.id)}
-                              disabled={cancelOrder.isPending}
-                            >
-                              <X className="h-4 w-4 text-red-500" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
+      {/* Orders List */}
+      <div className="space-y-4">
+        {isLoading ? (
+          <div className="text-center py-8">Đang tải...</div>
+        ) : filteredOrders.length > 0 ? (
+          filteredOrders.map((order) => (
+            <Card key={order.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-4">
+                      <h3 className="font-semibold">{order.orderNumber}</h3>
+                      <Badge className={statusColors[order.status]}>
+                        {statusLabels[order.status] || order.status}
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Đặt ngày: {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                    </div>
+                    <div className="font-semibold text-primary">
+                      Tổng: {order.total.toLocaleString('vi-VN')}đ
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {canCancelOrder(order) && (
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleCancelOrder(order.id)}
+                        disabled={cancelOrder.isPending}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Hủy đơn hàng
+                      </Button>
+                    )}
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => toggleOrderExpansion(order.id)}
+                    >
+                      {expandedOrders.has(order.id) ? (
+                        <>
+                          <ChevronUp className="h-4 w-4 mr-1" />
+                          Thu gọn
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4 mr-1" />
+                          Xem chi tiết
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              {expandedOrders.has(order.id) && (
+                <CardContent className="pt-0">
+                  <div className="space-y-3">
+                    <div className="text-sm">
+                      <p><strong>Người nhận:</strong> {order.recipientName}</p>
+                      <p><strong>Điện thoại:</strong> {order.recipientPhone}</p>
+                      <p><strong>Địa chỉ:</strong> {order.shippingAddress}, {order.shippingWard}, {order.shippingDistrict}, {order.shippingCity}</p>
+                      {order.note && <p><strong>Ghi chú:</strong> {order.note}</p>}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Sản phẩm:</h4>
+                      {order.items && order.items.length > 0 ? (
+                        order.items.map((item) => (
+                          <OrderItemWithCancel
+                            key={item.id}
+                            item={item}
+                            canCancel={canPartialCancel(order)}
+                            onCancelQuantity={(itemId, quantity) => 
+                              handlePartialCancel(order.id, itemId, quantity)
+                            }
+                          />
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground">Không có sản phẩm</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          ))
+        ) : (
+          <Card>
+            <CardContent className="text-center py-8">
               <Truck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Không tìm thấy đơn hàng nào</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              <p className="text-muted-foreground">Không tìm thấy đơn hàng nào</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }

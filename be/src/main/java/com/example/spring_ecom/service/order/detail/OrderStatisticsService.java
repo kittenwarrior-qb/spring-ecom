@@ -1,6 +1,6 @@
 package com.example.spring_ecom.service.order.detail;
 
-import com.example.spring_ecom.domain.order.OrderStatistics;
+import com.example.spring_ecom.controller.api.order.dao.OrderStatisticsDto;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
@@ -19,15 +19,16 @@ public class OrderStatisticsService {
     
     private final OrderRepository orderRepository;
     
-    public OrderStatistics getStatistics() {
+    public OrderStatisticsDto getStatistics() {
         List<OrderEntity> allOrders = orderRepository.findAll();
         
         long totalOrders = allOrders.size();
         long pendingOrders = countByStatus(allOrders, OrderStatus.PENDING);
-        long processingOrders = countByStatus(allOrders, OrderStatus.PROCESSING);
+        long confirmedOrders = countByStatus(allOrders, OrderStatus.CONFIRMED);
         long shippedOrders = countByStatus(allOrders, OrderStatus.SHIPPED);
         long deliveredOrders = countByStatus(allOrders, OrderStatus.DELIVERED);
         long cancelledOrders = countByStatus(allOrders, OrderStatus.CANCELLED);
+        long partiallyCancelledOrders = countByStatus(allOrders, OrderStatus.PARTIALLY_CANCELLED);
         
         BigDecimal totalRevenue = allOrders.stream()
                 .filter(o -> o.getStatus() == OrderStatus.DELIVERED)
@@ -43,13 +44,14 @@ public class OrderStatisticsService {
                 .map(OrderEntity::getTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        return new OrderStatistics(
+        return new OrderStatisticsDto(
                 totalOrders,
                 pendingOrders,
-                processingOrders,
+                confirmedOrders,
                 shippedOrders,
                 deliveredOrders,
                 cancelledOrders,
+                partiallyCancelledOrders,
                 totalRevenue,
                 todayRevenue
         );

@@ -33,6 +33,10 @@ public class OrderItemEntity extends BaseAuditEntity {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
     
+    @Column(name = "cancelled_quantity", nullable = false)
+    @Builder.Default
+    private Integer cancelledQuantity = 0;
+    
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
     

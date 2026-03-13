@@ -41,7 +41,7 @@ public class OrderQueryService {
     }
     
     public Page<Order> findAll(Pageable pageable) {
-        return orderRepository.findAll(pageable)
+        return orderRepository.findOrdersWithFilters(null, null, pageable)
                 .map(mapper::toDomain);
     }
 }

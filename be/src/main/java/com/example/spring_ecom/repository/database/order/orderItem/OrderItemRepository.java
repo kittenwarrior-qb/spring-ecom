@@ -24,8 +24,8 @@ public interface OrderItemRepository extends JpaRepository<OrderItemEntity, Long
         SELECT new com.example.spring_ecom.service.order.dao.OrderItemWithProductDao(
                oi.id, oi.orderId, oi.productId,
                oi.productTitle, p.coverImageUrl,
-               oi.quantity, oi.price, oi.subtotal,
-               oi.createdAt)
+               oi.quantity, oi.cancelledQuantity, oi.price, oi.subtotal,
+               CAST(oi.status AS string), oi.createdAt, oi.cancelledAt)
         FROM OrderItemEntity oi 
         JOIN ProductEntity p ON oi.productId = p.id 
         WHERE oi.orderId = :orderId

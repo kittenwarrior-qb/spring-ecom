@@ -1,0 +1,111 @@
+spring:
+  application:
+    name: spring-ecom
+  
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/spring_ecom_db
+    username: postgres
+    password: quocbui26042005
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+  
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  # Flyway Configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  
+  # Redis Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ""
+      database: 0
+      timeout: 2000ms
+      jedis:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+  
+  # File Upload Configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# Server Configuration
+server:
+  port: 8080
+
+# Logging Configuration
+logging:
+  level:
+    com.example.spring_ecom: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.flywaydb: DEBUG
+
+# JWT Configuration
+jwt:
+  secret: your-secret-key-change-this-in-production-minimum-256-bits-for-security
+  expiration: 86400000
+
+# Swagger/OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
+  show-actuator: false
+
+# Payment Webhook Configuration
+payment:
+  webhook:
+    api-key: my-secret-webhook-key-12345
+
+# SePay Configuration
+sepay:
+  bank:
+    name: BIDV
+    code: 970418
+  account:
+    number: 8858115694
+    name: BUI DINH QUOC
+  payment:
+    timeout: 900
+
+# Cloudinary Configuration
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:djuksxdrw}
+  api-key: ${CLOUDINARY_API_KEY:271299717346829}
+  api-secret: ${CLOUDINARY_API_SECRET:oJNM_-SNialD09nh-RwOhm9h9kU}
+
+# Email Configuration with Resend
+app:
+  resend:
+    api-key: ${RESEND_API_KEY:re_XX62ddhn_4fuR6C9rUrRAmUMBPzdQSaha}
+    from-email: ${RESEND_FROM_EMAIL:noreply@wishzy.io.vn}
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}

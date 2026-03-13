@@ -3,6 +3,7 @@ package com.example.spring_ecom.controller.api.order;
 import com.example.spring_ecom.controller.api.order.model.CreateOrderRequest;
 import com.example.spring_ecom.controller.api.order.model.OrderDetailResponse;
 import com.example.spring_ecom.controller.api.order.model.OrderResponse;
+import com.example.spring_ecom.controller.api.order.model.PartialCancelRequest;
 import com.example.spring_ecom.controller.api.order.model.UpdateOrderStatusRequest;
 import com.example.spring_ecom.controller.api.payment.model.PaymentInfoResponse;
 import com.example.spring_ecom.core.response.ApiResponse;
@@ -43,9 +44,19 @@ public interface OrderAPI {
     @GetMapping("/my-orders")
     ApiResponse<Page<OrderResponse>> getMyOrders(@Parameter(hidden = true) Pageable pageable);
     
+    @Operation(summary = "Get current user orders with items")
+    @GetMapping("/my-orders-with-items")
+    ApiResponse<Page<OrderDetailResponse>> getMyOrdersWithItems(@Parameter(hidden = true) Pageable pageable);
+    
     @Operation(summary = "Get current user orders by status")
     @GetMapping("/my-orders/status/{status}")
     ApiResponse<Page<OrderResponse>> getMyOrdersByStatus(
+            @PathVariable OrderStatus status,
+            @Parameter(hidden = true) Pageable pageable);
+    
+    @Operation(summary = "Get current user orders by status with items")
+    @GetMapping("/my-orders-with-items/status/{status}")
+    ApiResponse<Page<OrderDetailResponse>> getMyOrdersByStatusWithItems(
             @PathVariable OrderStatus status,
             @Parameter(hidden = true) Pageable pageable);
     
@@ -62,6 +73,12 @@ public interface OrderAPI {
     @Operation(summary = "Cancel order")
     @PostMapping("/{id}/cancel")
     ApiResponse<Void> cancelOrder(@PathVariable Long id);
+    
+    @Operation(summary = "Partial cancel order items")
+    @PostMapping("/{id}/partial-cancel")
+    ApiResponse<OrderResponse> partialCancelOrder(
+            @PathVariable Long id,
+            @Valid @RequestBody PartialCancelRequest request);
     
     @Operation(summary = "Create payment info for order")
     @PostMapping("/{orderNumber}/create-payment")

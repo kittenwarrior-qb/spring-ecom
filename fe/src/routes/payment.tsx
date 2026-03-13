@@ -127,6 +127,12 @@ function PaymentPage() {
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
+      recipientName: '',
+      recipientPhone: '',
+      shippingAddress: '',
+      shippingWard: '',
+      shippingDistrict: '',
+      shippingCity: '',
       paymentMethod: 'COD',
       note: '',
     },
@@ -202,29 +208,41 @@ function PaymentPage() {
             form.setValue(key as keyof PaymentFormData, parsedData[key])
           }
         })
-      } catch (error) {
-        
-      }
+      } catch (error) { /* empty */ }
     }
   }, [])
 
   // Redirect if cart is empty
+  React.useEffect(() => {
+    if (!cartLoading && (!cartItems || cartItems.length === 0)) {
+      navigate({ to: '/cart' })
+    }
+  }, [cartLoading, cartItems, navigate])
+
+  // Don't render if cart is empty
   if (!cartLoading && (!cartItems || cartItems.length === 0)) {
-    navigate({ to: '/cart' })
     return null
   }
 
   const onSubmit = async (data: PaymentFormData) => {
     try {
+      console.log('Submitting order:', data)
       const order = await createOrder.mutateAsync(data)
+      console.log('Order created successfully:', order)
       // Clear saved form data after successful order
       localStorage.removeItem('payment-form-data')
       toast.success('Đặt hàng thành công!')
-      navigate({ 
-        to: '/payment-success',
-        search: { orderNumber: order.orderNumber }
-      })
+      console.log('Navigating to payment-success with orderNumber:', order.orderNumber)
+      
+      // Use setTimeout to avoid setState during render
+      setTimeout(() => {
+        navigate({ 
+          to: '/payment-success',
+          search: { orderNumber: order.orderNumber }
+        })
+      }, 0)
     } catch (error) {
+      console.error('Order creation failed:', error)
       toast.error('Có lỗi xảy ra khi đặt hàng')
     }
   }

@@ -284,9 +284,12 @@ export interface OrderItemResponse {
   productTitle: string
   productImage: string | null
   quantity: number
+  cancelledQuantity: number
   price: number
   subtotal: number
+  status: string
   createdAt: string
+  cancelledAt: string | null
 }
 
 export interface OrderDetailResponse extends OrderResponse {

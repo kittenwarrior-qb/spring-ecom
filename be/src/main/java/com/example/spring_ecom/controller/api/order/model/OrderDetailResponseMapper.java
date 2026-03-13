@@ -18,6 +18,7 @@ public interface OrderDetailResponseMapper {
     
     OrderItemWithProductDto toDto(OrderItemWithProductDao dao);
     
+    @Mapping(source = "productCoverImageUrl", target = "productImage")
     OrderItemResponse toResponse(OrderItemWithProductDto dto);
     
     List<OrderItemWithProductDto> toDtoList(List<OrderItemWithProductDao> daoList);

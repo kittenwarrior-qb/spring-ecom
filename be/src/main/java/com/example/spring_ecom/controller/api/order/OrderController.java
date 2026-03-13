@@ -4,6 +4,7 @@ import com.example.spring_ecom.controller.api.order.model.CreateOrderRequest;
 import com.example.spring_ecom.controller.api.order.model.OrderDetailResponse;
 import com.example.spring_ecom.controller.api.order.model.OrderResponse;
 import com.example.spring_ecom.controller.api.order.model.OrderResponseMapper;
+import com.example.spring_ecom.controller.api.order.model.PartialCancelRequest;
 import com.example.spring_ecom.controller.api.order.model.UpdateOrderStatusRequest;
 import com.example.spring_ecom.controller.api.payment.model.PaymentInfoResponse;
 import com.example.spring_ecom.core.exception.BaseException;
@@ -121,11 +122,37 @@ public class OrderController implements OrderAPI {
     }
     
     @Override
+    public ApiResponse<Page<OrderDetailResponse>> getMyOrdersWithItems(Pageable pageable) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Page<Order> orders = orderUseCase.findByUserId(userId, pageable);
+        
+        Page<OrderDetailResponse> ordersWithItems = orders.map(order -> 
+            orderDetailService.getOrderDetail(order.id())
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order detail not found"))
+        );
+        
+        return ApiResponse.Success.of(ordersWithItems);
+    }
+    
+    @Override
     public ApiResponse<Page<OrderResponse>> getMyOrdersByStatus(OrderStatus status, Pageable pageable) {
         Long userId = SecurityUtil.getCurrentUserId();
         Page<OrderResponse> orders = orderUseCase.findByUserIdAndStatus(userId, status, pageable)
                 .map(responseMapper::toResDto);
         return ApiResponse.Success.of(orders);
+    }
+    
+    @Override
+    public ApiResponse<Page<OrderDetailResponse>> getMyOrdersByStatusWithItems(OrderStatus status, Pageable pageable) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Page<Order> orders = orderUseCase.findByUserIdAndStatus(userId, status, pageable);
+        
+        Page<OrderDetailResponse> ordersWithItems = orders.map(order -> 
+            orderDetailService.getOrderDetail(order.id())
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order detail not found"))
+        );
+        
+        return ApiResponse.Success.of(ordersWithItems);
     }
     
     @Override
@@ -158,6 +185,24 @@ public class OrderController implements OrderAPI {
         
         orderUseCase.cancelOrder(id);
         return ApiResponse.Success.of(ResponseCode.ORDER_CANCELLED);
+    }
+    
+    @Override
+    public ApiResponse<OrderResponse> partialCancelOrder(Long id, PartialCancelRequest request) {
+        Long currentUserId = SecurityUtil.getCurrentUserId();
+        boolean isAdmin = SecurityUtil.hasRole("ADMIN");
+        
+        if (!isAdmin) {
+            Order order = orderUseCase.findById(id)
+                    .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Order not found"));
+            
+            if (!order.userId().equals(currentUserId)) {
+                throw new BaseException(ResponseCode.FORBIDDEN, "You can only cancel your own orders");
+            }
+        }
+        
+        Order updatedOrder = orderUseCase.cancelPartialOrder(id, request.items());
+        return ApiResponse.Success.of(responseMapper.toResDto(updatedOrder));
     }
     
     // Payment related endpoints

@@ -14,6 +14,15 @@ export interface CreateOrderRequest {
   note?: string
 }
 
+export interface PartialCancelRequest {
+  items: PartialCancelItem[]
+}
+
+export interface PartialCancelItem {
+  orderItemId: number
+  quantityToCancel: number
+}
+
 export const orderApi = {
   // Create order from cart
   createOrder: async (request: CreateOrderRequest): Promise<OrderResponse> => {
@@ -29,10 +38,27 @@ export const orderApi = {
     return response.data.data
   },
 
+  // Get my orders with items
+  getMyOrdersWithItems: async (page = 0, size = 10): Promise<PageResponse<OrderDetailResponse>> => {
+    const response = await apiClient.get<ApiResponse<PageResponse<OrderDetailResponse>>>(`${ORDER_BASE_URL}/my-orders-with-items`, {
+      params: { page, size }
+    })
+    return response.data.data
+  },
+
   // Get my orders by status
   getMyOrdersByStatus: async (status: OrderStatus, page = 0, size = 10): Promise<PageResponse<OrderResponse>> => {
     const response = await apiClient.get<ApiResponse<PageResponse<OrderResponse>>>(
       `${ORDER_BASE_URL}/my-orders/status/${status}`,
+      { params: { page, size } }
+    )
+    return response.data.data
+  },
+
+  // Get my orders by status with items
+  getMyOrdersByStatusWithItems: async (status: OrderStatus, page = 0, size = 10): Promise<PageResponse<OrderDetailResponse>> => {
+    const response = await apiClient.get<ApiResponse<PageResponse<OrderDetailResponse>>>(
+      `${ORDER_BASE_URL}/my-orders-with-items/status/${status}`,
       { params: { page, size } }
     )
     return response.data.data
@@ -59,6 +85,12 @@ export const orderApi = {
   // Cancel order
   cancelOrder: async (id: number): Promise<void> => {
     await apiClient.post<ApiResponse<void>>(`${ORDER_BASE_URL}/${id}/cancel`)
+  },
+
+  // Partial cancel order
+  partialCancelOrder: async (id: number, request: PartialCancelRequest): Promise<OrderResponse> => {
+    const response = await apiClient.post<ApiResponse<OrderResponse>>(`${ORDER_BASE_URL}/${id}/partial-cancel`, request)
+    return response.data.data
   },
 
   // Admin: Get all orders

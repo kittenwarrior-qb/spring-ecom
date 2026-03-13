@@ -36,7 +36,7 @@ export function useMyOrders(page = 0, size = 10) {
 export function useMyOrdersByStatus(status: OrderStatus | undefined, page = 0, size = 10) {
   return useQuery({
     queryKey: orderKeys.myOrdersByStatus(status, page, size),
-    queryFn: () => status ? orderApi.getMyOrdersByStatus(status, page, size) : orderApi.getMyOrders(page, size),
+    queryFn: () => status ? orderApi.getMyOrdersByStatusWithItems(status, page, size) : orderApi.getMyOrdersWithItems(page, size),
     enabled: true,
   })
 }
@@ -65,6 +65,19 @@ export function useCancelOrder() {
   
   return useMutation({
     mutationFn: (id: number) => orderApi.cancelOrder(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.all })
+    },
+  })
+}
+
+// Partial cancel order
+export function usePartialCancelOrder() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ id, request }: { id: number; request: orderApi.PartialCancelRequest }) => 
+      orderApi.partialCancelOrder(id, request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: orderKeys.all })
     },
