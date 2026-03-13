@@ -1,9 +1,13 @@
-package com.example.spring_ecom.domain.order;
+package com.example.spring_ecom.repository.database.order.dao;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record OrderWithUserDto(
+import com.example.spring_ecom.domain.order.OrderStatus;
+import com.example.spring_ecom.domain.order.PaymentMethod;
+import com.example.spring_ecom.domain.order.PaymentStatus;
+
+public record OrderWithUserDao(
     Long id,
     String orderNumber,
     Long userId,

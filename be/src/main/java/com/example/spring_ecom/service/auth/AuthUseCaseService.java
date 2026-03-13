@@ -1,6 +1,6 @@
 package com.example.spring_ecom.service.auth;
 
-import com.example.spring_ecom.controller.api.auth.model.AuthResponse;
+import com.example.spring_ecom.controller.api.auth.model.LoginResponse;
 import com.example.spring_ecom.core.util.CookieUtil;
 import com.example.spring_ecom.domain.auth.LoginDto;
 import com.example.spring_ecom.domain.auth.RegisterDto;
@@ -19,7 +19,7 @@ public class AuthUseCaseService implements AuthUseCase {
 
     @Override
     @Transactional
-    public AuthResponse login(LoginDto command, HttpServletRequest request, HttpServletResponse response) {
+    public LoginResponse login(LoginDto command, HttpServletRequest request, HttpServletResponse response) {
         String deviceInfo = request.getHeader("User-Agent");
         String ipAddress = request.getRemoteAddr();
         return commandService.login(command, deviceInfo, ipAddress, response);
@@ -27,7 +27,7 @@ public class AuthUseCaseService implements AuthUseCase {
     
     @Override
     @Transactional
-    public AuthResponse register(RegisterDto command, HttpServletRequest request, HttpServletResponse response) {
+    public LoginResponse register(RegisterDto command, HttpServletRequest request, HttpServletResponse response) {
         String deviceInfo = request.getHeader("User-Agent");
         String ipAddress = request.getRemoteAddr();
         return commandService.register(command, deviceInfo, ipAddress, response);
@@ -35,7 +35,7 @@ public class AuthUseCaseService implements AuthUseCase {
     
     @Override
     @Transactional
-    public AuthResponse refreshToken(String refreshToken, HttpServletRequest request, HttpServletResponse response) {
+    public LoginResponse refreshToken(String refreshToken, HttpServletRequest request, HttpServletResponse response) {
         String deviceInfo = request.getHeader("User-Agent");
         String ipAddress = request.getRemoteAddr();
         return commandService.refreshToken(refreshToken, deviceInfo, ipAddress, response);

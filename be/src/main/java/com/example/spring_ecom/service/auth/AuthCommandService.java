@@ -1,6 +1,6 @@
 package com.example.spring_ecom.service.auth;
 
-import com.example.spring_ecom.controller.api.auth.model.AuthResponse;
+import com.example.spring_ecom.controller.api.auth.model.LoginResponse;
 import com.example.spring_ecom.core.util.CookieUtil;
 import com.example.spring_ecom.domain.auth.LoginDto;
 import com.example.spring_ecom.domain.auth.RegisterDto;
@@ -40,35 +40,35 @@ public class AuthCommandService {
     private final EmailUseCase emailUseCase;
     private final UserInfoUseCase userInfoUseCase;
 
-    public AuthResponse login(LoginDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
+    public LoginResponse login(LoginDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
         UserEntity userEntity = validateAndGetUser(command);
         updateLastLogin(userEntity);
         
         String sessionId = createUserSession(userEntity, deviceInfo, ipAddress);
-        return generateAuthResponse(sessionId, response);
+        return generateLoginResponse(sessionId, userEntity, response);
     }
 
-    public AuthResponse register(RegisterDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
+    public LoginResponse register(RegisterDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
         validateUserRegistration(command);
         
         UserEntity userEntity = createUser(command);
         sendVerificationEmail(userEntity);
         
-        return AuthResponse.builder()
-                .accessToken(null)
-                .refreshToken(null)
-                .build();
+        return new LoginResponse(null, null, null, null);
     }
     
-    public AuthResponse refreshToken(String oldRefreshToken, String deviceInfo, String ipAddress, HttpServletResponse response) {
+    public LoginResponse refreshToken(String oldRefreshToken, String deviceInfo, String ipAddress, HttpServletResponse response) {
         validateRefreshToken(oldRefreshToken);
         
         TokenInfo tokenInfo = tokenService.validateRefreshToken(oldRefreshToken);
+        UserEntity userEntity = userRepository.findById(tokenInfo.getUserId())
+                .orElseThrow(() -> new BaseException(ResponseCode.UNAUTHORIZED, "User not found"));
+        
         String newSessionId = createTokenSession(tokenInfo, deviceInfo, ipAddress);
         
         redisService.revokeSession(tokenInfo.getSessionId());
         
-        return generateAuthResponse(newSessionId, response);
+        return generateLoginResponse(newSessionId, userEntity, response);
     }
     
     public void logout(String refreshToken) {
@@ -122,6 +122,7 @@ public class AuthCommandService {
         
         return redisService.createSession(
                 userEntity.getId(),
+                userEntity.getUsername(),
                 userEntity.getEmail(),
                 userEntity.getRole().name(),
                 userInfo != null ? userInfo.firstName() : null,
@@ -146,13 +147,13 @@ public class AuthCommandService {
         );
     }
     
-    private AuthResponse generateAuthResponse(String sessionId, HttpServletResponse response) {
+    private LoginResponse generateLoginResponse(String sessionId, UserEntity userEntity, HttpServletResponse response) {
         String accessToken = jwtUtil.generateAccessToken(sessionId);
         String refreshToken = jwtUtil.generateRefreshToken(sessionId);
         
         cookieUtil.addRefreshTokenCookie(response, refreshToken);
         
-        return AuthResponse.of(accessToken, refreshToken);
+        return new LoginResponse(accessToken, refreshToken, userEntity.getUsername(), userEntity.getEmail());
     }
     
     private void validateUserRegistration(RegisterDto command) {

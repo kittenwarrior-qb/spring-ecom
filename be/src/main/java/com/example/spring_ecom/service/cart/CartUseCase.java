@@ -12,9 +12,10 @@ public interface CartUseCase {
     
     List<CartItem> getCartItems(Long userId);
     
-    CartItem addItemToCart(Long userId, Long productId, Integer quantity);
+    // Delegate to CartItemUseCase
+    CartItem addItemToCart(Long userId, CartItem cartItemRequest);
     
-    CartItem updateCartItemQuantity(Long userId, Long productId, Integer quantity);
+    CartItem updateCartItemQuantity(Long userId, Long productId, CartItem updateRequest);
     
     void removeItemFromCart(Long userId, Long productId);
     

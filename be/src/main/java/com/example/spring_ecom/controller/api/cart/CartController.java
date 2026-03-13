@@ -1,11 +1,14 @@
 package com.example.spring_ecom.controller.api.cart;
 
 import com.example.spring_ecom.controller.api.cart.model.AddToCartRequest;
+import com.example.spring_ecom.controller.api.cart.model.AddToCartRequestMapper;
 import com.example.spring_ecom.controller.api.cart.model.CartItemResponse;
 import com.example.spring_ecom.controller.api.cart.model.CartItemResponseMapper;
 import com.example.spring_ecom.controller.api.cart.model.UpdateCartItemRequest;
+import com.example.spring_ecom.controller.api.cart.model.UpdateCartItemRequestMapper;
 import com.example.spring_ecom.core.response.ApiResponse;
 import com.example.spring_ecom.core.util.SecurityUtil;
+import com.example.spring_ecom.domain.cart.CartItem;
 import com.example.spring_ecom.service.cart.CartUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +21,8 @@ public class CartController implements CartAPI {
     
     private final CartUseCase cartUseCase;
     private final CartItemResponseMapper responseMapper;
+    private final AddToCartRequestMapper addToCartRequestMapper;
+    private final UpdateCartItemRequestMapper updateCartItemRequestMapper;
     
     @Override
     public ApiResponse<List<CartItemResponse>> getCartItems() {
@@ -31,16 +36,22 @@ public class CartController implements CartAPI {
     @Override
     public ApiResponse<CartItemResponse> addItemToCart(AddToCartRequest request) {
         Long userId = SecurityUtil.getCurrentUserId();
+        
+        CartItem cartItemRequest = addToCartRequestMapper.toDomain(request);
+        
         CartItemResponse item = responseMapper.toResDto(
-                cartUseCase.addItemToCart(userId, request.productId(), request.quantity()));
+                cartUseCase.addItemToCart(userId, cartItemRequest));
         return ApiResponse.Success.of(item);
     }
     
     @Override
     public ApiResponse<CartItemResponse> updateCartItemQuantity(Long productId, UpdateCartItemRequest request) {
         Long userId = SecurityUtil.getCurrentUserId();
+        
+        CartItem updateRequest = updateCartItemRequestMapper.toDomain(request);
+        
         CartItemResponse item = responseMapper.toResDto(
-                cartUseCase.updateCartItemQuantity(userId, productId, request.quantity()));
+                cartUseCase.updateCartItemQuantity(userId, productId, updateRequest));
         return ApiResponse.Success.of(item);
     }
     
@@ -62,7 +73,8 @@ public class CartController implements CartAPI {
     public ApiResponse<Void> syncCart(List<AddToCartRequest> items) {
         Long userId = SecurityUtil.getCurrentUserId();
         for (AddToCartRequest item : items) {
-            cartUseCase.addItemToCart(userId, item.productId(), item.quantity());
+            CartItem cartItemRequest = addToCartRequestMapper.toDomain(item);
+            cartUseCase.addItemToCart(userId, cartItemRequest);
         }
         return ApiResponse.Success.of();
     }

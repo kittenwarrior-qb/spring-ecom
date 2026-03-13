@@ -5,11 +5,9 @@ import com.example.spring_ecom.core.mapper.BaseModelMapper;
 import com.example.spring_ecom.domain.product.Product;
 import com.example.spring_ecom.repository.database.product.ProductEntity;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 
 @Mapper(config = MapStructGlobalConfig.class)
 public interface ProductResponseMapper extends BaseModelMapper<ProductResponse, Product> {
     
-    // Note: categoryName will be populated via @Query join in repository
     ProductResponse fromEntity(ProductEntity entity);
 }

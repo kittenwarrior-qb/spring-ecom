@@ -1,12 +1,11 @@
 package com.example.spring_ecom.service.order.detail;
 
-import com.example.spring_ecom.controller.api.order.model.OrderDetailResponse;
-import com.example.spring_ecom.controller.api.order.model.OrderItemResponse;
+import com.example.spring_ecom.controller.api.order.orderItem.model.OrderDetailResponse;
+import com.example.spring_ecom.controller.api.order.orderItem.model.OrderDetailResponseMapper;
+import com.example.spring_ecom.controller.api.order.orderItem.model.OrderItemResponse;
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
-import com.example.spring_ecom.domain.order.OrderWithUserDto;
-import com.example.spring_ecom.domain.order.OrderItemWithProductDto;
-import com.example.spring_ecom.controller.api.order.model.OrderDetailResponseMapper;
+import com.example.spring_ecom.domain.order.OrderItem.OrderItemWithProductDto;
 import com.example.spring_ecom.service.order.dao.OrderWithUserDao;
 import com.example.spring_ecom.service.order.dao.OrderItemWithProductDao;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
@@ -29,7 +28,7 @@ public class OrderDetailService {
         OrderWithUserDao orderDao = findOrderWithUserById(orderId);
         List<OrderItemWithProductDao> orderItemDaos = orderItemRepository.findOrderItemsWithProductByOrderId(orderId);
         
-        OrderWithUserDto order = mapper.toDto(orderDao);
+        OrderWithUserDao order = orderDao;
         List<OrderItemWithProductDto> orderItems = mapper.toDtoList(orderItemDaos);
         List<OrderItemResponse> items = mapper.toResponseList(orderItems);
         

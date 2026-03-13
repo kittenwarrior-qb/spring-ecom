@@ -1,11 +1,11 @@
 package com.example.spring_ecom.service.order;
 
-import com.example.spring_ecom.controller.api.order.dao.OrderStatisticsDto;
-import com.example.spring_ecom.controller.api.order.model.OrderDetailResponse;
-import com.example.spring_ecom.controller.api.order.model.PartialCancelRequest.PartialCancelItem;
+import com.example.spring_ecom.controller.api.order.orderItem.model.OrderDetailResponse;
+import com.example.spring_ecom.controller.api.order.orderItem.model.PartialCancelRequestItem;
 import com.example.spring_ecom.domain.order.Order;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentStatus;
+import com.example.spring_ecom.repository.database.order.dao.OrderStatisticsDao;
 import com.example.spring_ecom.service.order.detail.OrderDetailService;
 import com.example.spring_ecom.service.order.detail.OrderStatisticsService;
 import lombok.RequiredArgsConstructor;
@@ -92,13 +92,13 @@ public class OrderUseCaseService implements OrderUseCase {
     
     @Override
     @Transactional(readOnly = true)
-    public OrderStatisticsDto getOrderStatistics() {
+    public OrderStatisticsDao getOrderStatistics() {
         return orderStatisticsService.getStatistics();
     }
     
     @Override
     @Transactional
-    public Order cancelPartialOrder(Long orderId, List<PartialCancelItem> cancelItems) {
+    public Order cancelPartialOrder(Long orderId, List<PartialCancelRequestItem> cancelItems) {
         return commandService.cancelPartial(orderId, cancelItems)
                 .orElseThrow(() -> new RuntimeException("Failed to cancel partial order"));
     }

@@ -2,20 +2,15 @@ package com.example.spring_ecom.service.cart;
 
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
-import com.example.spring_ecom.domain.cart.CartItem;
-import com.example.spring_ecom.repository.database.cart.*;
-import com.example.spring_ecom.repository.database.cart.cartItem.CartItemEntity;
-import com.example.spring_ecom.repository.database.cart.cartItem.CartItemEntityMapper;
-import com.example.spring_ecom.repository.database.cart.cartItem.CartItemRepository;
-import com.example.spring_ecom.repository.database.product.ProductEntity;
-import com.example.spring_ecom.repository.database.product.ProductRepository;
+import com.example.spring_ecom.domain.cart.Cart;
+import com.example.spring_ecom.repository.database.cart.CartEntity;
+import com.example.spring_ecom.repository.database.cart.CartEntityMapper;
+import com.example.spring_ecom.repository.database.cart.CartRepository;
 import com.example.spring_ecom.repository.database.user.UserEntity;
 import com.example.spring_ecom.repository.database.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.Objects;
 
 @Slf4j
 @Service
@@ -23,95 +18,26 @@ import java.util.Objects;
 public class CartCommandService {
     
     private final CartRepository cartRepository;
-    private final CartItemRepository cartItemRepository;
-    private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final CartItemEntityMapper cartItemMapper;
+    private final CartEntityMapper cartMapper;
     
-    public CartItem addItemToCart(Long userId, Long productId, Integer quantity) {
-        if (quantity <= 0) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Quantity must be greater than 0");
-        }
+    public Cart createCart(Cart cart) {
+        validateUser(cart.userId());
         
-        CartEntity cart = getOrCreateCart(userId);
-        ProductEntity product = productRepository.findById(productId)
-                .filter(p -> Objects.isNull(p.getDeletedAt()) && p.getIsActive())
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
-        
-        if (product.getStockQuantity() < quantity) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Insufficient stock");
-        }
-        
-        CartItemEntity cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
-                .map(existing -> {
-                    int newQuantity = existing.getQuantity() + quantity;
-                    if (product.getStockQuantity() < newQuantity) {
-                        throw new BaseException(ResponseCode.BAD_REQUEST, "Insufficient stock");
-                    }
-                    existing.setQuantity(newQuantity);
-                    return existing;
-                })
-                .orElseGet(() -> CartItemEntity.builder()
-                        .cartId(cart.getId())
-                        .productId(product.getId())
-                        .quantity(quantity)
-                        .price(Objects.nonNull(product.getDiscountPrice()) ? product.getDiscountPrice() : product.getPrice())
-                        .build());
-        
-        CartItemEntity saved = cartItemRepository.save(cartItem);
-        return cartItemMapper.toDomain(saved);
+        CartEntity entity = cartMapper.toEntity(cart);
+        CartEntity saved = cartRepository.save(entity);
+        return cartMapper.toDomain(saved);
     }
     
-    public CartItem updateCartItemQuantity(Long userId, Long productId, Integer quantity) {
-        if (quantity <= 0) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Quantity must be greater than 0");
-        }
-        
+    public void deleteCart(Long userId) {
         CartEntity cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Cart not found"));
         
-        CartItemEntity cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Cart item not found"));
-        
-        ProductEntity product = productRepository.findById(cartItem.getProductId())
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
-        
-        if (product.getStockQuantity() < quantity) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Insufficient stock");
-        }
-        
-        cartItem.setQuantity(quantity);
-        CartItemEntity updated = cartItemRepository.save(cartItem);
-        return cartItemMapper.toDomain(updated);
+        cartRepository.delete(cart);
     }
     
-    public void removeItemFromCart(Long userId, Long productId) {
-        CartEntity cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Cart not found"));
-        
-        CartItemEntity cartItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Cart item not found"));
-        
-        cartItemRepository.delete(cartItem);
-    }
-    
-    public void clearCart(Long userId) {
-        CartEntity cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Cart not found"));
-        
-        cartItemRepository.deleteByCartId(cart.getId());
-    }
-    
-    private CartEntity getOrCreateCart(Long userId) {
-        return cartRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    UserEntity user = userRepository.findById(userId)
-                            .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "User not found"));
-                    
-                    CartEntity newCart = CartEntity.builder()
-                            .userId(user.getId())
-                            .build();
-                    return cartRepository.save(newCart);
-                });
+    private void validateUser(Long userId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "User not found"));
     }
 }

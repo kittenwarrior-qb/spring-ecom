@@ -27,6 +27,8 @@ public class ProductCommandService {
     private final CategoryRepository categoryRepository;
     private final ProductEntityMapper mapper;
     
+    // ========================== MAIN METHODS ================================
+
     public Optional<Product> create(Product product) {
         validateProduct(product);
         validateCategory(product.categoryId());
@@ -57,6 +59,10 @@ public class ProductCommandService {
         entity.setDeletedAt(LocalDateTime.now());
         productRepository.save(entity);
     }
+
+
+
+    // ========================== SUPPORT METHODS ================================
 
     private ProductEntity findActiveProductById(Long id) {
         return productRepository.findById(id)

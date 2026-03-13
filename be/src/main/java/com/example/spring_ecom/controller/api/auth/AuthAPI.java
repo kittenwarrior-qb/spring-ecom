@@ -1,6 +1,6 @@
 package com.example.spring_ecom.controller.api.auth;
 
-import com.example.spring_ecom.controller.api.auth.model.AuthResponse;
+import com.example.spring_ecom.controller.api.auth.model.LoginResponse;
 import com.example.spring_ecom.controller.api.auth.model.LoginRequest;
 import com.example.spring_ecom.controller.api.auth.model.RegisterRequest;
 import com.example.spring_ecom.core.response.ApiResponse;
@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public interface AuthAPI {
 
     @GetMapping("/login")
-    ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request);
+    ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request);
 
     @GetMapping("/register")
-    ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request);
+    ResponseEntity<ApiResponse<LoginResponse>> register(@Valid @RequestBody RegisterRequest request);
 }

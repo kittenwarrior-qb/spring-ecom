@@ -250,7 +250,7 @@ export interface UserSessionResponse {
 }
 
 // Order types
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'PARTIALLY_CANCELLED'
 export type PaymentMethod = 'COD' | 'PAYOS' | 'BANK_TRANSFER'
 
 export interface OrderResponse {

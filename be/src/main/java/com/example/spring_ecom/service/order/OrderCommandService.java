@@ -1,6 +1,6 @@
 package com.example.spring_ecom.service.order;
 
-import com.example.spring_ecom.controller.api.order.model.PartialCancelRequest.PartialCancelItem;
+import com.example.spring_ecom.controller.api.order.orderItem.model.PartialCancelRequestItem;
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.cart.CartItem;
@@ -81,7 +81,7 @@ public class OrderCommandService {
         orderRepository.save(entity);
     }
     
-    public Optional<Order> cancelPartial(Long orderId, List<PartialCancelItem> cancelItems) {
+    public Optional<Order> cancelPartial(Long orderId, List<PartialCancelRequestItem> cancelItems) {
         OrderEntity entity = findOrderById(orderId);
         validatePartialCancellation(entity);
         
@@ -89,7 +89,7 @@ public class OrderCommandService {
         Map<Long, OrderItemEntity> itemMap = orderItems.stream()
                 .collect(Collectors.toMap(OrderItemEntity::getId, Function.identity()));
         
-        for (PartialCancelItem cancelItem : cancelItems) {
+        for (PartialCancelRequestItem cancelItem : cancelItems) {
             OrderItemEntity orderItem = itemMap.get(cancelItem.orderItemId());
             if (orderItem == null) {
                 throw new BaseException(ResponseCode.BAD_REQUEST, 
@@ -122,7 +122,7 @@ public class OrderCommandService {
         orderItem.setCancelledQuantity(orderItem.getCancelledQuantity() + quantityToCancel);
         
         if (orderItem.getCancelledQuantity().equals(orderItem.getQuantity())) {
-            orderItem.setStatus(com.example.spring_ecom.domain.order.OrderItemStatus.CANCELLED);
+            orderItem.setStatus(com.example.spring_ecom.domain.order.OrderItem.OrderItemStatus.CANCELLED);
             orderItem.setCancelledAt(LocalDateTime.now());
         }
         
@@ -255,11 +255,11 @@ public class OrderCommandService {
         LocalDateTime now = LocalDateTime.now();
         
         for (OrderItemEntity item : itemsToCancel) {
-            if (item.getStatus() == com.example.spring_ecom.domain.order.OrderItemStatus.CANCELLED) {
+            if (item.getStatus() == com.example.spring_ecom.domain.order.OrderItem.OrderItemStatus.CANCELLED) {
                 continue; // Skip already cancelled items
             }
             
-            item.setStatus(com.example.spring_ecom.domain.order.OrderItemStatus.CANCELLED);
+            item.setStatus(com.example.spring_ecom.domain.order.OrderItem.OrderItemStatus.CANCELLED);
             item.setCancelledAt(now);
             item.setCancelledQuantity(item.getQuantity()); // Cancel all quantity
             

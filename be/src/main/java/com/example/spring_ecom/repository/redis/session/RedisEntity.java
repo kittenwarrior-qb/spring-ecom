@@ -21,6 +21,7 @@ public class RedisEntity {
     private String sessionId;
     
     private Long userId;
+    private String username;
     private String email;
     private String role;
     private String firstName;

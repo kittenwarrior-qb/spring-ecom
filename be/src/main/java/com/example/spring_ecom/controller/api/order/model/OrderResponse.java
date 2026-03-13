@@ -1,5 +1,6 @@
 package com.example.spring_ecom.controller.api.order.model;
 
+import com.example.spring_ecom.controller.api.order.orderItem.model.OrderItemResponse;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentMethod;
 

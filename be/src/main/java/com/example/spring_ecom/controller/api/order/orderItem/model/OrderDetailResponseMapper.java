@@ -1,8 +1,7 @@
-package com.example.spring_ecom.controller.api.order.model;
+package com.example.spring_ecom.controller.api.order.orderItem.model;
 
 import com.example.spring_ecom.config.MapStructGlobalConfig;
-import com.example.spring_ecom.domain.order.OrderWithUserDto;
-import com.example.spring_ecom.domain.order.OrderItemWithProductDto;
+import com.example.spring_ecom.domain.order.OrderItem.OrderItemWithProductDto;
 import com.example.spring_ecom.service.order.dao.OrderWithUserDao;
 import com.example.spring_ecom.service.order.dao.OrderItemWithProductDao;
 import org.mapstruct.Mapper;
@@ -12,9 +11,6 @@ import java.util.List;
 
 @Mapper(config = MapStructGlobalConfig.class)
 public interface OrderDetailResponseMapper {
-    
-    @Mapping(target = "paymentMethod", expression = "java(com.example.spring_ecom.domain.order.PaymentMethod.valueOf(dao.paymentMethod()))")
-    OrderWithUserDto toDto(OrderWithUserDao dao);
     
     OrderItemWithProductDto toDto(OrderItemWithProductDao dao);
     
@@ -46,5 +42,5 @@ public interface OrderDetailResponseMapper {
     @Mapping(source = "order.createdAt", target = "createdAt")
     @Mapping(source = "order.updatedAt", target = "updatedAt")
     @Mapping(source = "order.cancelledAt", target = "cancelledAt")
-    OrderDetailResponse toDetailResponse(OrderWithUserDto order, List<OrderItemResponse> items);
+    OrderDetailResponse toDetailResponse(OrderWithUserDao order, List<OrderItemResponse> items);
 }

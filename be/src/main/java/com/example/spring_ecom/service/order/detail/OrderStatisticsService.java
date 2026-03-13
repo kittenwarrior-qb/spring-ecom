@@ -1,9 +1,10 @@
 package com.example.spring_ecom.service.order.detail;
 
-import com.example.spring_ecom.controller.api.order.dao.OrderStatisticsDto;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
+import com.example.spring_ecom.repository.database.order.dao.OrderStatisticsDao;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +20,7 @@ public class OrderStatisticsService {
     
     private final OrderRepository orderRepository;
     
-    public OrderStatisticsDto getStatistics() {
+    public OrderStatisticsDao getStatistics() {
         List<OrderEntity> allOrders = orderRepository.findAll();
         
         long totalOrders = allOrders.size();
@@ -44,7 +45,7 @@ public class OrderStatisticsService {
                 .map(OrderEntity::getTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        return new OrderStatisticsDto(
+        return new OrderStatisticsDao(
                 totalOrders,
                 pendingOrders,
                 confirmedOrders,

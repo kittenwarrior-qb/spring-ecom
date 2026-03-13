@@ -1,7 +1,7 @@
 package com.example.spring_ecom.controller.api.auth;
 
 import com.example.spring_ecom.controller.api.auth.model.AuthRequestMapper;
-import com.example.spring_ecom.controller.api.auth.model.AuthResponse;
+import com.example.spring_ecom.controller.api.auth.model.LoginResponse;
 import com.example.spring_ecom.controller.api.auth.model.LoginRequest;
 import com.example.spring_ecom.controller.api.auth.model.RegisterRequest;
 import com.example.spring_ecom.core.response.ApiResponse;
@@ -29,31 +29,31 @@ public class AuthController {
     
     @Operation(summary = "Login", description = "Login with email and password")
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(
+    public ResponseEntity<ApiResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
-        AuthResponse response = authUseCase.login(requestMapper.toDomain(request), httpRequest, httpResponse);
+        LoginResponse response = authUseCase.login(requestMapper.toDomain(request), httpRequest, httpResponse);
         return ResponseEntity.ok(ApiResponse.Success.of(response));
     }
     
     @Operation(summary = "Register", description = "Register new user account")
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(
+    public ResponseEntity<ApiResponse<LoginResponse>> register(
             @Valid @RequestBody RegisterRequest request,
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
-        AuthResponse response = authUseCase.register(requestMapper.toDomain(request), httpRequest, httpResponse);
+        LoginResponse response = authUseCase.register(requestMapper.toDomain(request), httpRequest, httpResponse);
         return ResponseEntity.ok(ApiResponse.Success.of(response));
     }
     
     @Operation(summary = "Refresh token", description = "Refresh access token using refresh token from cookie")
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<AuthResponse>> refresh(
+    public ResponseEntity<ApiResponse<LoginResponse>> refresh(
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
         String refreshToken = cookieUtil.getRefreshTokenFromCookie(httpRequest);
-        AuthResponse response = authUseCase.refreshToken(refreshToken, httpRequest, httpResponse);
+        LoginResponse response = authUseCase.refreshToken(refreshToken, httpRequest, httpResponse);
         return ResponseEntity.ok(ApiResponse.Success.of(response));
     }
     

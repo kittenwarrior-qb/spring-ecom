@@ -22,7 +22,6 @@ public class UserController implements UserAPI {
     private final UserInfoUseCase userInfoUseCase;
     private final UserResponseMapper responseMapper;
     private final UserProfileResponseMapper profileResponseMapper;
-    private final UserSessionResponseMapper sessionResponseMapper;
     private final RedisServiceWithFallback redisService;
 
     @Override
@@ -35,24 +34,25 @@ public class UserController implements UserAPI {
     
     @Override
     public ApiResponse<UserProfileResponse> getCurrentUserProfile(Authentication authentication) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        User user = userUseCase.findByUserId(userId)
-                .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
-        return ApiResponse.Success.of(profileResponseMapper.toResponse(user));
+        String sessionId = SecurityUtil.getCurrentSessionId();
+        RedisEntity session = redisService.validateSession(sessionId);
+        
+        // Convert Redis session to UserProfileResponse
+        UserProfileResponse response = profileResponseMapper.fromSessionToUserProfileResponse(session);
+        return ApiResponse.Success.of(response);
     }
     
     @Override
     public ApiResponse<UserProfileResponse> updateProfile(@Valid UpdateProfileRequest request, Authentication authentication) {
         Long userId = SecurityUtil.getCurrentUserId();
         
-        // Update user info in UserInfo table (including address fields)
         userInfoUseCase.createOrUpdateUserInfo(
                 userId,
                 request.firstName(),
                 request.lastName(),
                 request.phoneNumber(),
                 request.dateOfBirth(),
-                null, // avatarUrl - keep existing
+                null,
                 request.address(),
                 request.ward(),
                 request.district(),
@@ -92,13 +92,5 @@ public class UserController implements UserAPI {
         userUseCase.changePassword(userId, request.currentPassword(), request.newPassword());
         return ApiResponse.Success.of(ResponseCode.OK, "Password changed successfully");
     }
-    
-    @Override
-    public ApiResponse<UserSessionResponse> getCurrentUserSession(Authentication authentication) {
-        String sessionId = SecurityUtil.getCurrentSessionId();
-        RedisEntity session = redisService.validateSession(sessionId);
-        
-        UserSessionResponse response = sessionResponseMapper.toResponse(session);
-        return ApiResponse.Success.of(response);
-    }
+
 }

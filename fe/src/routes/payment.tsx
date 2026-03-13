@@ -14,7 +14,7 @@ import { PaymentMethods } from '@/components/payment-methods'
 import { useCartItems } from '@/hooks/use-cart'
 import { useCreateOrder } from '@/hooks/use-order'
 import { useProduct } from '@/hooks/use-product'
-import { useUserSession } from '@/hooks/use-user'
+import { useUserProfile } from '@/hooks/use-user'
 import { toast } from 'sonner'
 import type { CartItemResponse } from '@/types/api'
 
@@ -121,7 +121,7 @@ function CartItemSummary({ item }: { item: CartItemResponse }) {
 function PaymentPage() {
   const navigate = useNavigate()
   const { data: cartItems, isLoading: cartLoading } = useCartItems()
-  const { data: userSession, isLoading: sessionLoading } = useUserSession()
+  const { data: userProfile, isLoading: profileLoading } = useUserProfile()
   const createOrder = useCreateOrder()
 
   const form = useForm<PaymentFormData>({
@@ -160,10 +160,10 @@ function PaymentPage() {
     toast.success('Đã xóa dữ liệu đã lưu!')
   }
 
-  // Auto-fill form when user session data is available
+  // Auto-fill form when user profile data is available
   React.useEffect(() => {
-    if (userSession) {
-      const fullName = [userSession.firstName, userSession.lastName]
+    if (userProfile) {
+      const fullName = [userProfile.firstName, userProfile.lastName]
         .filter(Boolean)
         .join(' ')
       
@@ -171,23 +171,23 @@ function PaymentPage() {
       if (!form.getValues('recipientName') && fullName) {
         form.setValue('recipientName', fullName)
       }
-      if (!form.getValues('recipientPhone') && userSession.phoneNumber) {
-        form.setValue('recipientPhone', userSession.phoneNumber)
+      if (!form.getValues('recipientPhone') && userProfile.phoneNumber) {
+        form.setValue('recipientPhone', userProfile.phoneNumber)
       }
-      if (!form.getValues('shippingAddress') && userSession.address) {
-        form.setValue('shippingAddress', userSession.address)
+      if (!form.getValues('shippingAddress') && userProfile.address) {
+        form.setValue('shippingAddress', userProfile.address)
       }
-      if (!form.getValues('shippingCity') && userSession.city) {
-        form.setValue('shippingCity', userSession.city)
+      if (!form.getValues('shippingCity') && userProfile.city) {
+        form.setValue('shippingCity', userProfile.city)
       }
-      if (!form.getValues('shippingDistrict') && userSession.district) {
-        form.setValue('shippingDistrict', userSession.district)
+      if (!form.getValues('shippingDistrict') && userProfile.district) {
+        form.setValue('shippingDistrict', userProfile.district)
       }
-      if (!form.getValues('shippingWard') && userSession.ward) {
-        form.setValue('shippingWard', userSession.ward)
+      if (!form.getValues('shippingWard') && userProfile.ward) {
+        form.setValue('shippingWard', userProfile.ward)
       }
     }
-  }, [userSession, form])
+  }, [userProfile, form])
 
   // Auto-save form data to localStorage
   React.useEffect(() => {
@@ -247,7 +247,7 @@ function PaymentPage() {
     }
   }
 
-  if (cartLoading || sessionLoading) {
+  if (cartLoading || profileLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

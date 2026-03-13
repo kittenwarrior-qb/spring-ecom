@@ -1,8 +1,8 @@
-package com.example.spring_ecom.controller.api.order.dao;
+package com.example.spring_ecom.repository.database.order.dao;
 
 import java.math.BigDecimal;
 
-public record OrderStatisticsDto(
+public record OrderStatisticsDao(
     Long totalOrders,
     Long pendingOrders,
     Long confirmedOrders,

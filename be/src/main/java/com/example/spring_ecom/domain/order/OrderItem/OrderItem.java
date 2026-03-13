@@ -1,4 +1,4 @@
-package com.example.spring_ecom.domain.order;
+package com.example.spring_ecom.domain.order.OrderItem;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

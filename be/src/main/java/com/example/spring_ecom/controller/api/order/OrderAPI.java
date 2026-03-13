@@ -1,10 +1,10 @@
 package com.example.spring_ecom.controller.api.order;
 
 import com.example.spring_ecom.controller.api.order.model.CreateOrderRequest;
-import com.example.spring_ecom.controller.api.order.model.OrderDetailResponse;
 import com.example.spring_ecom.controller.api.order.model.OrderResponse;
-import com.example.spring_ecom.controller.api.order.model.PartialCancelRequest;
 import com.example.spring_ecom.controller.api.order.model.UpdateOrderStatusRequest;
+import com.example.spring_ecom.controller.api.order.orderItem.model.OrderDetailResponse;
+import com.example.spring_ecom.controller.api.order.orderItem.model.PartialCancelRequest;
 import com.example.spring_ecom.controller.api.payment.model.PaymentInfoResponse;
 import com.example.spring_ecom.core.response.ApiResponse;
 import com.example.spring_ecom.domain.order.OrderStatus;

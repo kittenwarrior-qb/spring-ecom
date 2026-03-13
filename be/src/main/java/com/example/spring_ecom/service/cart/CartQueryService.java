@@ -2,6 +2,7 @@ package com.example.spring_ecom.service.cart;
 
 import com.example.spring_ecom.domain.cart.Cart;
 import com.example.spring_ecom.domain.cart.CartItem;
+import com.example.spring_ecom.repository.database.cart.CartEntity;
 import com.example.spring_ecom.repository.database.cart.CartEntityMapper;
 import com.example.spring_ecom.repository.database.cart.CartRepository;
 import com.example.spring_ecom.repository.database.cart.cartItem.CartItemEntityMapper;
@@ -26,6 +27,10 @@ public class CartQueryService {
     public Optional<Cart> findByUserId(Long userId) {
         return cartRepository.findByUserId(userId)
                 .map(cartMapper::toDomain);
+    }
+    
+    public Optional<CartEntity> findEntityByUserId(Long userId) {
+        return cartRepository.findByUserId(userId);
     }
     
     public List<CartItem> findCartItems(Long cartId) {

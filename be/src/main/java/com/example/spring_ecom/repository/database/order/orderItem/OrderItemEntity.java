@@ -1,6 +1,6 @@
 package com.example.spring_ecom.repository.database.order.orderItem;
 
-import com.example.spring_ecom.domain.order.OrderItemStatus;
+import com.example.spring_ecom.domain.order.OrderItem.OrderItemStatus;
 import com.example.spring_ecom.repository.database.common.BaseAuditEntity;
 import jakarta.persistence.*;
 import lombok.*;

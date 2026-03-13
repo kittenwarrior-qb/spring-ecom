@@ -23,50 +23,23 @@ public class CategoryCommandService {
     private final CategoryRepository categoryRepository;
     private final CategoryEntityMapper mapper;
     
+    // ========================== MAIN METHODS ================================
+    
     public Optional<Category> create(Category category) {
-        // Check if parent exists
-        if (Objects.nonNull(category.parentId())) {
-            categoryRepository.findById(category.parentId())
-                    .filter(entity -> Objects.isNull(entity.getDeletedAt()))
-                    .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Parent category not found"));
-        }
+        validateParentCategory(category.parentId());
         
         CategoryEntity entity = mapper.toEntity(category);
-        
-        if (Objects.isNull(entity.getSlug()) || entity.getSlug().isBlank()) {
-            String baseSlug = SlugUtil.toSlug(entity.getName());
-            String uniqueSlug = generateUniqueSlug(baseSlug);
-            entity.setSlug(uniqueSlug);
-        } else {
-            if (categoryRepository.existsBySlugAndDeletedAtIsNull(entity.getSlug())) {
-                throw new BaseException(ResponseCode.BAD_REQUEST, "Category slug already exists");
-            }
-        }
+        handleSlugGeneration(entity);
         
         CategoryEntity saved = categoryRepository.save(entity);
         return Optional.of(mapper.toDomain(saved));
     }
     
     public Optional<Category> update(Long id, Category category) {
-        CategoryEntity entity = categoryRepository.findById(id)
-                .filter(e -> Objects.isNull(e.getDeletedAt()))
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Category not found"));
+        CategoryEntity entity = findActiveCategoryById(id);
         
-        if (!entity.getSlug().equals(category.slug()) && 
-            categoryRepository.existsBySlugAndDeletedAtIsNull(category.slug())) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, "Category slug already exists");
-        }
-        
-        if (Objects.nonNull(category.parentId())) {
-            // Cannot set itself as parent
-            if (category.parentId().equals(id)) {
-                throw new BaseException(ResponseCode.BAD_REQUEST, "Category cannot be its own parent");
-            }
-            
-            categoryRepository.findById(category.parentId())
-                    .filter(e -> Objects.isNull(e.getDeletedAt()))
-                    .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Parent category not found"));
-        }
+        validateParentCategory(category.parentId(), id);
+        handleSlugUpdate(category.slug(), entity.getSlug());
         
         mapper.update(entity, category);
         
@@ -75,12 +48,55 @@ public class CategoryCommandService {
     }
     
     public void delete(Long id) {
-        CategoryEntity entity = categoryRepository.findById(id)
-                .filter(e -> Objects.isNull(e.getDeletedAt()))
-                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Category not found"));
-        
+        CategoryEntity entity = findActiveCategoryById(id);
         entity.setDeletedAt(LocalDateTime.now());
         categoryRepository.save(entity);
+    }
+
+    // ========================== SUPPORT METHODS ================================
+
+    private CategoryEntity findActiveCategoryById(Long id) {
+        return categoryRepository.findById(id)
+                .filter(e -> Objects.isNull(e.getDeletedAt()))
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Category not found"));
+    }
+    
+    private void validateParentCategory(Long parentId) {
+        validateParentCategory(parentId, null);
+    }
+    
+    private void validateParentCategory(Long parentId, Long currentId) {
+        if (Objects.isNull(parentId)) return;
+        
+        if (Objects.nonNull(currentId) && parentId.equals(currentId)) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, "Category cannot be its own parent");
+        }
+        
+        categoryRepository.findById(parentId)
+                .filter(entity -> Objects.isNull(entity.getDeletedAt()))
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Parent category not found"));
+    }
+    
+    private void handleSlugGeneration(CategoryEntity entity) {
+        if (Objects.isNull(entity.getSlug()) || entity.getSlug().isBlank()) {
+            String baseSlug = SlugUtil.toSlug(entity.getName());
+            String uniqueSlug = generateUniqueSlug(baseSlug);
+            entity.setSlug(uniqueSlug);
+        } else {
+            validateSlugUniqueness(entity.getSlug());
+        }
+    }
+    
+    private void handleSlugUpdate(String newSlug, String currentSlug) {
+        if (Objects.nonNull(newSlug) && !newSlug.equals(currentSlug)) {
+            validateSlugUniqueness(newSlug);
+        }
+    }
+    
+    private void validateSlugUniqueness(String slug) {
+        if (categoryRepository.existsBySlugAndDeletedAtIsNull(slug)) {
+            throw new BaseException(ResponseCode.BAD_REQUEST, "Category slug already exists");
+        }
     }
     
     private String generateUniqueSlug(String baseSlug) {

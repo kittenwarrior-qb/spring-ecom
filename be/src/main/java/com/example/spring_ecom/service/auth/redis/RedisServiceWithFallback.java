@@ -26,7 +26,7 @@ public class RedisServiceWithFallback {
     
     private static final long ACCESS_TOKEN_TTL_SECONDS = 900; // 15 minutes
     
-    public String createSession(Long userId, String email, String role, String firstName, String lastName, 
+    public String createSession(Long userId, String username, String email, String role, String firstName, String lastName, 
                                String phoneNumber, String address, String city, String district, String ward,
                                String deviceInfo, String ipAddress) {
         String sessionId = UUID.randomUUID().toString();
@@ -34,6 +34,7 @@ public class RedisServiceWithFallback {
         RedisEntity session = RedisEntity.builder()
                 .sessionId(sessionId)
                 .userId(userId)
+                .username(username)
                 .email(email)
                 .role(role)
                 .firstName(firstName)
@@ -63,12 +64,12 @@ public class RedisServiceWithFallback {
     
     // Overloaded method for backward compatibility
     public String createSession(Long userId, String email, String role, String deviceInfo, String ipAddress) {
-        return createSession(userId, email, role, null, null, null, null, null, null, null, deviceInfo, ipAddress);
+        return createSession(userId, null, email, role, null, null, null, null, null, null, null, deviceInfo, ipAddress);
     }
     
     public Optional<RedisEntity> getSession(String sessionId) {
         try {
-            Optional<RedisEntity> session = redisRepository.findBySessionId(sessionId);
+            Optional<RedisEntity> session = redisRepository.findById(sessionId);
             
             if (session.isPresent()) {
                 // Update last accessed time

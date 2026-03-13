@@ -44,10 +44,9 @@ public class RedisService {
     }
     
     public Optional<RedisEntity> getSession(String sessionId) {
-        Optional<RedisEntity> session = redisRepository.findBySessionId(sessionId);
+        Optional<RedisEntity> session = redisRepository.findById(sessionId);
         
         if (session.isPresent()) {
-            // Update last accessed time
             RedisEntity sessionEntity = session.get();
             sessionEntity.setLastAccessedAt(LocalDateTime.now());
             redisRepository.save(sessionEntity);
@@ -94,8 +93,6 @@ public class RedisService {
     public void cleanupOrphanedKeys() {
         try {
             log.info("Cleanup completed - only session keys should exist in Redis");
-            // Note: refresh tokens should be JWT, not stored in Redis
-            // Only session data (redis:sessionId) should be in Redis
         } catch (Exception e) {
             log.error("Error during cleanup: {}", e.getMessage());
         }

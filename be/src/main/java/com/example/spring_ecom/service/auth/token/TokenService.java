@@ -28,14 +28,21 @@ public class TokenService {
         }
         
         String sessionId = jwtUtil.extractSessionId(token);
-        RedisEntity session = redisService.validateSession(sessionId);
         
-        return TokenInfo.builder()
-                .sessionId(sessionId)
-                .userId(session.getUserId())
-                .email(session.getEmail())
-                .role(session.getRole())
-                .build();
+        try {
+            RedisEntity session = redisService.validateSession(sessionId);
+            
+            return TokenInfo.builder()
+                    .sessionId(sessionId)
+                    .userId(session.getUserId())
+                    .email(session.getEmail())
+                    .role(session.getRole())
+                    .build();
+        } catch (BaseException e) {
+            log.warn("Access token validation failed - Session validation error for sessionId: {}, error: {}", 
+                    sessionId, e.getMessage());
+            throw e;
+        }
     }
     
     public TokenInfo validateRefreshToken(String token) {
@@ -49,14 +56,21 @@ public class TokenService {
         }
         
         String sessionId = jwtUtil.extractSessionId(token);
-        RedisEntity session = redisService.validateSession(sessionId);
         
-        return TokenInfo.builder()
-                .sessionId(sessionId)
-                .userId(session.getUserId())
-                .email(session.getEmail())
-                .role(session.getRole())
-                .build();
+        try {
+            RedisEntity session = redisService.validateSession(sessionId);
+            
+            return TokenInfo.builder()
+                    .sessionId(sessionId)
+                    .userId(session.getUserId())
+                    .email(session.getEmail())
+                    .role(session.getRole())
+                    .build();
+        } catch (BaseException e) {
+            log.warn("Refresh token validation failed - Session validation error for sessionId: {}, error: {}", 
+                    sessionId, e.getMessage());
+            throw e;
+        }
     }
     
     public String extractSessionId(String token) {

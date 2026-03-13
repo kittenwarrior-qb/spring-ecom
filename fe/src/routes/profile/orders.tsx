@@ -28,6 +28,7 @@ const statusColors: Record<string, string> = {
   CONFIRMED: 'bg-cyan-100 text-cyan-800',
   PENDING: 'bg-gray-100 text-gray-800',
   CANCELLED: 'bg-red-100 text-red-800',
+  PARTIALLY_CANCELLED: 'bg-orange-100 text-orange-800',
 }
 
 const statusLabels: Record<string, string> = {
@@ -37,6 +38,7 @@ const statusLabels: Record<string, string> = {
   CONFIRMED: 'Đã xác nhận',
   PENDING: 'Chờ xác nhận',
   CANCELLED: 'Đã hủy',
+  PARTIALLY_CANCELLED: 'Đã hủy một phần',
 }
 
 function OrdersPage() {
@@ -132,6 +134,7 @@ function OrdersPage() {
                 <SelectItem value="SHIPPED">Đang giao</SelectItem>
                 <SelectItem value="DELIVERED">Đã giao</SelectItem>
                 <SelectItem value="CANCELLED">Đã hủy</SelectItem>
+                <SelectItem value="PARTIALLY_CANCELLED">Đã hủy một phần</SelectItem>
               </SelectContent>
             </Select>
           </div>

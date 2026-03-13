@@ -1,10 +1,17 @@
 import { AxiosError } from 'axios'
 import { toast } from 'sonner'
 import type { ApiResponse } from '@/types/api'
+import { isNetworkError, getNetworkErrorMessage } from './request-utils'
 
 export function handleServerError(error: unknown) {
   // eslint-disable-next-line no-console
   console.log(error)
+
+  // Handle network/timeout errors first
+  if (isNetworkError(error)) {
+    toast.error(getNetworkErrorMessage(error))
+    return
+  }
 
   let errMsg = 'Something went wrong!'
 

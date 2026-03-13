@@ -110,23 +110,5 @@ public interface UserAPI {
             @Valid @RequestBody ChangePasswordRequest request,
             @Parameter(hidden = true) Authentication authentication
     );
-    
-    @GetMapping("/me/session")
-    @Operation(
-            summary = "Get current user session info",
-            description = "Retrieve session information including address details for the authenticated user"
-    )
-    @ApiResponses(value = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "200",
-                    description = "Successfully retrieved session info"
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "401",
-                    description = "Unauthorized"
-            )
-    })
-    ApiResponse<UserSessionResponse> getCurrentUserSession(
-            @Parameter(hidden = true) Authentication authentication
-    );
+
 }

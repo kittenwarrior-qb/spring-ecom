@@ -9,7 +9,6 @@ public record ProductRequest(
     @Size(min = 1, max = 255, message = "Title must be between 1 and 255 characters")
     String title,
     
-    @Size(max = 255, message = "Slug must not exceed 255 characters")
     String slug,
     
     String author,
