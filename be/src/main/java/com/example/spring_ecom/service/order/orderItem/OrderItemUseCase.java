@@ -3,8 +3,9 @@ package com.example.spring_ecom.service.order.orderItem;
 import com.example.spring_ecom.controller.api.order.orderItem.model.PartialCancelRequestItem;
 import com.example.spring_ecom.domain.cart.CartItem;
 import com.example.spring_ecom.repository.database.order.OrderEntity;
+import com.example.spring_ecom.repository.database.order.dao.OrderItemWithProductDao;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
-import com.example.spring_ecom.service.order.dao.OrderItemWithProductDao;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

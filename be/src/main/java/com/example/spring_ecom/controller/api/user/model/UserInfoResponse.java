@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Schema(description = "User profile response (without sensitive data)")
-public record UserProfileResponse(
+public record UserInfoResponse(
         @Schema(description = "User ID", example = "1")
         Long id,
         

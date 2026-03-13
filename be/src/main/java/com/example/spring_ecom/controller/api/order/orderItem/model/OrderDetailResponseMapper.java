@@ -2,8 +2,9 @@ package com.example.spring_ecom.controller.api.order.orderItem.model;
 
 import com.example.spring_ecom.config.MapStructGlobalConfig;
 import com.example.spring_ecom.domain.order.OrderItem.OrderItemWithProductDto;
-import com.example.spring_ecom.service.order.dao.OrderWithUserDao;
-import com.example.spring_ecom.service.order.dao.OrderItemWithProductDao;
+import com.example.spring_ecom.repository.database.order.dao.OrderItemWithProductDao;
+import com.example.spring_ecom.repository.database.order.dao.OrderWithUserDao;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

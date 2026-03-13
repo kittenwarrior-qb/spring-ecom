@@ -1,11 +1,10 @@
 package com.example.spring_ecom.repository.database.order.dao;
 
+import com.example.spring_ecom.domain.order.OrderStatus;
+import com.example.spring_ecom.domain.order.PaymentStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
-import com.example.spring_ecom.domain.order.OrderStatus;
-import com.example.spring_ecom.domain.order.PaymentMethod;
-import com.example.spring_ecom.domain.order.PaymentStatus;
 
 public record OrderWithUserDao(
     Long id,
@@ -18,7 +17,7 @@ public record OrderWithUserDao(
     BigDecimal shippingFee,
     BigDecimal discount,
     BigDecimal total,
-    PaymentMethod paymentMethod,
+    String paymentMethod,
     String shippingAddress,
     String shippingCity,
     String shippingDistrict,

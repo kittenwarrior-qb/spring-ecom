@@ -1,10 +1,11 @@
 package com.example.spring_ecom.repository.database.order.orderItem;
 
-import com.example.spring_ecom.service.order.dao.OrderItemWithProductDao;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import com.example.spring_ecom.repository.database.order.dao.OrderItemWithProductDao;
 
 import java.util.List;
 

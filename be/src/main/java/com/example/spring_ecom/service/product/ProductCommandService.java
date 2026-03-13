@@ -36,8 +36,8 @@ public class ProductCommandService {
         ProductEntity entity = mapper.toEntity(product);
         handleSlugGeneration(entity, null);
         
-        ProductEntity saved = productRepository.save(entity);
-        return Optional.of(mapper.toDomain(saved));
+        productRepository.save(entity);
+        return Optional.of(mapper.toDomain(entity));
     }
     
     public Optional<Product> update(Long id, Product product) {
@@ -50,8 +50,8 @@ public class ProductCommandService {
         
         mapper.update(entity, product);
         
-        ProductEntity updated = productRepository.save(entity);
-        return Optional.of(mapper.toDomain(updated));
+        productRepository.save(entity);
+        return Optional.of(mapper.toDomain(entity));
     }
     
     public void delete(Long id) {

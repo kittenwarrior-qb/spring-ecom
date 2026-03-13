@@ -22,6 +22,7 @@ public class UserController implements UserAPI {
     private final UserInfoUseCase userInfoUseCase;
     private final UserResponseMapper responseMapper;
     private final UserProfileResponseMapper profileResponseMapper;
+    private final UserInfoRequestMapper userInfoRequestMapper;
     private final RedisServiceWithFallback redisService;
 
     @Override
@@ -43,24 +44,11 @@ public class UserController implements UserAPI {
     }
     
     @Override
-    public ApiResponse<UserProfileResponse> updateProfile(@Valid UpdateProfileRequest request, Authentication authentication) {
+    public ApiResponse<UserProfileResponse> updateProfile(@Valid UserInfoRequest request, Authentication authentication) {
         Long userId = SecurityUtil.getCurrentUserId();
         
-        userInfoUseCase.createOrUpdateUserInfo(
-                userId,
-                request.firstName(),
-                request.lastName(),
-                request.phoneNumber(),
-                request.dateOfBirth(),
-                null,
-                request.address(),
-                request.ward(),
-                request.district(),
-                request.city(),
-                request.postalCode()
-        );
+        userInfoUseCase.createOrUpdate(userId, userInfoRequestMapper.toDomain(userId, request));
         
-        // Get updated user for response
         User user = userUseCase.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
         
@@ -68,13 +56,11 @@ public class UserController implements UserAPI {
     }
     
     @Override
-    public ApiResponse<UserProfileResponse> updateAvatar(@Valid UpdateAvatarRequest request, Authentication authentication) {
+    public ApiResponse<UserProfileResponse> updateAvatar(@Valid UserInfoRequest request, Authentication authentication) {
         Long userId = SecurityUtil.getCurrentUserId();
         
-        // Update avatar in UserInfo table
-        userInfoUseCase.updateAvatar(userId, request.avatarUrl());
+        userInfoUseCase.createOrUpdate(userId, userInfoRequestMapper.toDomain(userId, request));
         
-        // Get updated user for response
         User user = userUseCase.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
         

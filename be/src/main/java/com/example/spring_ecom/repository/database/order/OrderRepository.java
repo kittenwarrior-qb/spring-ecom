@@ -1,7 +1,8 @@
 package com.example.spring_ecom.repository.database.order;
 
 import com.example.spring_ecom.domain.order.OrderStatus;
-import com.example.spring_ecom.service.order.dao.OrderWithUserDao;
+import com.example.spring_ecom.repository.database.order.dao.OrderWithUserDao;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

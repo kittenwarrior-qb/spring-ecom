@@ -1,4 +1,4 @@
-package com.example.spring_ecom.service.order.dao;
+package com.example.spring_ecom.repository.database.order.dao;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

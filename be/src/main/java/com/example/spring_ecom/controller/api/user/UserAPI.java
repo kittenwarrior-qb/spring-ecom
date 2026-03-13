@@ -42,7 +42,7 @@ public interface UserAPI {
     @PutMapping("/me")
     @Operation(
             summary = "Update user profile",
-            description = "Update profile information (name, phone, date of birth)"
+            description = "Update profile information (name, phone, date of birth, address)"
     )
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -59,7 +59,7 @@ public interface UserAPI {
             )
     })
     ApiResponse<UserProfileResponse> updateProfile(
-            @Valid @RequestBody UpdateProfileRequest request,
+            @Valid @RequestBody UserInfoRequest request,
             @Parameter(hidden = true) Authentication authentication
     );
     
@@ -83,7 +83,7 @@ public interface UserAPI {
             )
     })
     ApiResponse<UserProfileResponse> updateAvatar(
-            @Valid @RequestBody UpdateAvatarRequest request,
+            @Valid @RequestBody UserInfoRequest request,
             @Parameter(hidden = true) Authentication authentication
     );
     

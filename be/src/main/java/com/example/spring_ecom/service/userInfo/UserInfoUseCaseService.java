@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.Optional;
 
 @Slf4j
@@ -25,35 +24,19 @@ public class UserInfoUseCaseService implements UserInfoUseCase {
     
     @Override
     @Transactional
-    public UserInfo createOrUpdateUserInfo(Long userId, String firstName, String lastName, 
-                                          String phoneNumber, LocalDate dateOfBirth, String avatarUrl,
-                                          String address, String ward, String district, String city, String postalCode) {
-        return commandService.createOrUpdate(userId, firstName, lastName, phoneNumber, dateOfBirth, 
-                                           avatarUrl, address, ward, district, city, postalCode);
+    public Optional<UserInfo> createOrUpdate(Long userId, UserInfo userInfo) {
+        Optional<UserInfo> existing = queryService.findByUserId(userId);
+        
+        if (existing.isPresent()) {
+            return commandService.update(userId, userInfo);
+        } else {
+            return commandService.create(userInfo);
+        }
     }
     
     @Override
     @Transactional
-    public UserInfo updateProfile(Long userId, String firstName, String lastName, 
-                                 String phoneNumber, LocalDate dateOfBirth) {
-        return commandService.updateProfile(userId, firstName, lastName, phoneNumber, dateOfBirth);
-    }
-    
-    @Override
-    @Transactional
-    public UserInfo updateAvatar(Long userId, String avatarUrl) {
-        return commandService.updateAvatar(userId, avatarUrl);
-    }
-    
-    @Override
-    @Transactional
-    public UserInfo updateAddress(Long userId, String address, String ward, String district, String city, String postalCode) {
-        return commandService.updateAddress(userId, address, ward, district, city, postalCode);
-    }
-    
-    @Override
-    @Transactional
-    public void deleteByUserId(Long userId) {
-        commandService.softDelete(userId);
+    public void delete(Long userId) {
+        commandService.delete(userId);
     }
 }

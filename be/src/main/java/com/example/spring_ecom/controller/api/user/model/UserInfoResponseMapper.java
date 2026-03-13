@@ -10,7 +10,7 @@ import org.mapstruct.Mapping;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(config = MapStructGlobalConfig.class)
-public abstract class UserProfileResponseMapper {
+public abstract class UserInfoResponseMapper {
     
     @Autowired
     protected UserInfoUseCase userInfoUseCase;
@@ -25,7 +25,7 @@ public abstract class UserProfileResponseMapper {
     @Mapping(target = "district", expression = "java(getUserInfo(user).district())")
     @Mapping(target = "city", expression = "java(getUserInfo(user).city())")
     @Mapping(target = "postalCode", expression = "java(getUserInfo(user).postalCode())")
-    public abstract UserProfileResponse toResponse(User user);
+    public abstract UserInfoResponse toResponse(User user);
     
     @Mapping(target = "id", source = "userId")
     @Mapping(target = "dateOfBirth", ignore = true)
@@ -36,7 +36,7 @@ public abstract class UserProfileResponseMapper {
     @Mapping(target = "isActive", ignore = true)
     @Mapping(target = "lastLoginAt", ignore = true)
     @Mapping(target = "updatedAt", source = "lastAccessedAt")
-    public abstract UserProfileResponse sessionToResponse(RedisEntity session);
+    public abstract UserInfoResponse sessionToResponse(RedisEntity session);
     
     protected UserInfo getUserInfo(User user) {
         if (user == null || user.id() == null) {

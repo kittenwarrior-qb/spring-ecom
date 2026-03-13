@@ -1,8 +1,9 @@
 package com.example.spring_ecom.service.order.orderItem;
 
+import com.example.spring_ecom.repository.database.order.dao.OrderItemWithProductDao;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemRepository;
-import com.example.spring_ecom.service.order.dao.OrderItemWithProductDao;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
