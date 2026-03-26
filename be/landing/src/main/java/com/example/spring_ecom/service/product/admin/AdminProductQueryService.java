@@ -3,9 +3,8 @@ package com.example.spring_ecom.service.product.admin;
 import com.example.spring_ecom.controller.api.product.model.ProductResponse;
 import com.example.spring_ecom.controller.api.product.model.ProductResponseMapper;
 import com.example.spring_ecom.domain.product.Product;
-import com.example.spring_ecom.grpc.domain.ProductProto;
-import com.example.spring_ecom.grpc.mapper.ProductGrpcMapper;
-import com.example.spring_ecom.repository.grpc.ProductGrpcRepository;
+import com.example.spring_ecom.repository.grpc.product.ProductGrpcClient;
+import com.example.spring_ecom.repository.grpc.product.ProductGrpcMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,14 +20,14 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AdminProductQueryService {
 
-    private final ProductGrpcRepository productGrpcRepository;
+    private final ProductGrpcClient productGrpcClient;
     private final ProductGrpcMapper productGrpcMapper;
     private final ProductResponseMapper productResponseMapper;
 
     public Page<ProductResponse> getAllProducts(Pageable pageable) {
         log.info("Admin getting all products via gRPC: page={}, size={}", pageable.getPageNumber(), pageable.getPageSize());
 
-        List<ProductProto.Product> protoProducts = productGrpcRepository.getProductsAdmin(
+        var protoProducts = productGrpcClient.getProductsAdmin(
                 pageable.getPageNumber(),
                 pageable.getPageSize()
         );
@@ -44,7 +43,7 @@ public class AdminProductQueryService {
     public Optional<ProductResponse> getProductById(Long productId) {
         log.info("Admin getting product by ID via gRPC: {}", productId);
 
-        return productGrpcRepository.getProductById(productId)
+        return productGrpcClient.getProductById(productId)
                 .map(proto -> {
                     Product product = productGrpcMapper.toDomain(proto);
                     return productResponseMapper.toResponse(product);

@@ -8,7 +8,7 @@ import com.example.spring_ecom.repository.database.cart.CartEntity;
 import com.example.spring_ecom.repository.database.cart.cartItem.CartItemEntity;
 import com.example.spring_ecom.repository.database.cart.cartItem.CartItemEntityMapper;
 import com.example.spring_ecom.repository.database.cart.cartItem.CartItemRepository;
-import com.example.spring_ecom.repository.grpc.ProductGrpcRepository;
+import com.example.spring_ecom.repository.grpc.product.ProductGrpcClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 public class CartItemCommandService {
     
     private final CartItemRepository cartItemRepository;
-    private final ProductGrpcRepository productGrpcRepository;
+    private final ProductGrpcClient productGrpcClient;
     private final CartItemEntityMapper cartItemMapper;
     
     // ========================== MAIN METHODS ================================
@@ -43,7 +43,7 @@ public class CartItemCommandService {
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Cart item not found"));
         
         // Check stock via gRPC
-        boolean available = productGrpcRepository.validateProductAvailability(productId, updateRequest.quantity());
+        boolean available = productGrpcClient.validateProductAvailability(productId, updateRequest.quantity());
         if (!available) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Insufficient stock");
         }
@@ -69,14 +69,14 @@ public class CartItemCommandService {
     // ========================== SUPPORT METHODS ================================
 
     private ProductProto.Product validateAndGetProduct(Long productId, Integer quantity) {
-        ProductProto.Product product = productGrpcRepository.getProductById(productId)
+        ProductProto.Product product = productGrpcClient.getProductById(productId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found"));
         
         if (!product.getIsActive()) {
             throw new BaseException(ResponseCode.NOT_FOUND, "Product not found or inactive");
         }
 
-        boolean available = productGrpcRepository.validateProductAvailability(productId, quantity);
+        boolean available = productGrpcClient.validateProductAvailability(productId, quantity);
         if (!available) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Insufficient stock");
         }
@@ -97,7 +97,7 @@ public class CartItemCommandService {
     
     private CartItemEntity updateExistingItem(CartItemEntity existing, CartItem request, ProductProto.Product product) {
         int newQuantity = existing.getQuantity() + request.quantity();
-        boolean available = productGrpcRepository.validateProductAvailability(request.productId(), newQuantity);
+        boolean available = productGrpcClient.validateProductAvailability(request.productId(), newQuantity);
         if (!available) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Insufficient stock for total quantity: " + newQuantity);
         }

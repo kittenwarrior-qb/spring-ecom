@@ -9,7 +9,7 @@ import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntityMapper;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemRepository;
-import com.example.spring_ecom.repository.grpc.ProductGrpcRepository;
+import com.example.spring_ecom.repository.grpc.product.ProductGrpcClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,7 +27,7 @@ import java.util.stream.Collectors;
 public class OrderItemCommandService {
     
     private final OrderItemRepository orderItemRepository;
-    private final ProductGrpcRepository productGrpcRepository;
+    private final ProductGrpcClient productGrpcClient;
     private final OrderItemEntityMapper orderItemMapper;
     
     // ========== MAIN COMMAND METHODS ==========
@@ -41,7 +40,7 @@ public class OrderItemCommandService {
         // Build orderItems từ proto product data
         List<OrderItemEntity> orderItems = cartItems.stream()
                 .map(cartItem -> {
-                    ProductProto.Product product = productGrpcRepository.getProductById(cartItem.productId())
+                    ProductProto.Product product = productGrpcClient.getProductById(cartItem.productId())
                             .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND,
                                     "Product not found: " + cartItem.productId()));
                     return createOrderItemFromProto(orderEntity, cartItem, product);
@@ -87,7 +86,7 @@ public class OrderItemCommandService {
             }
         });
         if (!soldMap.isEmpty()) {
-            productGrpcRepository.updateProductsSoldCount(soldMap);
+            productGrpcClient.updateProductsSoldCount(soldMap);
         }
     }
     

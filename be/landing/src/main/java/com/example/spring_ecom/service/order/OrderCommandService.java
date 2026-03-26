@@ -5,7 +5,6 @@ import com.example.spring_ecom.controller.api.order.model.CreateOrderRequestMapp
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.cart.CartItem;
-import com.example.spring_ecom.domain.order.CreateOrderFromCartRequest;
 import com.example.spring_ecom.repository.database.order.dao.CreateOrderFromCartDao;
 import com.example.spring_ecom.domain.order.Order;
 import com.example.spring_ecom.domain.order.OrderCalculation;
@@ -14,12 +13,11 @@ import com.example.spring_ecom.domain.order.PaymentStatus;
 import com.example.spring_ecom.domain.order.PaymentMethod;
 import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.OrderEntityMapper;
-import com.example.spring_ecom.repository.database.order.dao.CreateOrderFromCartDao;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
 import com.example.spring_ecom.service.coupon.CouponUseCase;
 import com.example.spring_ecom.service.order.orderItem.OrderItemUseCase;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
-import com.example.spring_ecom.repository.grpc.UserGrpcRepository;
+import com.example.spring_ecom.repository.grpc.user.UserGrpcClient;
 import com.example.spring_ecom.service.product.ProductCommandService;
 import com.example.spring_ecom.service.cart.CartUseCase;
 import com.example.spring_ecom.kafka.service.OrderKafkaProducer;
@@ -47,7 +45,7 @@ import java.util.stream.Collectors;
 public class OrderCommandService {
     
     private final OrderRepository orderRepository;
-    private final UserGrpcRepository userGrpcRepository;
+    private final UserGrpcClient userGrpcClient;
     private final ProductCommandService productCommandService;
     private final OrderItemUseCase orderItemUseCase;
     private final CartUseCase cartUseCase;
@@ -250,7 +248,7 @@ public class OrderCommandService {
         if (Objects.isNull(userId)) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "User ID is required");
         }
-        boolean valid = userGrpcRepository.validateUser(userId);
+        boolean valid = userGrpcClient.validateUser(userId);
         if (!valid) {
             throw new BaseException(ResponseCode.NOT_FOUND, "User not found");
         }

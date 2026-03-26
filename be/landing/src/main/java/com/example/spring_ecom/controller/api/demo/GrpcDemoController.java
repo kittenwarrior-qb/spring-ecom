@@ -1,19 +1,15 @@
 package com.example.spring_ecom.controller.api.demo;
 
-import com.example.spring_ecom.grpc.ProductGrpcClient;
-import com.example.spring_ecom.grpc.UserGrpcClient;
-import com.example.spring_ecom.grpc.domain.ProductProto;
-import com.example.spring_ecom.grpc.domain.UserProto;
-import com.example.spring_ecom.grpc.mapper.ProductGrpcMapper;
+import com.example.spring_ecom.repository.grpc.product.ProductGrpcClient;
+import com.example.spring_ecom.repository.grpc.user.UserGrpcClient;
+import com.example.spring_ecom.repository.grpc.product.ProductGrpcMapper;
 import com.example.spring_ecom.controller.api.product.model.ProductResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 
 @Slf4j

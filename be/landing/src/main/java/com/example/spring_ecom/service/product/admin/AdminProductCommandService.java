@@ -4,9 +4,8 @@ import com.example.spring_ecom.controller.api.product.model.ProductRequest;
 import com.example.spring_ecom.controller.api.product.model.ProductResponse;
 import com.example.spring_ecom.controller.api.product.model.ProductResponseMapper;
 import com.example.spring_ecom.domain.product.Product;
-import com.example.spring_ecom.grpc.domain.ProductProto;
-import com.example.spring_ecom.grpc.mapper.ProductGrpcMapper;
-import com.example.spring_ecom.repository.grpc.ProductGrpcRepository;
+import com.example.spring_ecom.repository.grpc.product.ProductGrpcClient;
+import com.example.spring_ecom.repository.grpc.product.ProductGrpcMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,16 +17,16 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AdminProductCommandService {
 
-    private final ProductGrpcRepository productGrpcRepository;
+    private final ProductGrpcClient productGrpcClient;
     private final ProductGrpcMapper productGrpcMapper;
     private final ProductResponseMapper productResponseMapper;
 
     public Optional<ProductResponse> createProduct(ProductRequest request) {
         log.info("Admin creating product via gRPC: {}", request.title());
 
-        ProductProto.Product proto = productGrpcMapper.toProto(request);
+        var proto = productGrpcMapper.toProto(request);
 
-        return productGrpcRepository.createProduct(proto)
+        return productGrpcClient.createProduct(proto)
                 .map(created -> {
                     Product product = productGrpcMapper.toDomain(created);
                     return productResponseMapper.toResponse(product);
@@ -37,9 +36,9 @@ public class AdminProductCommandService {
     public Optional<ProductResponse> updateProduct(Long productId, ProductRequest request) {
         log.info("Admin updating product via gRPC: {}", productId);
 
-        ProductProto.Product proto = productGrpcMapper.toProto(request);
+        var proto = productGrpcMapper.toProto(request);
 
-        return productGrpcRepository.updateProduct(productId, proto)
+        return productGrpcClient.updateProduct(productId, proto)
                 .map(updated -> {
                     Product product = productGrpcMapper.toDomain(updated);
                     return productResponseMapper.toResponse(product);
@@ -48,6 +47,6 @@ public class AdminProductCommandService {
 
     public boolean deleteProduct(Long productId) {
         log.info("Admin deleting product via gRPC: {}", productId);
-        return productGrpcRepository.deleteProduct(productId);
+        return productGrpcClient.deleteProduct(productId);
     }
 }
