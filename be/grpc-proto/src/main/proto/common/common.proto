@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package common;
+
+option java_package = "com.example.spring_ecom.grpc.common";
+option java_outer_classname = "CommonProto";
+
+import "google/protobuf/any.proto";
+
+// Common response wrapper
+message ApiResponse {
+  bool success = 1;
+  string message = 2;
+  int32 code = 3;
+  google.protobuf.Any data = 4;
+}
+
+// Pagination request
+message PageRequest {
+  int32 page = 1;
+  int32 size = 2;
+  string sort = 3;
+}
+
+// Pagination response
+message PageResponse {
+  int32 page = 1;
+  int32 size = 2;
+  int64 total_elements = 3;
+  int32 total_pages = 4;
+  bool first = 5;
+  bool last = 6;
+  bool has_next = 7;
+  bool has_previous = 8;
+}

@@ -1,0 +1,712 @@
+/* ===== FONT FACE ===== */
+@import url('fonts.css');
+
+/* ===== TOAST ANIMATIONS ===== */
+@keyframes progress {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+
+.animate-progress {
+    animation: progress 3s linear forwards;
+}
+
+:root {
+    --primary-color: #F47D42;
+    --primary-dark: #ed7873;
+    --secondary-color: #666666;
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --warning-color: #f59e0b;
+    --dark-bg: #0f172a;
+    --card-bg: #1e293b;
+    --text-light: #f1f5f9;
+    --text-muted: #94a3b8;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Baloo 2', sans-serif !important;
+}
+
+body {
+    font-family: 'Baloo 2', sans-serif !important;
+    background: #ffffff;
+    min-height: 100vh;
+    color: #333;
+}
+
+/* Force Baloo 2 font on all elements */
+body, 
+html,
+input,
+textarea,
+select,
+button,
+a,
+p,
+h1, h2, h3, h4, h5, h6,
+span,
+div,
+label,
+th,
+td,
+li,
+.form-control,
+.form-select,
+.form-label,
+.btn,
+.nav-link,
+.navbar-brand,
+.card,
+.table,
+.alert,
+.badge {
+    font-family: 'Baloo 2', sans-serif !important;
+}
+
+.navbar {
+    background: #ffffff;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.nav-link {
+    color: #333 !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--primary-color) !important;
+    transform: translateY(-2px);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: var(--primary-color);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.nav-link:hover::after, .nav-link.active::after {
+    width: 80%;
+}
+
+.container {
+    max-width: 1000px !important;
+}
+
+.container-main {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.card {
+    background: #ffffff;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.card-header {
+    background: linear-gradient(270deg, #f2a864 0%, #ed7873 100%);
+    color: white;
+    border-radius: 20px 20px 0 0 !important;
+    border: none;
+    padding: 1.5rem;
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-family: 'Baloo 2', sans-serif !important;
+    font-weight: 700;
+    font-size: 1rem;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    transform: translateY(0);
+    outline: none;
+}
+
+.btn:focus {
+    outline: none;
+    ring: 4px;
+    ring-offset: 2px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(270deg, #f2a864 0%, #ed7873 100%);
+    box-shadow: 0 4px 0 0 var(--primary-dark);
+    border: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(270deg, #f2a864 0%, #ed7873 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 5px 0 0 var(--primary-dark);
+}
+
+.btn-primary:active:not(:disabled) {
+    background: linear-gradient(270deg, #f2a864 0%, #ed7873 100%);
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 var(--primary-dark);
+}
+
+.btn-success {
+    background: #10b981;
+    box-shadow: 0 4px 0 0 #059669;
+}
+
+.btn-success:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 0 0 #059669;
+}
+
+.btn-success:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 #059669;
+}
+
+.btn-danger {
+    background: #ef4444;
+    box-shadow: 0 4px 0 0 #dc2626;
+}
+
+.btn-danger:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 0 0 #dc2626;
+}
+
+.btn-danger:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 #dc2626;
+}
+
+.btn-warning {
+    background: #f59e0b;
+    box-shadow: 0 4px 0 0 #d97706;
+}
+
+.btn-warning:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 0 0 #d97706;
+}
+
+.btn-warning:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 #d97706;
+}
+
+.btn-info {
+    background: #06b6d4;
+    box-shadow: 0 4px 0 0 #0891b2;
+}
+
+.btn-info:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 0 0 #0891b2;
+}
+
+.btn-info:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 #0891b2;
+}
+
+.btn-secondary {
+    background: #64748b;
+    box-shadow: 0 4px 0 0 #475569;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 0 0 #475569;
+}
+
+.btn-secondary:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 #475569;
+}
+
+.table {
+    color: #333;
+}
+
+.table thead {
+    background: rgba(193, 80, 46, 0.1);
+}
+
+.table tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.table tbody tr:hover {
+    background: rgba(193, 80, 46, 0.05);
+    transform: scale(1.01);
+}
+
+.alert {
+    border-radius: 15px;
+    border: none;
+    backdrop-filter: blur(10px);
+    animation: slideIn 0.5s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-control, .form-select {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: #333;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background: #ffffff;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(193, 80, 46, 0.25);
+    color: #333;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.footer {
+    background: #ffffff;
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* ===== TAILWIND BUTTON 3D STYLES ===== */
+/* Override Tailwind classes with 3D button effects */
+
+/* Base button styles */
+button, 
+[type="button"], 
+[type="submit"],
+.btn,
+a.inline-block,
+a.block {
+    font-family: 'Baloo 2', sans-serif !important;
+    font-weight: 700 !important;
+    transition: all 0.15s ease !important;
+}
+
+/* Disable 3D effects for quantity buttons and discount badges */
+button[onclick*="updateQuantity"],
+button[onclick*="increaseQty"],
+button[onclick*="decreaseQty"],
+.quantity-btn,
+.discount-badge,
+.bg-red-500 {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+button[onclick*="updateQuantity"]:hover,
+button[onclick*="increaseQty"]:hover,
+button[onclick*="decreaseQty"]:hover,
+.quantity-btn:hover {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+button[onclick*="updateQuantity"]:active,
+button[onclick*="increaseQty"]:active,
+button[onclick*="decreaseQty"]:active,
+.quantity-btn:active {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Button links with bg classes need inline-block for transform */
+a.bg-primary,
+a[class*="bg-primary"],
+a.bg-\[\#C1502E\],
+a[class*="bg-[#C1502E]"],
+a.bg-red-500,
+a.bg-red-600,
+a.bg-green-500,
+a.bg-green-600,
+a.bg-blue-500,
+a.bg-blue-600,
+a.bg-yellow-500,
+a.bg-yellow-600,
+a.bg-gray-600,
+a.bg-gray-700 {
+    display: inline-block !important;
+    transition: all 0.15s ease !important;
+}
+
+/* Primary Button (Gradient - Màu chủ đạo) */
+.bg-\[\#C1502E\],
+[class*="bg-[#C1502E]"],
+.bg-primary,
+a.bg-\[\#C1502E\],
+button.bg-\[\#C1502E\] {
+    background: linear-gradient(270deg, #f2a864 0%, #ed7873 100%) !important;
+    box-shadow: 0 4px 0 0 #ed7873 !important;
+    transform: translateY(0) !important;
+}
+
+.bg-\[\#C1502E\]:hover,
+[class*="bg-[#C1502E]"]:hover,
+.bg-primary:hover,
+a.bg-\[\#C1502E\]:hover,
+button.bg-\[\#C1502E\]:hover,
+.hover\:bg-\[\#A0402A\]:hover,
+.hover\:bg-primary:hover {
+    background: linear-gradient(270deg, #f2a864 0%, #ed7873 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 5px 0 0 #ed7873 !important;
+}
+
+.bg-\[\#C1502E\]:active,
+[class*="bg-[#C1502E]"]:active,
+.bg-primary:active,
+a.bg-\[\#C1502E\]:active,
+button.bg-\[\#C1502E\]:active {
+    background: linear-gradient(270deg, #f2a864 0%, #ed7873 100%) !important;
+    transform: translateY(2px) !important;
+    box-shadow: 0 2px 0 0 #ed7873 !important;
+}
+
+/* Purple Button - Removed */
+
+/* Red/Danger Button */
+.bg-red-500,
+.bg-red-600 {
+    background: #ef4444 !important;
+    box-shadow: 0 4px 0 0 #dc2626 !important;
+    transform: translateY(0) !important;
+}
+
+.bg-red-500:hover,
+.bg-red-600:hover,
+.hover\:bg-red-700:hover {
+    background: #ef4444 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 5px 0 0 #dc2626 !important;
+}
+
+.bg-red-500:active,
+.bg-red-600:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 2px 0 0 #dc2626 !important;
+}
+
+/* Exception: Discount badges should not have 3D effect */
+.bg-red-500.absolute,
+.bg-red-600.absolute,
+div.absolute.bg-red-500,
+div.absolute.bg-red-600 {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.bg-red-500.absolute:hover,
+.bg-red-600.absolute:hover,
+div.absolute.bg-red-500:hover,
+div.absolute.bg-red-600:hover {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.bg-red-500.absolute:active,
+.bg-red-600.absolute:active,
+div.absolute.bg-red-500:active,
+div.absolute.bg-red-600:active {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Green/Success Button */
+.bg-green-500,
+.bg-green-600 {
+    background: #10b981 !important;
+    box-shadow: 0 4px 0 0 #059669 !important;
+    transform: translateY(0) !important;
+}
+
+.bg-green-500:hover,
+.bg-green-600:hover,
+.hover\:bg-green-700:hover {
+    background: #10b981 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 5px 0 0 #059669 !important;
+}
+
+.bg-green-500:active,
+.bg-green-600:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 2px 0 0 #059669 !important;
+}
+
+/* Blue Button */
+.bg-blue-500,
+.bg-blue-600 {
+    background: #06b6d4 !important;
+    box-shadow: 0 4px 0 0 #0891b2 !important;
+    transform: translateY(0) !important;
+}
+
+.bg-blue-500:hover,
+.bg-blue-600:hover,
+.hover\:bg-blue-700:hover {
+    background: #06b6d4 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 5px 0 0 #0891b2 !important;
+}
+
+.bg-blue-500:active,
+.bg-blue-600:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 2px 0 0 #0891b2 !important;
+}
+
+/* Yellow/Warning Button */
+.bg-yellow-500,
+.bg-yellow-600 {
+    background: #f59e0b !important;
+    box-shadow: 0 4px 0 0 #d97706 !important;
+    transform: translateY(0) !important;
+}
+
+.bg-yellow-500:hover,
+.bg-yellow-600:hover {
+    background: #f59e0b !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 5px 0 0 #d97706 !important;
+}
+
+.bg-yellow-500:active,
+.bg-yellow-600:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 2px 0 0 #d97706 !important;
+}
+
+/* Gray/Secondary Button */
+.bg-gray-600,
+.bg-gray-700 {
+    background: #64748b !important;
+    box-shadow: 0 4px 0 0 #475569 !important;
+    transform: translateY(0) !important;
+}
+
+.bg-gray-600:hover,
+.bg-gray-700:hover {
+    background: #64748b !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 5px 0 0 #475569 !important;
+}
+
+.bg-gray-600:active,
+.bg-gray-700:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 2px 0 0 #475569 !important;
+}
+
+/* ===== TAILWIND CUSTOM UTILITIES ===== */
+/* Text colors */
+.text-primary {
+    color: #F47D42 !important;
+}
+
+.text-primary-dark {
+    color: #ed7873 !important;
+}
+
+.text-primary-light {
+    color: #D86B4A !important;
+}
+
+.text-secondary {
+    color: #666666 !important;
+}
+
+.text-secondary-dark {
+    color: #555555 !important;
+}
+
+/* Background colors */
+.bg-primary {
+    background: linear-gradient(270deg, #f2a864 0%, #ed7873 100%) !important;
+}
+
+.bg-primary-dark {
+    background-color: #ed7873 !important;
+}
+
+.bg-secondary {
+    background-color: #666666 !important;
+}
+
+/* Hover text colors */
+.hover\:text-primary:hover {
+    color: #F47D42 !important;
+}
+
+.hover\:text-primary-dark:hover {
+    color: #ed7873 !important;
+}
+
+/* Hover background colors */
+.hover\:bg-primary:hover {
+    background-color: #F47D42 !important;
+}
+
+.hover\:opacity-90:hover {
+    opacity: 0.9 !important;
+}
+
+.hover\:opacity-80:hover {
+    opacity: 0.8 !important;
+}
+
+/* Focus ring colors */
+.focus\:ring-primary:focus {
+    --tw-ring-color: #F47D42 !important;
+}
+
+/* Group hover utilities */
+.group:hover .group-hover\:text-primary {
+    color: #F47D42 !important;
+}
+
+.group:hover .group-hover\:text-primary-dark {
+    color: #ed7873 !important;
+}
+
+.group:hover .group-hover\:scale-110 {
+    transform: scale(1.1) !important;
+}
+
+.group:hover .group-hover\:translate-x-1 {
+    transform: translateX(0.25rem) !important;
+}
+
+/* ===== SKELETON LOADING ANIMATION ===== */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}
+
+.skeleton-book-card {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.skeleton-image {
+    width: 100%;
+    aspect-ratio: 3/4;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}
+
+.skeleton-text {
+    height: 1rem;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-text-short {
+    width: 60%;
+}
+
+.skeleton-text-medium {
+    width: 80%;
+}
+
+/* Book card aspect ratio */
+.aspect-\[3\/4\] {
+    aspect-ratio: 3/4;
+}
+
+/* Line clamp for book titles */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Min height for consistent card layout */
+.min-h-\[3rem\] {
+    min-height: 3rem;
+}

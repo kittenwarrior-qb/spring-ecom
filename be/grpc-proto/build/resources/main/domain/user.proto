@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package domain;
+
+option java_package = "com.example.spring_ecom.grpc.domain";
+option java_outer_classname = "UserProto";
+
+message User {
+  int64 id = 1;
+  string username = 2;
+  string email = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string phone = 6;
+  string date_of_birth = 7;
+  string avatar_url = 8;
+  bool is_active = 9;
+  bool email_verified = 10;
+  string created_at = 11;
+  string updated_at = 12;
+}
+
+message UserInfo {
+  int64 id = 1;
+  int64 user_id = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string phone_number = 5;
+  string date_of_birth = 6;
+  string avatar_url = 7;
+  string address = 8;
+  string ward = 9;
+  string district = 10;
+  string city = 11;
+  string postal_code = 12;
+}
+
+message UserPreferences {
+  int64 user_id = 1;
+  string language = 2;
+  string currency = 3;
+  string timezone = 4;
+  bool email_notifications = 5;
+  bool sms_notifications = 6;
+  bool marketing_emails = 7;
+  repeated string favorite_categories = 8;
+}
+
+message UserAddress {
+  int64 id = 1;
+  int64 user_id = 2;
+  string type = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string phone = 6;
+  string address_line1 = 7;
+  string address_line2 = 8;
+  string city = 9;
+  string state = 10;
+  string postal_code = 11;
+  string country = 12;
+  bool is_default = 13;
+  string created_at = 14;
+  string updated_at = 15;
+}

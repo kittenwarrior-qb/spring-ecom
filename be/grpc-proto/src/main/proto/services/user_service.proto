@@ -1,0 +1,179 @@
+syntax = "proto3";
+
+package services;
+
+option java_package = "com.example.spring_ecom.grpc.services";
+option java_outer_classname = "UserServiceProto";
+
+import "common/common.proto";
+import "domain/user.proto";
+import "domain/order.proto";
+
+service UserService {
+  // Basic user operations
+  rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse);
+  rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc GetUserOrders(GetUserOrdersRequest) returns (GetUserOrdersResponse);
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+  
+  // User preferences
+  rpc GetUserPreferences(GetUserPreferencesRequest) returns (GetUserPreferencesResponse);
+  rpc UpdateUserPreferences(UpdateUserPreferencesRequest) returns (UpdateUserPreferencesResponse);
+  
+  // User addresses
+  rpc GetUserAddresses(GetUserAddressesRequest) returns (GetUserAddressesResponse);
+  rpc AddUserAddress(AddUserAddressRequest) returns (AddUserAddressResponse);
+  rpc UpdateUserAddress(UpdateUserAddressRequest) returns (UpdateUserAddressResponse);
+  rpc DeleteUserAddress(DeleteUserAddressRequest) returns (DeleteUserAddressResponse);
+  rpc SetDefaultAddress(SetDefaultAddressRequest) returns (SetDefaultAddressResponse);
+}
+
+// Basic user operations
+message GetUserByIdRequest {
+  int64 user_id = 1;
+}
+
+message GetUserByIdResponse {
+  domain.User user = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message GetUserProfileRequest {
+  int64 user_id = 1;
+}
+
+message GetUserProfileResponse {
+  domain.UserInfo profile = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message UpdateProfileRequest {
+  int64 user_id = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string phone = 4;
+  string date_of_birth = 5;
+  string avatar_url = 6;
+}
+
+message UpdateProfileResponse {
+  domain.User user = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message ChangePasswordRequest {
+  int64 user_id = 1;
+  string current_password = 2;
+  string new_password = 3;
+  string confirm_password = 4;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetUserOrdersRequest {
+  int64 user_id = 1;
+  common.PageRequest page_request = 2;
+  string status_filter = 3;
+}
+
+message GetUserOrdersResponse {
+  repeated domain.Order orders = 1;
+  common.PageResponse page_response = 2;
+  bool success = 3;
+  string message = 4;
+}
+
+message DeleteAccountRequest {
+  int64 user_id = 1;
+  string password = 2;
+  string reason = 3;
+}
+
+message DeleteAccountResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// User preferences
+message GetUserPreferencesRequest {
+  int64 user_id = 1;
+}
+
+message GetUserPreferencesResponse {
+  domain.UserPreferences preferences = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message UpdateUserPreferencesRequest {
+  int64 user_id = 1;
+  domain.UserPreferences preferences = 2;
+}
+
+message UpdateUserPreferencesResponse {
+  domain.UserPreferences preferences = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+// User addresses
+message GetUserAddressesRequest {
+  int64 user_id = 1;
+}
+
+message GetUserAddressesResponse {
+  repeated domain.UserAddress addresses = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message AddUserAddressRequest {
+  int64 user_id = 1;
+  domain.UserAddress address = 2;
+}
+
+message AddUserAddressResponse {
+  domain.UserAddress address = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message UpdateUserAddressRequest {
+  int64 user_id = 1;
+  int64 address_id = 2;
+  domain.UserAddress address = 3;
+}
+
+message UpdateUserAddressResponse {
+  domain.UserAddress address = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message DeleteUserAddressRequest {
+  int64 user_id = 1;
+  int64 address_id = 2;
+}
+
+message DeleteUserAddressResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message SetDefaultAddressRequest {
+  int64 user_id = 1;
+  int64 address_id = 2;
+}
+
+message SetDefaultAddressResponse {
+  bool success = 1;
+  string message = 2;
+}

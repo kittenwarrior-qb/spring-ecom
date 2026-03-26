@@ -1,0 +1,19 @@
+package com.example.spring_ecom.domain.order.OrderItem;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+public record OrderItem(
+    Long id,
+    Long orderId,
+    Long productId,
+    String productTitle,
+    Integer quantity,
+    BigDecimal price,
+    BigDecimal subtotal,
+    OrderItemStatus status,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt,
+    LocalDateTime cancelledAt
+) {
+}

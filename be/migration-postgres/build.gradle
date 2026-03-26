@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+    id 'org.flywaydb.flyway' version '11.1.0'
+}
+
+group = 'com.example'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = '17'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.postgresql:postgresql:42.7.1'
+    implementation 'org.flywaydb:flyway-core:9.22.3'
+}
+
+flyway {
+    url = project.findProperty('flyway.url') ?: 'jdbc:postgresql://localhost:5432/spring_ecom_db'
+    user = project.findProperty('flyway.user') ?: 'postgres'
+    password = project.findProperty('flyway.password') ?: 'quocbui26042005'
+    locations = ['classpath:db/migration']
+    schemas = ['public']
+    baselineOnMigrate = true
+    validateOnMigrate = false  
+    cleanDisabled = false
+}
+
+task migrateDatabase {
+    dependsOn flywayMigrate
+    group = 'database'
+    description = 'Run database migrations'
+}
+
+task cleanDatabase {
+    dependsOn flywayClean
+    group = 'database'
+    description = 'Clean database (development only)'
+}
+
+task migrationInfo {
+    dependsOn flywayInfo
+    group = 'database'
+    description = 'Show migration information'
+}

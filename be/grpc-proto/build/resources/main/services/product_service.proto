@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package services;
+
+option java_package = "com.example.spring_ecom.grpc.services";
+option java_outer_classname = "ProductServiceProto";
+
+import "common/common.proto";
+import "domain/product.proto";
+
+service ProductService {
+  // Product management (Admin)
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
+  rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
+  rpc GetProductsAdmin(GetProductsAdminRequest) returns (GetProductsAdminResponse);
+  rpc IncrementProductViews(IncrementProductViewsRequest) returns (IncrementProductViewsResponse);
+  
+  // Stock management (inter-service)
+  rpc ValidateProductAvailability(ValidateProductAvailabilityRequest) returns (ValidateProductAvailabilityResponse);
+  rpc GetProductById(GetProductByIdRequest) returns (GetProductByIdResponse);
+  rpc UpdateProductStock(UpdateProductStockRequest) returns (UpdateProductStockResponse);
+  rpc UpdateProductsSoldCount(UpdateProductsSoldCountRequest) returns (UpdateProductsSoldCountResponse);
+  
+  // Category management (Admin)
+  rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
+  rpc UpdateCategory(UpdateCategoryRequest) returns (UpdateCategoryResponse);
+  rpc DeleteCategory(DeleteCategoryRequest) returns (DeleteCategoryResponse);
+  rpc GetCategoriesAdmin(GetCategoriesAdminRequest) returns (GetCategoriesAdminResponse);
+}
+
+// Product messages
+message CreateProductRequest {
+  domain.Product product = 1;
+}
+
+message CreateProductResponse {
+  domain.Product product = 1;
+}
+
+message UpdateProductRequest {
+  int64 product_id = 1;
+  domain.Product product = 2;
+}
+
+message UpdateProductResponse {
+  domain.Product product = 1;
+}
+
+message DeleteProductRequest {
+  int64 product_id = 1;
+}
+
+message DeleteProductResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetProductsAdminRequest {
+  common.PageRequest page_request = 1;
+  string search = 2;
+  int64 category_id = 3;
+  bool is_active = 4;
+}
+
+message GetProductsAdminResponse {
+  repeated domain.Product products = 1;
+  common.PageResponse page_response = 2;
+}
+
+message IncrementProductViewsRequest {
+  int64 product_id = 1;
+}
+
+message IncrementProductViewsResponse {
+  bool success = 1;
+}
+
+// Stock management messages
+message ValidateProductAvailabilityRequest {
+  int64 product_id = 1;
+  int32 quantity = 2;
+}
+
+message ValidateProductAvailabilityResponse {
+  bool available = 1;
+  int32 stock_quantity = 2;
+  string message = 3;
+}
+
+message GetProductByIdRequest {
+  int64 product_id = 1;
+}
+
+message GetProductByIdResponse {
+  domain.Product product = 1;
+  bool found = 2;
+}
+
+message StockUpdateItem {
+  int64 product_id = 1;
+  int32 quantity_delta = 2;
+}
+
+message UpdateProductStockRequest {
+  int64 product_id = 1;
+  int32 quantity_delta = 2;  // negative to deduct, positive to restore
+}
+
+message UpdateProductStockResponse {
+  bool success = 1;
+  int32 new_stock_quantity = 2;
+  string message = 3;
+}
+
+message UpdateProductsSoldCountRequest {
+  repeated StockUpdateItem items = 1;
+}
+
+message UpdateProductsSoldCountResponse {
+  bool success = 1;
+}
+
+// Category messages
+message CreateCategoryRequest {
+  domain.Category category = 1;
+}
+
+message CreateCategoryResponse {
+  domain.Category category = 1;
+}
+
+message UpdateCategoryRequest {
+  int64 category_id = 1;
+  domain.Category category = 2;
+}
+
+message UpdateCategoryResponse {
+  domain.Category category = 1;
+}
+
+message DeleteCategoryRequest {
+  int64 category_id = 1;
+}
+
+message DeleteCategoryResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetCategoriesAdminRequest {
+  common.PageRequest page_request = 1;
+  string search = 2;
+  bool is_active = 3;
+}
+
+message GetCategoriesAdminResponse {
+  repeated domain.Category categories = 1;
+  common.PageResponse page_response = 2;
+}

@@ -1,0 +1,13 @@
+rootProject.name = 'spring-ecom-backend'
+
+include 'landing'
+include 'core'
+include 'grpc-proto'
+include 'migration-postgres'
+include 'kafka-service'
+
+project(':landing').projectDir = file('landing')
+project(':core').projectDir = file('core')
+project(':grpc-proto').projectDir = file('grpc-proto')
+project(':migration-postgres').projectDir = file('migration-postgres')
+project(':kafka-service').projectDir = file('kafka-service')

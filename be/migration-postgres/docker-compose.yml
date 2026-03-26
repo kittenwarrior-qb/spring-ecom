@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  migration:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: postgres-migration-runner
+    env_file:
+      - .env
+    environment:
+      - FLYWAY_URL=${FLYWAY_URL}
+      - FLYWAY_USER=${FLYWAY_USER}
+      - FLYWAY_PASSWORD=${FLYWAY_PASSWORD}
+    network_mode: "host"
+    entrypoint: ["sh", "-c"]
+    command: ["flyway -baselineOnMigrate=true migrate && echo '============================================' && echo '✅ MIGRATION SUCCESSFUL! CSDL ĐÃ SẴN SÀNG!' && echo '============================================'"]

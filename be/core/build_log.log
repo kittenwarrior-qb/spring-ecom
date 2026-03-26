@@ -1,0 +1,17 @@
+
+FAILURE: Build failed with an exception.
+
+* Where:
+Build file 'D:\Desktop\spring-ecom-v2\be\server\build.gradle' line: 55
+
+* What went wrong:
+A problem occurred evaluating root project 'spring-ecom-server'.
+> Project with path ':grpc-proto' could not be found in root project 'spring-ecom-server'.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 746ms

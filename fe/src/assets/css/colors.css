@@ -1,0 +1,17 @@
+/* Fahaza Brand Colors - Warm Orange Theme */
+:root {
+    --primary: #F47D42;
+    --primary-dark: #ed7873;
+    --primary-light: #f2a864;
+    --secondary: #8B4513;
+    --accent: #CD853F;
+}
+
+/* Tailwind Custom Classes */
+.text-primary { color: var(--primary) !important; }
+.bg-primary { background-color: var(--primary) !important; }
+.border-primary { border-color: var(--primary) !important; }
+.hover\:text-primary:hover { color: var(--primary) !important; }
+.hover\:bg-primary:hover { background-color: var(--primary) !important; }
+.hover\:bg-primary-dark:hover { background-color: var(--primary-dark) !important; }
+.focus\:ring-primary:focus { --tw-ring-color: var(--primary) !important; }
