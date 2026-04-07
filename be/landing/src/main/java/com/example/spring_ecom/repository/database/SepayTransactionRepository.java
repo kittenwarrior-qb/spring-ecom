@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Repository
@@ -61,7 +62,7 @@ public class SepayTransactionRepository {
     }
     
     public SepayTransaction save(SepayTransaction transaction) {
-        if (transaction.id() == null) {
+        if (Objects.isNull(transaction.id())) {
             return insert(transaction);
         } else {
             return update(transaction);

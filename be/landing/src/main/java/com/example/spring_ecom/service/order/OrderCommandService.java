@@ -92,7 +92,7 @@ public class OrderCommandService {
         OrderEntity saved = orderRepository.save(entity);
         
         // Increment coupon usage if applied
-        if (calculation.couponId() != null) {
+        if (Objects.nonNull(calculation.couponId())) {
             couponUseCase.incrementUsage(calculation.couponId());
         }
         
@@ -109,7 +109,7 @@ public class OrderCommandService {
     
     public Optional<Order> updateStatus(Long id, OrderStatus status) {
         OrderEntity entity = findOrderById(id);
-        String oldStatus = entity.getStatus() != null ? entity.getStatus().name() : null;
+        String oldStatus = Objects.nonNull(entity.getStatus()) ? entity.getStatus().name() : null;
         validateStatusTransition(entity, status);
         
         mapper.updateOrderStatus(entity, status);
@@ -208,7 +208,7 @@ public class OrderCommandService {
         BigDecimal shippingFee = BigDecimal.ZERO;
         
         // If no coupon code, return without discount
-        if (couponCode == null || couponCode.isBlank()) {
+        if (Objects.isNull(couponCode) || couponCode.isBlank()) {
             return OrderCalculation.withoutCoupon(subtotal, shippingFee);
         }
         
@@ -282,7 +282,7 @@ public class OrderCommandService {
         
         // Validate transition using allowed transitions map
         Set<OrderStatus> allowedNextStatus = ALLOWED_STATUS_TRANSITIONS.get(currentStatus);
-        if (allowedNextStatus == null || !allowedNextStatus.contains(newStatus)) {
+        if (Objects.isNull(allowedNextStatus) || !allowedNextStatus.contains(newStatus)) {
             throw new BaseException(ResponseCode.BAD_REQUEST, 
                 String.format("Invalid status transition: %s → %s. Allowed: %s", 
                     currentStatus, newStatus, allowedNextStatus));
@@ -442,11 +442,11 @@ public class OrderCommandService {
                     .orderId(order.id())
                     .orderNumber(order.orderNumber())
                     .userId(order.userId())
-                    .status(order.status() != null ? order.status().name() : null)
+                    .status(Objects.nonNull(order.status()) ? order.status().name() : null)
                     .previousStatus(previousStatus)
-                    .paymentMethod(order.paymentMethod() != null ? order.paymentMethod().name() : null)
-                    .paymentStatus(order.paymentStatus() != null ? order.paymentStatus().name() : null)
-                    .total(order.total() != null ? order.total().doubleValue() : 0.0)
+                    .paymentMethod(Objects.nonNull(order.paymentMethod()) ? order.paymentMethod().name() : null)
+                    .paymentStatus(Objects.nonNull(order.paymentStatus()) ? order.paymentStatus().name() : null)
+                    .total(Objects.nonNull(order.total()) ? order.total().doubleValue() : 0.0)
                     .build();
             orderKafkaProducer.send(event);
         } catch (Exception e) {
@@ -455,18 +455,11 @@ public class OrderCommandService {
     }
     
     // ========== NEW KAFKA EVENT METHODS ==========
-    
-    /**
-     * Check stock availability từ DB client (KHÔNG dùng gRPC)
-     */
+
     private void validateStockAvailability(List<CartItem> cartItems) {
         productCommandService.validateStockForOrder(cartItems);
     }
-    
-    /**
-     * Publish ORDER_CREATED event với đầy đủ order items
-     * Server consumer sẽ: deduct stock, update sold count
-     */
+
     private void publishOrderCreatedEvent(Order order, List<OrderItemEntity> orderItems, List<CartItem> cartItems) {
         try {
             List<OrderEvent.OrderItemPayload> itemPayloads = orderItems.stream()
@@ -487,13 +480,13 @@ public class OrderCommandService {
                     .orderId(order.id())
                     .orderNumber(order.orderNumber())
                     .userId(order.userId())
-                    .status(order.status() != null ? order.status().name() : null)
-                    .paymentMethod(order.paymentMethod() != null ? order.paymentMethod().name() : null)
-                    .paymentStatus(order.paymentStatus() != null ? order.paymentStatus().name() : null)
-                    .subtotal(order.subtotal() != null ? order.subtotal().doubleValue() : 0.0)
-                    .shippingFee(order.shippingFee() != null ? order.shippingFee().doubleValue() : 0.0)
-                    .discount(order.discount() != null ? order.discount().doubleValue() : 0.0)
-                    .total(order.total() != null ? order.total().doubleValue() : 0.0)
+                    .status(Objects.nonNull(order.status()) ? order.status().name() : null)
+                    .paymentMethod(Objects.nonNull(order.paymentMethod()) ? order.paymentMethod().name() : null)
+                    .paymentStatus(Objects.nonNull(order.paymentStatus()) ? order.paymentStatus().name() : null)
+                    .subtotal(Objects.nonNull(order.subtotal()) ? order.subtotal().doubleValue() : 0.0)
+                    .shippingFee(Objects.nonNull(order.shippingFee()) ? order.shippingFee().doubleValue() : 0.0)
+                    .discount(Objects.nonNull(order.discount()) ? order.discount().doubleValue() : 0.0)
+                    .total(Objects.nonNull(order.total()) ? order.total().doubleValue() : 0.0)
                     .items(itemPayloads)
                     .build();
             
@@ -534,9 +527,9 @@ public class OrderCommandService {
                     .orderNumber(order.orderNumber())
                     .userId(order.userId())
                     .status(OrderStatus.CANCELLED.name())
-                    .paymentMethod(order.paymentMethod() != null ? order.paymentMethod().name() : null)
-                    .paymentStatus(order.paymentStatus() != null ? order.paymentStatus().name() : null)
-                    .total(order.total() != null ? order.total().doubleValue() : 0.0)
+                    .paymentMethod(Objects.nonNull(order.paymentMethod()) ? order.paymentMethod().name() : null)
+                    .paymentStatus(Objects.nonNull(order.paymentStatus()) ? order.paymentStatus().name() : null)
+                    .total(Objects.nonNull(order.total()) ? order.total().doubleValue() : 0.0)
                     .items(itemPayloads)
                     .build();
             
@@ -565,7 +558,7 @@ public class OrderCommandService {
             List<OrderEvent.OrderItemPayload> itemPayloads = new ArrayList<>();
             for (OrderItemEntity item : afterItems) {
                 Integer qtyToCancel = cancelMap.get(item.getId());
-                if (qtyToCancel != null && qtyToCancel > 0) {
+                if (Objects.nonNull(qtyToCancel) && qtyToCancel > 0) {
                     itemPayloads.add(OrderEvent.OrderItemPayload.builder()
                             .productId(item.getProductId())
                             .productTitle(item.getProductTitle())
@@ -584,10 +577,10 @@ public class OrderCommandService {
                     .orderId(order.id())
                     .orderNumber(order.orderNumber())
                     .userId(order.userId())
-                    .status(order.status() != null ? order.status().name() : null)
-                    .paymentMethod(order.paymentMethod() != null ? order.paymentMethod().name() : null)
-                    .paymentStatus(order.paymentStatus() != null ? order.paymentStatus().name() : null)
-                    .total(order.total() != null ? order.total().doubleValue() : 0.0)
+                    .status(Objects.nonNull(order.status()) ? order.status().name() : null)
+                    .paymentMethod(Objects.nonNull(order.paymentMethod()) ? order.paymentMethod().name() : null)
+                    .paymentStatus(Objects.nonNull(order.paymentStatus()) ? order.paymentStatus().name() : null)
+                    .total(Objects.nonNull(order.total()) ? order.total().doubleValue() : 0.0)
                     .items(itemPayloads)
                     .build();
             
@@ -628,9 +621,9 @@ public class OrderCommandService {
                     .orderNumber(order.orderNumber())
                     .userId(order.userId())
                     .status(OrderStatus.DELIVERED.name())
-                    .paymentMethod(order.paymentMethod() != null ? order.paymentMethod().name() : null)
-                    .paymentStatus(order.paymentStatus() != null ? order.paymentStatus().name() : null)
-                    .total(order.total() != null ? order.total().doubleValue() : 0.0)
+                    .paymentMethod(Objects.nonNull(order.paymentMethod()) ? order.paymentMethod().name() : null)
+                    .paymentStatus(Objects.nonNull(order.paymentStatus()) ? order.paymentStatus().name() : null)
+                    .total(Objects.nonNull(order.total()) ? order.total().doubleValue() : 0.0)
                     .items(itemPayloads)
                     .build();
             
@@ -650,7 +643,7 @@ public class OrderCommandService {
             List<OrderItemEntity> orderItems = orderItemUseCase.findByOrderId(order.id());
             
             List<OrderEvent.OrderItemPayload> itemPayloads = orderItems.stream()
-                    .filter(item -> item.getStatus() == null || 
+                    .filter(item -> Objects.isNull(item.getStatus()) || 
                             item.getStatus() == com.example.spring_ecom.domain.order.OrderItem.OrderItemStatus.ACTIVE)
                     .map(item -> OrderEvent.OrderItemPayload.builder()
                             .productId(item.getProductId())

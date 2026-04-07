@@ -46,6 +46,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useProductsContext } from './products-provider'
+import { ImageUpload } from '@/components/image-upload'
 
 const productFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255, 'Title must be at most 255 characters'),
@@ -60,7 +61,7 @@ const productFormSchema = z.object({
   price: z.number().min(0, 'Price must be non-negative'),
   discountPrice: z.number().min(0, 'Discount price must be non-negative').optional(),
   stockQuantity: z.number().int().min(0, 'Stock quantity must be non-negative').optional(),
-  coverImageUrl: z.string().url('Must be a valid URL').max(500).optional().or(z.literal('')),
+  coverImageUrl: z.string().max(500).optional().or(z.literal('')),
   isBestseller: z.boolean(),
   isActive: z.boolean(),
   categoryId: z.number().optional(),
@@ -87,7 +88,7 @@ function ProductFormDialog({
   description: string
   isLoading: boolean
 }) {
-  const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useCategories()
+  const { data: categories, isLoading: categoriesLoading } = useCategories()
   
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -411,9 +412,12 @@ function ProductFormDialog({
                 name='coverImageUrl'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cover Image URL</FormLabel>
+                    <FormLabel>Cover Image</FormLabel>
                     <FormControl>
-                      <Input placeholder='https://example.com/image.jpg' {...field} />
+                      <ImageUpload
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

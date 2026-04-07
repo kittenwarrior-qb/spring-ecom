@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -15,11 +17,6 @@ public class OrderKafkaConsumer {
 
     private final OrderEventService orderEventService;
 
-    /**
-     * - ORDER_CREATED: Trừ stock trong DB server
-     * - ORDER_CANCELLED: Restore stock trong DB server
-     * - ORDER_DELIVERED: Update sold count
-     */
     @KafkaListener(topics = OrderKafkaProducer.TOPIC, groupId = "spring-ecom-server-group")
     public void consumeOrderEvent(OrderEvent event) {
         log.info("============ 📥 KAFKA EVENT RECEIVED ============");
@@ -30,7 +27,7 @@ public class OrderKafkaConsumer {
         log.info("Order Number: {}", event.getOrderNumber());
         log.info("User ID: {}", event.getUserId());
         log.info("Total: {}", event.getTotal());
-        log.info("Items count: {}", event.getItems() != null ? event.getItems().size() : 0);
+        log.info("Items count: {}", Objects.nonNull(event.getItems()) ? event.getItems().size() : 0);
         log.info("Source: {}", event.getSource());
         log.info("================================================");
 
@@ -55,6 +52,7 @@ public class OrderKafkaConsumer {
                 case OrderEvent.STATUS_CHANGED -> {
                     log.info("Processing ORDER_STATUS_CHANGED event...");
                     log.info("Status: {} -> {}", event.getPreviousStatus(), event.getStatus());
+                    orderEventService.handleOrderStatusChanged(event);
                 }
                 case "ORDER_PARTIAL_CANCELLED" -> {
                     log.info("Processing ORDER_PARTIAL_CANCELLED event...");

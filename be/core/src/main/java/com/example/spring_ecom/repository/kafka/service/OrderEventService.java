@@ -1,14 +1,14 @@
 package com.example.spring_ecom.repository.kafka.service;
 
 import com.example.spring_ecom.kafka.domain.OrderEvent;
-import com.example.spring_ecom.repository.kafka.producer.OrderKafkaProducerImpl;
 import com.example.spring_ecom.repository.database.product.ProductEntity;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
-import com.example.spring_ecom.repository.database.order.OrderEntity;
+
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.repository.database.product.ProductRepository;
 import com.example.spring_ecom.repository.database.stock.StockReservationEntity;
 import com.example.spring_ecom.repository.database.stock.StockReservationRepository;
+import com.example.spring_ecom.service.notification.NotificationUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,10 +18,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service xử lý các Kafka event liên quan đến Order
@@ -34,8 +37,17 @@ public class OrderEventService {
 
     private final ProductRepository productRepository;
     private final StockReservationRepository reservationRepository;
-    private final OrderKafkaProducerImpl kafkaProducer;
     private final OrderRepository orderRepository;
+    private final NotificationUseCase notificationUseCase;
+
+    /**
+     * Idempotency guard: tracks eventIds already processed for notifications.
+     * Prevents duplicate notifications when Kafka redelivers the same event.
+     * NOTE: In-memory only — suitable for single-instance deployments.
+     * For multi-instance scale-out, replace with a Redis SET (TTL ~24h).
+     */
+    private final Set<String> processedNotificationEventIds =
+            Collections.newSetFromMap(new ConcurrentHashMap<>());
     
     @Value("${stock.reservation.ttl-minutes:15}")
     private int reservationTtlMinutes;
@@ -50,36 +62,33 @@ public class OrderEventService {
         
         if (hasNoItems(event)) {
             log.warn("Order {} has no items, skipping stock reservation", event.getOrderId());
-            sendOrderFailedEvent(event, "Order has no items", new ArrayList<>());
-            return;
+            // Throw exception to trigger transaction rollback
+            throw new RuntimeException("Order has no items: " + event.getOrderId());
         }
 
-        // BƯỚC 1: Check ALL items trước
-        List<OrderEvent.StockFailureItem> failedItems = checkStockAvailability(event);
+        // ATOMIC RESERVE - check + reserve in single SQL (no race condition)
+        List<OrderEvent.StockFailureItem> failedItems = reserveStockForOrderAtomic(event);
         
-        // BƯỚC 2: Nếu có fail → ROLLBACK + send ORDER_FAILED
+        // If any item failed → transaction will rollback
         if (!failedItems.isEmpty()) {
-            log.warn("[KAFKA] Stock check failed for OrderId: {}, Failed items: {}", 
+            log.warn("[KAFKA] Stock reservation failed for OrderId: {}, Failed items: {}", 
                     event.getOrderId(), failedItems.size());
-            sendOrderFailedEvent(event, "Insufficient stock", failedItems);
-            return; // Transaction rollback tự động nếu throw exception
+            // Throw exception to trigger transaction rollback
+            throw new RuntimeException("Insufficient stock for order: " + event.getOrderId());
         }
         
-        // BƯỚC 3: ALL OK → Reserve ALL trong 1 transaction
-        try {
-            reserveStockForOrder(event);
-            log.info("[KAFKA] Stock reserved successfully - OrderId: {}, Items: {}", 
-                    event.getOrderId(), event.getItems().size());
-            
-            // BƯỚC 4: Update order status directly in DB (ONE-WAY KAFKA)
-            updateOrderStatus(event.getOrderId(), OrderStatus.STOCK_RESERVED);
-            log.info("Order status updated to STOCK_RESERVED: orderId={}", event.getOrderId());
-        } catch (Exception e) {
-            log.error("[KAFKA] Failed to reserve stock for OrderId: {}", event.getOrderId(), e);
-            // Update order status to STOCK_FAILED
-            updateOrderStatus(event.getOrderId(), OrderStatus.STOCK_FAILED);
-            log.error("Order status updated to STOCK_FAILED: orderId={}", event.getOrderId());
-            throw e; // Trigger transaction rollback
+        log.info("[KAFKA] Stock reserved successfully - OrderId: {}, Items: {}", 
+                event.getOrderId(), event.getItems().size());
+        
+        // Update order status
+        updateOrderStatus(event.getOrderId(), OrderStatus.STOCK_RESERVED);
+        log.info("Order status updated to STOCK_RESERVED: orderId={}", event.getOrderId());
+        
+        // Send notification to user — guarded by idempotency check
+        if (isNewNotificationEvent(event.getEventId())) {
+            sendOrderCreatedNotification(event);
+        } else {
+            log.info("[NOTIFICATION] Skipping duplicate ORDER_CREATED notification - eventId={}", event.getEventId());
         }
     }
 
@@ -155,6 +164,83 @@ public class OrderEventService {
                 event.getOrderId(), soldCountMap.size());
     }
     
+    /**
+     * Handle ORDER_STATUS_CHANGED - send notification to user
+     */
+    @Transactional
+    public void handleOrderStatusChanged(OrderEvent event) {
+        log.info("[KAFKA] Processing ORDER_STATUS_CHANGED - OrderId: {}, Status: {} -> {}", 
+                event.getOrderId(), event.getPreviousStatus(), event.getStatus());
+        
+        // Send notification — guarded by idempotency check
+        if (isNewNotificationEvent(event.getEventId())) {
+            sendOrderStatusNotification(event);
+        } else {
+            log.info("[NOTIFICATION] Skipping duplicate ORDER_STATUS_CHANGED notification - eventId={}", event.getEventId());
+        }
+    }
+    
+    /**
+     * Send notification when order status changes
+     */
+    private void sendOrderStatusNotification(OrderEvent event) {
+        try {
+            if (Objects.isNull(event.getUserId()) || Objects.isNull(event.getStatus())) {
+                log.warn("[NOTIFICATION] Missing userId or status, skipping notification");
+                return;
+            }
+            
+            String status = event.getStatus();
+            String title = "Cập nhật đơn hàng";
+            String message = mapStatusToMessage(event.getOrderNumber(), status);
+            String type = mapStatusToType(status);
+            String actionUrl = "/orders/" + event.getOrderId();
+            
+            log.info("[NOTIFICATION] Sending order status notification - userId={}, orderNumber={}, status={}", 
+                    event.getUserId(), event.getOrderNumber(), status);
+            
+            notificationUseCase.createAndSend(
+                    event.getUserId(),
+                    type,
+                    title,
+                    message,
+                    event.getOrderId(),
+                    "ORDER",
+                    null,
+                    actionUrl
+            );
+            
+            log.info("[NOTIFICATION] Order status notification sent successfully - userId={}", event.getUserId());
+        } catch (Exception e) {
+            log.error("[NOTIFICATION] Failed to send order status notification: {}", e.getMessage(), e);
+        }
+    }
+    
+    private String mapStatusToMessage(String orderNumber, String status) {
+        String statusText = switch (status.toUpperCase()) {
+            case "CONFIRMED" -> "đã được xác nhận";
+            case "PROCESSING" -> "đang được xử lý";
+            case "SHIPPED" -> "đã được giao cho đơn vị vận chuyển";
+            case "DELIVERED" -> "đã được giao thành công";
+            case "CANCELLED" -> "đã bị hủy";
+            case "STOCK_RESERVED" -> "đã được xác nhận tồn kho";
+            default -> "đã được cập nhật";
+        };
+        return String.format("Đơn hàng #%s %s", orderNumber, statusText);
+    }
+    
+    private String mapStatusToType(String status) {
+        return switch (status.toUpperCase()) {
+            case "CONFIRMED" -> "ORDER_CONFIRMED";
+            case "PROCESSING" -> "ORDER_STATUS";
+            case "SHIPPED" -> "ORDER_SHIPPED";
+            case "DELIVERED" -> "ORDER_DELIVERED";
+            case "CANCELLED" -> "ORDER_CANCELLED";
+            case "STOCK_RESERVED" -> "ORDER_CONFIRMED";
+            default -> "ORDER_STATUS";
+        };
+    }
+    
     @Transactional
     public void handleOrderPartialCancelled(OrderEvent event) {
         log.info("[KAFKA] Processing ORDER_PARTIAL_CANCELLED - OrderId: {}, Items to release: {}",
@@ -189,6 +275,16 @@ public class OrderEventService {
 
     // ========== PRIVATE HELPER METHODS ==========
 
+    /**
+     * Returns true if this eventId has NOT been processed yet (i.e. it is new).
+     * Marks the eventId as processed on first call.
+     * Guards against duplicate notifications from Kafka redelivery.
+     */
+    private boolean isNewNotificationEvent(String eventId) {
+        if (Objects.isNull(eventId)) return true;
+        return processedNotificationEventIds.add(eventId);
+    }
+
     private boolean hasNoItems(OrderEvent event) {
         return Objects.isNull(event.getItems()) || event.getItems().isEmpty();
     }
@@ -203,7 +299,7 @@ public class OrderEventService {
         for (OrderEvent.OrderItemPayload item : event.getItems()) {
             ProductEntity product = productRepository.findById(item.getProductId()).orElse(null);
             
-            if (product == null) {
+            if (Objects.isNull(product)) {
                 failedItems.add(OrderEvent.StockFailureItem.builder()
                         .productId(item.getProductId())
                         .productTitle(item.getProductTitle())
@@ -228,21 +324,49 @@ public class OrderEventService {
     }
     
     /**
-     * Reserve stock for ALL items in order
-     * Creates reservation records and updates product's reservedQuantity
+     * Reserve stock for ALL items in order with PESSIMISTIC LOCK
+     * Prevents race condition by locking product row during update
+     * @return List of failed items (empty if all OK)
      */
-    private void reserveStockForOrder(OrderEvent event) {
+    private List<OrderEvent.StockFailureItem> reserveStockForOrderAtomic(OrderEvent event) {
         Instant now = Instant.now();
         Instant expireAt = now.plus(reservationTtlMinutes, ChronoUnit.MINUTES);
+        List<OrderEvent.StockFailureItem> failedItems = new ArrayList<>();
 
         for (OrderEvent.OrderItemPayload item : event.getItems()) {
-            ProductEntity product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProductId()));
-
-            // Update reservedQuantity on product
+            // PESSIMISTIC LOCK - lock product row for update
+            ProductEntity product = productRepository.findByIdWithLock(item.getProductId())
+                    .orElse(null);
+            
+            if (Objects.isNull(product)) {
+                failedItems.add(OrderEvent.StockFailureItem.builder()
+                        .productId(item.getProductId())
+                        .productTitle(item.getProductTitle())
+                        .requestedQuantity(item.getQuantity())
+                        .availableQuantity(0)
+                        .build());
+                log.warn("[STOCK] Product not found: productId={}", item.getProductId());
+                continue;
+            }
+            
+            int availableQuantity = product.getStockQuantity() - product.getReservedQuantity();
+            
+            if (availableQuantity < item.getQuantity()) {
+                failedItems.add(OrderEvent.StockFailureItem.builder()
+                        .productId(item.getProductId())
+                        .productTitle(product.getTitle())
+                        .requestedQuantity(item.getQuantity())
+                        .availableQuantity(availableQuantity)
+                        .build());
+                log.warn("[STOCK] Reserve failed: productId={}, requested={}, available={}", 
+                        item.getProductId(), item.getQuantity(), availableQuantity);
+                continue;
+            }
+            
+            // Reserve stock - lock prevents race condition
             product.setReservedQuantity(product.getReservedQuantity() + item.getQuantity());
             productRepository.save(product);
-
+            
             // Create reservation record
             StockReservationEntity reservation = StockReservationEntity.builder()
                     .orderId(event.getOrderId())
@@ -253,86 +377,57 @@ public class OrderEventService {
                     .expireAt(expireAt)
                     .build();
             reservationRepository.save(reservation);
-
-            log.debug("Reserved stock: productId={}, quantity={}, expireAt={}",
-                    item.getProductId(), item.getQuantity(), expireAt);
+            
+            log.info("[STOCK] Reserved: productId={}, qty={}, orderId={}", 
+                    item.getProductId(), item.getQuantity(), event.getOrderId());
         }
-    }
-    
-    /**
-     * Send ORDER_CONFIRMED event back to client
-     */
-    private void sendOrderConfirmedEvent(OrderEvent originalEvent) {
-        OrderEvent confirmedEvent = OrderEvent.builder()
-                .eventId(java.util.UUID.randomUUID().toString())
-                .eventType(OrderEvent.ORDER_CONFIRMED)
-                .timestamp(Instant.now())
-                .source("server")
-                .orderId(originalEvent.getOrderId())
-                .orderNumber(originalEvent.getOrderNumber())
-                .userId(originalEvent.getUserId())
-                .status("STOCK_RESERVED")
-                .items(originalEvent.getItems())
-                .build();
         
-        kafkaProducer.send(confirmedEvent);
-        log.info("[KAFKA] Sent ORDER_CONFIRMED event - OrderId: {}", originalEvent.getOrderId());
-    }
-    
-    /**
-     * Send ORDER_FAILED event back to client
-     */
-    private void sendOrderFailedEvent(OrderEvent originalEvent, String reason, List<OrderEvent.StockFailureItem> failedItems) {
-        OrderEvent failedEvent = OrderEvent.builder()
-                .eventId(java.util.UUID.randomUUID().toString())
-                .eventType(OrderEvent.ORDER_FAILED)
-                .timestamp(Instant.now())
-                .source("server")
-                .orderId(originalEvent.getOrderId())
-                .orderNumber(originalEvent.getOrderNumber())
-                .userId(originalEvent.getUserId())
-                .status("STOCK_FAILED")
-                .failureReason(reason)
-                .failedItems(failedItems)
-                .items(originalEvent.getItems())
-                .build();
-        
-        kafkaProducer.send(failedEvent);
-        log.info("[KAFKA] Sent ORDER_FAILED event - OrderId: {}, Reason: {}", 
-                originalEvent.getOrderId(), reason);
+        return failedItems;
     }
 
-    /**
-     * Release reserved stock (for cancel/timeout)
-     */
     private void releaseReservedStock(Long productId, Integer quantity) {
-        productRepository.findById(productId).ifPresentOrElse(
-                product -> {
-                    product.setReservedQuantity(Math.max(0, product.getReservedQuantity() - quantity));
-                    productRepository.save(product);
-                    log.info("Released reserved stock: productId={}, quantity={}, newReserved={}",
-                            productId, quantity, product.getReservedQuantity());
-                },
-                () -> log.error("Product not found for stock release: productId={}", productId)
-        );
+        ProductEntity product = productRepository.findByIdWithLock(productId).orElse(null);
+        
+        if (Objects.isNull(product)) {
+            log.warn("[STOCK] Release failed - product not found: productId={}", productId);
+            return;
+        }
+        
+        if (product.getReservedQuantity() < quantity) {
+            log.warn("[STOCK] Release failed - insufficient reserved: productId={}, reserved={}, requested={}", 
+                    productId, product.getReservedQuantity(), quantity);
+            return;
+        }
+        
+        product.setReservedQuantity(product.getReservedQuantity() - quantity);
+        productRepository.save(product);
+        
+        log.info("[STOCK] Released: productId={}, qty={}", productId, quantity);
     }
     
     /**
-     * Deduct stock (convert reserved → sold) when payment confirmed
+     * Deduct stock (convert reserved → sold) when payment confirmed with PESSIMISTIC LOCK
      */
     private void deductStock(Long productId, Integer quantity, String productTitle) {
-        productRepository.findById(productId).ifPresentOrElse(
-                product -> {
-                    // Deduct from stockQuantity
-                    product.setStockQuantity(product.getStockQuantity() - quantity);
-                    // Release from reservedQuantity
-                    product.setReservedQuantity(Math.max(0, product.getReservedQuantity() - quantity));
-                    productRepository.save(product);
-                    log.info("Stock deducted: productId={}, title={}, quantity={}, newStock={}, newReserved={}",
-                            productId, productTitle, quantity, product.getStockQuantity(), product.getReservedQuantity());
-                },
-                () -> log.error("Product not found for stock deduction: productId={}", productId)
-        );
+        ProductEntity product = productRepository.findByIdWithLock(productId).orElse(null);
+        
+        if (Objects.isNull(product)) {
+            log.error("[STOCK] Deduct failed - product not found: productId={}", productId);
+            throw new IllegalStateException("Product not found: productId=" + productId);
+        }
+        
+        if (product.getStockQuantity() < quantity || product.getReservedQuantity() < quantity) {
+            log.error("[STOCK] Deduct failed - insufficient stock or reservation: productId={}, stock={}, reserved={}, requested={}", 
+                    productId, product.getStockQuantity(), product.getReservedQuantity(), quantity);
+            throw new IllegalStateException("Insufficient stock or reservation: productId=" + productId);
+        }
+        
+        product.setStockQuantity(product.getStockQuantity() - quantity);
+        product.setReservedQuantity(product.getReservedQuantity() - quantity);
+        product.setSoldCount(product.getSoldCount() + quantity);
+        productRepository.save(product);
+        
+        log.info("[STOCK] Deducted: productId={}, qty={}, productTitle={}", productId, quantity, productTitle);
     }
     
     private void restoreStock(Long productId, Integer quantity, String productTitle) {
@@ -372,5 +467,36 @@ public class OrderEventService {
                 },
                 () -> log.error("Order not found for status update: orderId={}", orderId)
         );
+    }
+    
+    /**
+     * Send notification to user when order is created successfully
+     */
+    private void sendOrderCreatedNotification(OrderEvent event) {
+        try {
+            log.info("[NOTIFICATION] Sending order created notification - userId={}, orderNumber={}", 
+                    event.getUserId(), event.getOrderNumber());
+            
+            String title = "Đặt hàng thành công";
+            String message = String.format("Đơn hàng #%s đã được tạo thành công và đang chờ xác nhận", 
+                    event.getOrderNumber());
+            String actionUrl = "/orders/" + event.getOrderId();
+            
+            notificationUseCase.createAndSend(
+                    event.getUserId(),
+                    "ORDER_CREATED",
+                    title,
+                    message,
+                    event.getOrderId(),
+                    "ORDER",
+                    null,
+                    actionUrl
+            );
+            
+            log.info("[NOTIFICATION] Order created notification sent successfully - userId={}", event.getUserId());
+        } catch (Exception e) {
+            log.error("[NOTIFICATION] Failed to send order created notification: {}", e.getMessage(), e);
+            // Don't fail the order if notification fails
+        }
     }
 }

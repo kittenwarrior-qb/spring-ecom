@@ -348,6 +348,7 @@ export interface CreatePermissionRequest {
 
 // Coupon types
 export type DiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT'
+export type NotificationType = 'NONE' | 'BROADCAST' | 'TARGETED'
 
 export interface CouponRequest {
   code: string
@@ -360,6 +361,8 @@ export interface CouponRequest {
   startDate: string
   endDate: string
   isActive?: boolean
+  notificationType?: NotificationType
+  targetUserIds?: number[]
 }
 
 export interface CouponResponse {
@@ -391,4 +394,20 @@ export interface CouponValidationResponse {
   message: string
   coupon: CouponResponse | null
   discountAmount: number
+}
+
+// File types
+export interface FileUploadResponse {
+  filename: string
+  url: string
+}
+
+export interface FileItem {
+  filename: string
+  url: string
+}
+
+export interface FileListResponse {
+  files: FileItem[]
+  count: number
 }

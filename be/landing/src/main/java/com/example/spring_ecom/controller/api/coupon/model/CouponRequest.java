@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record CouponRequest(
     @NotBlank(message = "Coupon code is required")
@@ -36,7 +37,13 @@ public record CouponRequest(
     @NotNull(message = "End date is required")
     LocalDateTime endDate,
     
-    Boolean isActive
+    Boolean isActive,
+    
+    // Notification options
+    NotificationType notificationType,
+    
+    // Target user IDs (only used when notificationType = TARGETED)
+    List<Long> targetUserIds
 ) {
     public CouponRequest {
         // Set defaults
@@ -46,5 +53,17 @@ public record CouponRequest(
         if (isActive == null) {
             isActive = true;
         }
+        if (notificationType == null) {
+            notificationType = NotificationType.NONE;
+        }
+    }
+    
+    /**
+     * Notification type for coupon creation
+     */
+    public enum NotificationType {
+        NONE,       // Don't send notification
+        BROADCAST,  // Send to all users
+        TARGETED    // Send to specific users
     }
 }

@@ -11,7 +11,7 @@ import org.mapstruct.Mapping;
  * Vì Category là record (immutable), dùng 2-source merge method thay cho @MappingTarget.
  */
 @Mapper(config = MapStructGlobalConfig.class)
-public interface AdminCategoryRequestMapper {
+public interface    AdminCategoryRequestMapper {
 
     /**
      * Tạo Category domain mới từ CreateCategoryRequest.

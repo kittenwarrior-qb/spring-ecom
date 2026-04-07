@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/core/spring-ecom-backend.core.main.iml" filepath="$PROJECT_DIR$/.idea/modules/core/spring-ecom-backend.core.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/emqx-proto/spring-ecom-backend.emqx-proto.main.iml" filepath="$PROJECT_DIR$/.idea/modules/emqx-proto/spring-ecom-backend.emqx-proto.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/kafka-service/spring-ecom-backend.kafka-service.main.iml" filepath="$PROJECT_DIR$/.idea/modules/kafka-service/spring-ecom-backend.kafka-service.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/landing/spring-ecom-backend.landing.main.iml" filepath="$PROJECT_DIR$/.idea/modules/landing/spring-ecom-backend.landing.main.iml" />
     </modules>

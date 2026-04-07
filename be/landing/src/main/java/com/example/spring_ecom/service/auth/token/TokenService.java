@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -84,7 +85,7 @@ public class TokenService {
     }
     
     private List<String> parseAuthorities(String authorities) {
-        if (authorities == null || authorities.isBlank()) {
+        if (Objects.isNull(authorities) || authorities.isBlank()) {
             return Collections.emptyList();
         }
         return Arrays.asList(authorities.split(","));

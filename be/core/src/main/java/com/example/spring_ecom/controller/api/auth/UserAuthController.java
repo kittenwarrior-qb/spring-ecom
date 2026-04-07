@@ -26,19 +26,14 @@ import java.time.temporal.ChronoUnit;
  * CLIENT SERVICE - APIs cho người dùng cuối
  */
 @RestController
-@RequestMapping("/v1/api/auth")
 @RequiredArgsConstructor
-@Tag(name = "User Authentication", description = "User authentication APIs")
-public class UserAuthController {
+public class UserAuthController implements AuthAPI {
     
     private final AuthUseCase authUseCase;
     private final AuthRequestMapper requestMapper;
     private final CookieUtil cookieUtil;
     
-    @Operation(summary = "User Login", description = "User login with email and password")
-    @PostMapping("/login")
-    @RateLimit(limit = 5, duration = 1, unit = ChronoUnit.MINUTES, type = RateLimitType.IP, 
-               message = "Too many login attempts. Please try again in 1 minute.")
+    @Override
     public ResponseEntity<ApiResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest,
@@ -47,10 +42,7 @@ public class UserAuthController {
         return ResponseEntity.ok(ApiResponse.Success.of(response));
     }
     
-    @Operation(summary = "User Registration", description = "Register new user account")
-    @PostMapping("/register")
-    @RateLimit(limit = 3, duration = 1, unit = ChronoUnit.MINUTES, type = RateLimitType.IP,
-               message = "Too many registration attempts. Please try again in 1 minute.")
+    @Override
     public ResponseEntity<ApiResponse<LoginResponse>> register(
             @Valid @RequestBody RegisterRequest request,
             HttpServletRequest httpRequest,
@@ -59,8 +51,7 @@ public class UserAuthController {
         return ResponseEntity.ok(ApiResponse.Success.of(response));
     }
     
-    @Operation(summary = "Refresh token", description = "Refresh access token using refresh token from cookie")
-    @PostMapping("/refresh")
+    @Override
     public ResponseEntity<ApiResponse<LoginResponse>> refresh(
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
@@ -69,8 +60,7 @@ public class UserAuthController {
         return ResponseEntity.ok(ApiResponse.Success.of(response));
     }
     
-    @Operation(summary = "User Logout", description = "Logout and revoke refresh token")
-    @PostMapping("/logout")
+    @Override
     public ResponseEntity<ApiResponse<Void>> logout(
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
@@ -80,17 +70,13 @@ public class UserAuthController {
         return ResponseEntity.ok(ApiResponse.Success.of(ResponseCode.OK, "Logged out successfully", null));
     }
     
-    @Operation(summary = "Forgot Password", description = "Send password reset email")
-    @PostMapping("/forgot-password")
-    @RateLimit(limit = 3, duration = 5, unit = ChronoUnit.MINUTES, type = RateLimitType.IP,
-               message = "Too many password reset attempts. Please try again in 5 minutes.")
+    @Override
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestParam String email) {
         // TODO: Implement forgot password via gRPC call to server
         return ResponseEntity.ok(ApiResponse.Success.of(ResponseCode.OK, "Password reset email sent", null));
     }
     
-    @Operation(summary = "Reset Password", description = "Reset password with token")
-    @PostMapping("/reset-password")
+    @Override
     public ResponseEntity<ApiResponse<Void>> resetPassword(
             @RequestParam String token,
             @RequestParam String newPassword) {

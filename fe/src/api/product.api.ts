@@ -1,9 +1,9 @@
 import apiClient from '@/lib/api-client'
 import type { ApiResponse, PageResponse, ProductRequest, ProductResponse } from '@/types/api'
 
-const PRODUCT_BASE_URL = '/api/products'
-// Admin product API calls Landing (8080) for gRPC demo - different from other admin APIs
-const ADMIN_PRODUCT_URL = 'http://localhost:8080/v1/api/admin/products'
+// All product API calls Core service directly on port 8081
+const PRODUCT_BASE_URL = 'http://localhost:8081/v1/api/products'
+const ADMIN_PRODUCT_URL = 'http://localhost:8081/v1/api/admin/products'
 
 export const productApi = {
   // Get all products with pagination

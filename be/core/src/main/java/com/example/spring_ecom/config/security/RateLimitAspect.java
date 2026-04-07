@@ -18,6 +18,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Duration;
+import java.util.Objects;
 
 @Slf4j
 @Aspect
@@ -56,9 +57,9 @@ public class RateLimitAspect {
                     rateLimit.type().name(),
                     identifier,
                     endpoint,
-                    info.getCurrentRequests() != null ? info.getCurrentRequests() : 0,
+                    Objects.nonNull(info.getCurrentRequests()) ? info.getCurrentRequests() : 0,
                     rateLimit.limit(),
-                    info.getRemainingTimeSeconds() != null ? info.getRemainingTimeSeconds() : 0
+                    Objects.nonNull(info.getRemainingTimeSeconds()) ? info.getRemainingTimeSeconds() : 0
             );
         }
         
@@ -86,12 +87,12 @@ public class RateLimitAspect {
     
     private String getClientIpAddress(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+        if (Objects.nonNull(xForwardedFor) && !xForwardedFor.isEmpty()) {
             return xForwardedFor.split(",")[0].trim();
         }
         
         String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
+        if (Objects.nonNull(xRealIp) && !xRealIp.isEmpty()) {
             return xRealIp;
         }
         
@@ -100,7 +101,7 @@ public class RateLimitAspect {
     
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated() && 
+        if (Objects.nonNull(authentication) && authentication.isAuthenticated() && 
             !authentication.getName().equals("anonymousUser")) {
             return authentication.getName(); // Có thể là user ID hoặc username
         }

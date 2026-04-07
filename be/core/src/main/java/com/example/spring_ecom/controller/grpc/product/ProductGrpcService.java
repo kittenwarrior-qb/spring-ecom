@@ -15,6 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Objects;
+
 @Slf4j
 @GrpcService
 @RequiredArgsConstructor
@@ -113,7 +115,7 @@ public class ProductGrpcService extends ProductServiceGrpc.ProductServiceImplBas
             
             String search = request.getSearch();
             Page<Product> productPage;
-            if (search != null && !search.trim().isEmpty()) {
+            if (Objects.nonNull(search) && !search.trim().isEmpty()) {
                 productPage = productUseCase.searchProducts(search, pageable);
             } else {
                 productPage = productUseCase.findAll(pageable);

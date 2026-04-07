@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Objects;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -20,11 +22,11 @@ public class RateLimitResult {
     }
     
     public int getRemainingRequests() {
-        if (rateLimitInfo == null) return 0;
+        if (Objects.isNull(rateLimitInfo)) return 0;
         return Math.max(0, rateLimitInfo.getMaxRequests() - rateLimitInfo.getCurrentRequests());
     }
     
     public Long getRetryAfter() {
-        return rateLimitInfo != null ? rateLimitInfo.getRemainingTimeSeconds() : null;
+        return Objects.nonNull(rateLimitInfo) ? rateLimitInfo.getRemainingTimeSeconds() : null;
     }
 }

@@ -62,6 +62,10 @@ spring:
 grpc:
   server:
     port: 9091
+  client:
+    landingpage-service:
+      address: static://localhost:9090
+      negotiation-type: plaintext
 
 # Server Configuration
 server:
@@ -114,6 +118,26 @@ sepay:
     name: BUI DINH QUOC
   payment:
     timeout: 900
+
+# MinIO Configuration
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin123}
+  bucket: ${MINIO_BUCKET:spring-ecom}
+  presigned-url-expiry: ${MINIO_PRESIGNED_URL_EXPIRY:3600}
+
+# MQTT Configuration
+mqtt:
+  broker-url: ${MQTT_BROKER_URL:tcp://localhost:1883}
+  websocket-url: ${MQTT_WEBSOCKET_URL:ws://localhost:8083/mqtt}
+  client-id: ${MQTT_CLIENT_ID:spring-ecom-backend}
+  username: ${MQTT_USERNAME:}
+  password: ${MQTT_PASSWORD:}
+  completion-timeout: 5000
+  connection-timeout: 30
+  clean-session: true
+  auto-reconnect: true
 
 # Cloudinary Configuration
 cloudinary:

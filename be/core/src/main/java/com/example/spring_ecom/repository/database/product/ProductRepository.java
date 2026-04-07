@@ -1,8 +1,10 @@
 package com.example.spring_ecom.repository.database.product;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,7 +18,6 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     
     Optional<ProductEntity> findBySlugAndDeletedAtIsNull(String slug);
     
-    // Unified filtering method - can handle all combinations
     @Query("""
         SELECT p FROM ProductEntity p
         LEFT JOIN FETCH p.category c
@@ -100,4 +101,14 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     }
     
     boolean existsBySlugAndDeletedAtIsNull(String slug);
+    
+    // ========== PESSIMISTIC LOCK METHODS (Prevent Race Condition) ==========
+    
+    /**
+     * Find product with pessimistic write lock for stock operations
+     * Use this for reserve/release/deduct stock operations
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM ProductEntity p WHERE p.id = :id AND p.deletedAt IS NULL")
+    Optional<ProductEntity> findByIdWithLock(@Param("id") Long id);
 }

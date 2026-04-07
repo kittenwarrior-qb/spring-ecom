@@ -60,6 +60,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/v1/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/api/categories/**").permitAll()
 
+                        // Public endpoints - Coupons (read only)
+                        .requestMatchers(HttpMethod.GET, "/v1/api/coupons/**").permitAll()
+
                         // Admin endpoints - permission checks are done at method level via @PreAuthorize
                         .requestMatchers("/v1/api/admin/**").authenticated()
 
@@ -67,7 +70,12 @@ public class SecurityConfig {
                         .requestMatchers("/v1/api/cart/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/v1/api/orders/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/v1/api/profile/**").hasAnyRole("USER", "SELLER", "ADMIN")
+                        .requestMatchers("/v1/api/notifications/**").hasAnyRole("USER", "SELLER", "ADMIN")
                         .requestMatchers("/v1/api/auth/logout").hasAnyRole("USER", "SELLER", "ADMIN")
+
+                        // File endpoints - list and download are public
+                        .requestMatchers(HttpMethod.GET, "/v1/api/files/list").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/api/files/download/**").permitAll()
 
                         // All other requests require authentication
                         .anyRequest().authenticated())

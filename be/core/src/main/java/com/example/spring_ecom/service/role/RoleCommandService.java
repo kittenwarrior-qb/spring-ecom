@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -76,7 +77,7 @@ public class RoleCommandService {
         }
         RoleEntity newRole = RoleEntity.builder().name(request.name()).build();
         newRole = roleRepository.save(newRole);
-        if (request.permissionIds() != null && !request.permissionIds().isEmpty()) {
+        if (Objects.nonNull(request.permissionIds()) && !request.permissionIds().isEmpty()) {
             return assignPermissionsToRole(newRole.getId(), request.permissionIds());
         }
         return new RoleDto(newRole.getId(), newRole.getName(), List.of());
@@ -158,7 +159,7 @@ public class RoleCommandService {
             boolean isAlreadySuperAdmin = userRoleRepository.findByUserId(userId).stream()
                     .anyMatch(ur -> {
                         RoleEntity r = roleRepository.findById(ur.getRoleId()).orElse(null);
-                        return r != null && SUPERADMIN_ROLE_NAME.equals(r.getName());
+                        return Objects.nonNull(r) && SUPERADMIN_ROLE_NAME.equals(r.getName());
                     });
             if (!isAlreadySuperAdmin) {
                 throw new BaseException(ResponseCode.FORBIDDEN, 
@@ -190,7 +191,7 @@ public class RoleCommandService {
      */
     private void checkAdminManagePermission() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
+        if (Objects.isNull(authentication)) {
             throw new BaseException(ResponseCode.UNAUTHORIZED, "Authentication required");
         }
         

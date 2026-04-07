@@ -5,8 +5,10 @@ import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ApiResponse;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.coupon.Coupon;
+import com.example.spring_ecom.domain.notification.Notification;
 import com.example.spring_ecom.repository.database.coupon.DiscountType;
 import com.example.spring_ecom.service.coupon.CouponUseCase;
+import com.example.spring_ecom.service.notification.NotificationCommandService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +22,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/api/admin/coupons")
@@ -30,6 +37,7 @@ public class AdminCouponController {
     
     private final CouponUseCase couponUseCase;
     private final CouponResponseMapper responseMapper;
+    private final NotificationCommandService notificationCommandService;
     
     @Operation(summary = "Get all coupons", description = "Get all coupons (admin only)")
     @GetMapping
@@ -61,6 +69,9 @@ public class AdminCouponController {
         Coupon created = couponUseCase.create(coupon)
                 .orElseThrow(() -> new BaseException(ResponseCode.INTERNAL_SERVER_ERROR, "Failed to create coupon"));
         
+        // Send notification based on notification type
+        sendCouponNotification(created, request.notificationType(), request.targetUserIds());
+        
         return ResponseEntity.ok(ApiResponse.Success.of(responseMapper.toResponse(created)));
     }
     
@@ -86,7 +97,7 @@ public class AdminCouponController {
             @Parameter(description = "Coupon ID") @PathVariable Long id) {
         log.info("Deleting coupon: {}", id);
         couponUseCase.delete(id);
-        return ResponseEntity.ok(ApiResponse.Success.of(null));
+        return ResponseEntity.ok(ApiResponse.Success.of());
     }
     
     // ========== HELPER METHODS ==========
@@ -98,14 +109,85 @@ public class AdminCouponController {
             request.description(),
             request.discountType(),
             request.discountValue(),
-            request.minOrderValue() != null ? request.minOrderValue() : BigDecimal.ZERO,
+            Objects.nonNull(request.minOrderValue()) ? request.minOrderValue() : BigDecimal.ZERO,
             request.maxDiscount(),
             request.usageLimit(),
             0, // usedCount
             request.startDate(),
             request.endDate(),
-            request.isActive() != null ? request.isActive() : true,
+            Objects.nonNull(request.isActive()) ? request.isActive() : true,
             null, null, null // createdAt, updatedAt, deletedAt
         );
+    }
+    
+    /**
+     * Send notification based on notification type
+     * - NONE: Don't send notification
+     * - BROADCAST: Send to all users via MQTT
+     * - TARGETED: Send to specific users
+     */
+    private void sendCouponNotification(Coupon coupon, CouponRequest.NotificationType notificationType, List<Long> targetUserIds) {
+        if (notificationType == null || notificationType == CouponRequest.NotificationType.NONE) {
+            log.info("[COUPON] No notification requested for coupon: {}", coupon.code());
+            return;
+        }
+        
+        try {
+            String title = "🎉 Coupon mới!";
+            String message = String.format("Sử dụng mã %s để giảm %s", 
+                    coupon.code(), 
+                    formatDiscount(coupon));
+            // Link to public coupons page
+            String actionUrl = "/coupons";
+            
+            if (notificationType == CouponRequest.NotificationType.BROADCAST) {
+                // Broadcast to all users via gRPC -> MQTT
+                Notification notification = createCouponNotification(coupon, title, message, actionUrl, null);
+                notificationCommandService.broadcast(notification);
+                log.info("[COUPON] Broadcast notification sent for coupon: {}", coupon.code());
+                
+            } else if (notificationType == CouponRequest.NotificationType.TARGETED) {
+                // Send to specific users
+                if (targetUserIds == null || targetUserIds.isEmpty()) {
+                    log.warn("[COUPON] TARGETED notification requested but no target users provided");
+                    return;
+                }
+                
+                for (Long userId : targetUserIds) {
+                    Notification notification = createCouponNotification(coupon, title, message, actionUrl, userId);
+                    notificationCommandService.createAndSend(notification);
+                }
+                log.info("[COUPON] Targeted notification sent to {} users for coupon: {}", 
+                        targetUserIds.size(), coupon.code());
+            }
+        } catch (Exception e) {
+            log.error("[COUPON] Failed to send notification: {}", e.getMessage());
+            // Don't throw - coupon is already created successfully
+        }
+    }
+    
+    private Notification createCouponNotification(Coupon coupon, String title, String message, 
+            String actionUrl, Long userId) {
+        return new Notification(
+                null, // id
+                userId, // null for broadcast, specific userId for targeted
+                "NEW_COUPON",
+                title,
+                message,
+                coupon.id(),
+                "COUPON",
+                null, // imageUrl
+                actionUrl,
+                false,
+                null
+        );
+    }
+    
+    private String formatDiscount(Coupon coupon) {
+        if (coupon.discountType() == DiscountType.PERCENTAGE) {
+            return coupon.discountValue() + "%";
+        } else {
+            return coupon.discountValue() + "đ";
+        }
     }
 }

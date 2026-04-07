@@ -5,6 +5,8 @@ import com.example.spring_ecom.domain.coupon.Coupon;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.Objects;
+
 @Mapper(config = MapStructGlobalConfig.class, componentModel = "spring")
 public interface CouponResponseMapper {
     
@@ -13,7 +15,7 @@ public interface CouponResponseMapper {
     CouponResponse toResponse(Coupon coupon);
     
     default Integer calculateRemainingUses(Coupon coupon) {
-        if (coupon.usageLimit() == null) {
+        if (Objects.isNull(coupon.usageLimit())) {
             return null;
         }
         return Math.max(0, coupon.usageLimit() - coupon.usedCount());

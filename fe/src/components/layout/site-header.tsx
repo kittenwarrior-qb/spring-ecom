@@ -17,6 +17,7 @@ import { useUserProfile } from '@/hooks/use-user'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { authApi } from '@/api/auth.api'
+import { NotificationBell } from '@/components/notification-bell'
 
 // Import logo
 import logoImg from '@/assets/images/logo.png'
@@ -141,6 +142,9 @@ export function SiteHeader() {
 
           {/* Right Actions */}
           <div className="hidden md:flex md:items-center md:space-x-2">
+            {/* Notifications */}
+            <NotificationBell />
+
             {/* Cart */}
             <Link to="/cart">
               <Button variant="ghost" className="relative text-gray-700 hover:text-gray-900">
@@ -259,6 +263,13 @@ export function SiteHeader() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Sách
+              </Link>
+              <Link
+                to="/notifications"
+                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Thông báo
               </Link>
               <a href="#" className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md">
                 Giới thiệu

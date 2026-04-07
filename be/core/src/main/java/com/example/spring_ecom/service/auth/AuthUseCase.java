@@ -12,4 +12,5 @@ public interface AuthUseCase {
     LoginResponse refreshToken(String refreshToken, HttpServletRequest request, HttpServletResponse response);
     void logout(String refreshToken);
     void logoutBySessionId(String sessionId);
+    boolean isEmailVerified(String email);
 }

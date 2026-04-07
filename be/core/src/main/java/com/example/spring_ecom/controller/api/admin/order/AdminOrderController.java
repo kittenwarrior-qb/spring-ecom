@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,8 +36,8 @@ public class AdminOrderController implements AdminOrderAPI {
             String search, String dateFrom, String dateTo) {
         try {
             log.info("Admin getting all orders with filters: status={}, search={}", status, search);
-            LocalDate from = dateFrom != null ? LocalDate.parse(dateFrom) : null;
-            LocalDate to = dateTo != null ? LocalDate.parse(dateTo) : null;
+            LocalDate from = Objects.nonNull(dateFrom) ? LocalDate.parse(dateFrom) : null;
+            LocalDate to = Objects.nonNull(dateTo) ? LocalDate.parse(dateTo) : null;
 
             Page<Order> orders = orderUseCase.findAllWithFilters(pageable, search, status, paymentStatus, from, to);
             Page<OrderResponse> responses = orders.map(orderResponseMapper::toResponse);
@@ -117,8 +118,8 @@ public class AdminOrderController implements AdminOrderAPI {
     public ResponseEntity<ApiResponse<OrderStatistics>> getOrderStatistics(String period, String startDate, String endDate) {
         try {
             log.info("Admin getting order statistics: period={}", period);
-            LocalDate from = startDate != null ? LocalDate.parse(startDate) : null;
-            LocalDate to = endDate != null ? LocalDate.parse(endDate) : null;
+            LocalDate from = Objects.nonNull(startDate) ? LocalDate.parse(startDate) : null;
+            LocalDate to = Objects.nonNull(endDate) ? LocalDate.parse(endDate) : null;
             OrderStatistics statistics = orderUseCase.getOrderStatistics(period, from, to);
             return ResponseEntity.ok(ApiResponse.Success.of(statistics));
         } catch (Exception e) {

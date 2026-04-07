@@ -83,7 +83,7 @@ public class CouponCommandService {
     
     private void validateCoupon(Coupon coupon) {
         // Validate discount value
-        if (coupon.discountValue() == null || coupon.discountValue().compareTo(BigDecimal.ZERO) <= 0) {
+        if (Objects.isNull(coupon.discountValue()) || coupon.discountValue().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Discount value must be positive");
         }
         
@@ -94,24 +94,24 @@ public class CouponCommandService {
         }
         
         // Validate dates
-        if (coupon.startDate() != null && coupon.endDate() != null) {
+        if (Objects.nonNull(coupon.startDate()) && Objects.nonNull(coupon.endDate())) {
             if (!coupon.endDate().isAfter(coupon.startDate())) {
                 throw new BaseException(ResponseCode.BAD_REQUEST, "End date must be after start date");
             }
         }
         
         // Validate max discount
-        if (coupon.maxDiscount() != null && coupon.maxDiscount().compareTo(BigDecimal.ZERO) <= 0) {
+        if (Objects.nonNull(coupon.maxDiscount()) && coupon.maxDiscount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Max discount must be positive");
         }
         
         // Validate min order value
-        if (coupon.minOrderValue() != null && coupon.minOrderValue().compareTo(BigDecimal.ZERO) < 0) {
+        if (Objects.nonNull(coupon.minOrderValue()) && coupon.minOrderValue().compareTo(BigDecimal.ZERO) < 0) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Minimum order value cannot be negative");
         }
         
         // Validate usage limit
-        if (coupon.usageLimit() != null && coupon.usageLimit() <= 0) {
+        if (Objects.nonNull(coupon.usageLimit()) && coupon.usageLimit() <= 0) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Usage limit must be positive");
         }
     }

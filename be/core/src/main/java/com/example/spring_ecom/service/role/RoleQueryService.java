@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +42,7 @@ public class RoleQueryService {
         
         for (RolePermissionDao dao : results) {
             roleNames.putIfAbsent(dao.roleId(), dao.roleName());
-            if (dao.permissionName() != null) {
+            if (Objects.nonNull(dao.permissionName())) {
                 rolePermissions.computeIfAbsent(dao.roleId(), k -> new ArrayList<>())
                         .add(dao.permissionName());
             }
@@ -83,7 +84,7 @@ public class RoleQueryService {
         for (RolePermissionDao dao : results) {
             if (roleIds.contains(dao.roleId())) {
                 roleNames.putIfAbsent(dao.roleId(), dao.roleName());
-                if (dao.permissionName() != null) {
+                if (Objects.nonNull(dao.permissionName())) {
                     rolePermissions.computeIfAbsent(dao.roleId(), k -> new ArrayList<>())
                             .add(dao.permissionName());
                 }

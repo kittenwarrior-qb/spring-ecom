@@ -48,13 +48,15 @@ const couponFormSchema = z.object({
   code: z.string().min(1, 'Mã coupon không được để trống').max(50, 'Mã coupon tối đa 50 ký tự'),
   description: z.string().max(255, 'Mô tả tối đa 255 ký tự').optional(),
   discountType: z.enum(['PERCENTAGE', 'FIXED_AMOUNT']),
-  discountValue: z.coerce.number().positive('Giá trị giảm giá phải lớn hơn 0'),
-  minOrderValue: z.coerce.number().min(0, 'Giá trị đơn hàng tối thiểu không được âm').optional(),
-  maxDiscount: z.coerce.number().positive('Giảm giá tối đa phải lớn hơn 0').optional().nullable(),
-  usageLimit: z.coerce.number().positive('Giới hạn sử dụng phải lớn hơn 0').optional().nullable(),
+  discountValue: z.number().positive('Giá trị giảm giá phải lớn hơn 0'),
+  minOrderValue: z.number().min(0, 'Giá trị đơn hàng tối thiểu không được âm').optional(),
+  maxDiscount: z.number().positive('Giảm giá tối đa phải lớn hơn 0').optional().nullable(),
+  usageLimit: z.number().positive('Giới hạn sử dụng phải lớn hơn 0').optional().nullable(),
   startDate: z.date(),
   endDate: z.date(),
   isActive: z.boolean(),
+  notificationType: z.enum(['NONE', 'BROADCAST', 'TARGETED']),
+  targetUserIds: z.array(z.number()),
 }).refine((data) => data.endDate > data.startDate, {
   message: 'Ngày kết thúc phải sau ngày bắt đầu',
   path: ['endDate'],
@@ -66,6 +68,14 @@ const couponFormSchema = z.object({
 }, {
   message: 'Phần trăm giảm giá không được vượt quá 100%',
   path: ['discountValue'],
+}).refine((data) => {
+  if (data.notificationType === 'TARGETED' && data.targetUserIds.length === 0) {
+    return false
+  }
+  return true
+}, {
+  message: 'Vui lòng chọn ít nhất một người dùng',
+  path: ['targetUserIds'],
 })
 
 type CouponFormValues = z.infer<typeof couponFormSchema>
@@ -98,6 +108,8 @@ export function CouponDialog({ mode }: CouponDialogProps) {
       startDate: new Date(),
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
       isActive: true,
+      notificationType: 'NONE',
+      targetUserIds: [],
     },
   })
 
@@ -115,6 +127,8 @@ export function CouponDialog({ mode }: CouponDialogProps) {
         startDate: new Date(selectedCoupon.startDate),
         endDate: new Date(selectedCoupon.endDate),
         isActive: selectedCoupon.isActive,
+        notificationType: 'NONE',
+        targetUserIds: [],
       })
     } else if (mode === 'create') {
       form.reset({
@@ -128,6 +142,8 @@ export function CouponDialog({ mode }: CouponDialogProps) {
         startDate: new Date(),
         endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         isActive: true,
+        notificationType: 'NONE',
+        targetUserIds: [],
       })
     }
   }, [mode, selectedCoupon, form])
@@ -139,6 +155,8 @@ export function CouponDialog({ mode }: CouponDialogProps) {
       endDate: values.endDate.toISOString(),
       maxDiscount: values.maxDiscount || undefined,
       usageLimit: values.usageLimit || undefined,
+      notificationType: values.notificationType,
+      targetUserIds: values.notificationType === 'TARGETED' ? values.targetUserIds : undefined,
     }
 
     if (mode === 'create') {
@@ -195,7 +213,7 @@ export function CouponDialog({ mode }: CouponDialogProps) {
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
             {mode === 'create' ? 'Tạo coupon mới' : 'Chỉnh sửa coupon'}
@@ -208,7 +226,7 @@ export function CouponDialog({ mode }: CouponDialogProps) {
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto pr-2 -mr-2 flex-1">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -274,7 +292,12 @@ export function CouponDialog({ mode }: CouponDialogProps) {
                       <Input 
                         type="number" 
                         placeholder={discountType === 'PERCENTAGE' ? '10' : '50000'} 
-                        {...field} 
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          field.onChange(value ? Number(value) : 0)
+                        }}
                       />
                     </FormControl>
                     {discountType === 'PERCENTAGE' && (
@@ -292,7 +315,16 @@ export function CouponDialog({ mode }: CouponDialogProps) {
                   <FormItem>
                     <FormLabel>Đơn hàng tối thiểu (VNĐ)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="0" {...field} />
+                      <Input 
+                        type="number" 
+                        placeholder="0" 
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          field.onChange(value ? Number(value) : 0)
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -445,7 +477,69 @@ export function CouponDialog({ mode }: CouponDialogProps) {
               )}
             />
 
-            <DialogFooter>
+            {/* Notification Options */}
+            <div className="space-y-4 rounded-lg border p-4">
+              <h4 className="text-sm font-medium">Gửi thông báo</h4>
+              
+              <FormField
+                control={form.control}
+                name="notificationType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Loại thông báo</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn loại thông báo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="NONE">Không gửi thông báo</SelectItem>
+                        <SelectItem value="BROADCAST">Gửi cho tất cả người dùng</SelectItem>
+                        <SelectItem value="TARGETED">Gửi cho người dùng cụ thể</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {field.value === 'BROADCAST' && 'Thông báo sẽ được gửi đến tất cả người dùng'}
+                      {field.value === 'TARGETED' && 'Chọn người dùng cụ thể để gửi thông báo'}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="targetUserIds"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Người dùng nhận thông báo</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="Nhập ID người dùng, cách nhau bằng dấu phẩy (vd: 1, 2, 3)"
+                        value={field.value.join(', ')}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          const ids = value
+                            .split(',')
+                            .map((s) => Number(s.trim()))
+                            .filter((n) => !isNaN(n) && n > 0)
+                          field.onChange(ids)
+                        }}
+                        disabled={form.watch('notificationType') !== 'TARGETED'}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Nhập ID của người dùng sẽ nhận thông báo coupon
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <DialogFooter className="pt-4 border-t mt-4 shrink-0">
               {mode === 'edit' && (
                 <Button type="button" variant="outline" onClick={handleClose}>
                   Hủy

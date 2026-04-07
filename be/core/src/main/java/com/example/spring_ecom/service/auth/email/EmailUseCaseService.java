@@ -1,6 +1,6 @@
 package com.example.spring_ecom.service.auth.email;
 
-import com.example.spring_ecom.service.auth.AuthQueryService;
+import com.example.spring_ecom.service.auth.AuthUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 public class EmailUseCaseService implements EmailUseCase {
     
     private final EmailCommandService commandService;
-    private final AuthQueryService authQueryService;
+    private final AuthUseCase authUseCase;
     
     @Override
     public void sendVerificationEmail(Long userId) {
@@ -28,6 +28,6 @@ public class EmailUseCaseService implements EmailUseCase {
     
     @Override
     public boolean isEmailVerified(String email) {
-        return authQueryService.isEmailVerified(email);
+        return authUseCase.isEmailVerified(email);
     }
 }

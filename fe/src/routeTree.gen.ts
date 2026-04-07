@@ -14,6 +14,8 @@ import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as PaymentSuccessRouteImport } from './routes/payment-success'
 import { Route as PaymentRouteImport } from './routes/payment'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as CouponsRouteImport } from './routes/coupons'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -24,6 +26,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ProfileSettingsRouteImport } from './routes/profile/settings'
 import { Route as ProfileOrdersRouteImport } from './routes/profile/orders'
 import { Route as ProductsSlugRouteImport } from './routes/products/$slug'
+import { Route as OrdersIdRouteImport } from './routes/orders/$id'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
 import { Route as AdminRolesIndexRouteImport } from './routes/admin/roles/index'
@@ -59,6 +62,16 @@ const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
 const PaymentRoute = PaymentRouteImport.update({
   id: '/payment',
   path: '/payment',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CouponsRoute = CouponsRouteImport.update({
+  id: '/coupons',
+  path: '/coupons',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CartRoute = CartRouteImport.update({
@@ -108,6 +121,11 @@ const ProfileOrdersRoute = ProfileOrdersRouteImport.update({
 const ProductsSlugRoute = ProductsSlugRouteImport.update({
   id: '/products/$slug',
   path: '/products/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersIdRoute = OrdersIdRouteImport.update({
+  id: '/orders/$id',
+  path: '/orders/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSettingsRouteRoute =
@@ -176,12 +194,15 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/cart': typeof CartRoute
+  '/coupons': typeof CouponsRoute
+  '/notifications': typeof NotificationsRoute
   '/payment': typeof PaymentRoute
   '/payment-success': typeof PaymentSuccessRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/verify-email': typeof VerifyEmailRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/orders/$id': typeof OrdersIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/profile/orders': typeof ProfileOrdersRoute
   '/profile/settings': typeof ProfileSettingsRoute
@@ -202,11 +223,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cart': typeof CartRoute
+  '/coupons': typeof CouponsRoute
+  '/notifications': typeof NotificationsRoute
   '/payment': typeof PaymentRoute
   '/payment-success': typeof PaymentSuccessRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/orders/$id': typeof OrdersIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/profile/orders': typeof ProfileOrdersRoute
   '/profile/settings': typeof ProfileSettingsRoute
@@ -230,12 +254,15 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
   '/cart': typeof CartRoute
+  '/coupons': typeof CouponsRoute
+  '/notifications': typeof NotificationsRoute
   '/payment': typeof PaymentRoute
   '/payment-success': typeof PaymentSuccessRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/verify-email': typeof VerifyEmailRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/orders/$id': typeof OrdersIdRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/profile/orders': typeof ProfileOrdersRoute
   '/profile/settings': typeof ProfileSettingsRoute
@@ -259,12 +286,15 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/cart'
+    | '/coupons'
+    | '/notifications'
     | '/payment'
     | '/payment-success'
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
     | '/settings'
+    | '/orders/$id'
     | '/products/$slug'
     | '/profile/orders'
     | '/profile/settings'
@@ -285,11 +315,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/cart'
+    | '/coupons'
+    | '/notifications'
     | '/payment'
     | '/payment-success'
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
+    | '/orders/$id'
     | '/products/$slug'
     | '/profile/orders'
     | '/profile/settings'
@@ -312,12 +345,15 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/admin'
     | '/cart'
+    | '/coupons'
+    | '/notifications'
     | '/payment'
     | '/payment-success'
     | '/sign-in'
     | '/sign-up'
     | '/verify-email'
     | '/_authenticated/settings'
+    | '/orders/$id'
     | '/products/$slug'
     | '/profile/orders'
     | '/profile/settings'
@@ -341,11 +377,14 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   CartRoute: typeof CartRoute
+  CouponsRoute: typeof CouponsRoute
+  NotificationsRoute: typeof NotificationsRoute
   PaymentRoute: typeof PaymentRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  OrdersIdRoute: typeof OrdersIdRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   ProfileOrdersRoute: typeof ProfileOrdersRoute
   ProfileSettingsRoute: typeof ProfileSettingsRoute
@@ -388,6 +427,20 @@ declare module '@tanstack/react-router' {
       path: '/payment'
       fullPath: '/payment'
       preLoaderRoute: typeof PaymentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coupons': {
+      id: '/coupons'
+      path: '/coupons'
+      fullPath: '/coupons'
+      preLoaderRoute: typeof CouponsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cart': {
@@ -458,6 +511,13 @@ declare module '@tanstack/react-router' {
       path: '/products/$slug'
       fullPath: '/products/$slug'
       preLoaderRoute: typeof ProductsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders/$id': {
+      id: '/orders/$id'
+      path: '/orders/$id'
+      fullPath: '/orders/$id'
+      preLoaderRoute: typeof OrdersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/settings': {
@@ -601,11 +661,14 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   CartRoute: CartRoute,
+  CouponsRoute: CouponsRoute,
+  NotificationsRoute: NotificationsRoute,
   PaymentRoute: PaymentRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  OrdersIdRoute: OrdersIdRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   ProfileOrdersRoute: ProfileOrdersRoute,
   ProfileSettingsRoute: ProfileSettingsRoute,

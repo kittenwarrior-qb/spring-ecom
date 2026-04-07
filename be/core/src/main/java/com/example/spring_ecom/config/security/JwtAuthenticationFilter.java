@@ -24,57 +24,52 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    
+
     private final TokenService tokenService;
-    
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        
+
         String authHeader = request.getHeader("Authorization");
-        
+
         if (Objects.isNull(authHeader) || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
-        
+
         try {
             String token = authHeader.substring(7);
-            
+
             TokenInfo tokenInfo = tokenService.validateAccessToken(token);
-            
+
             // Build authorities from token
             List<SimpleGrantedAuthority> authorities = buildAuthorities(tokenInfo);
-            
+
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                tokenInfo.getEmail(),
-                null,
-                authorities
-            );
-            
+                    tokenInfo.getEmail(),
+                    null,
+                    authorities);
+
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            
+
             request.setAttribute("userId", tokenInfo.getUserId());
             request.setAttribute("sessionId", tokenInfo.getSessionId());
-            
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (Exception e) {
             log.error("Cannot set user authentication: {}", e.getMessage());
         }
-        
+
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Build authorities from TokenInfo (loaded from Redis session)
-     * No database queries needed - authorities are cached in session
-     */
     private List<SimpleGrantedAuthority> buildAuthorities(TokenInfo tokenInfo) {
-        if (tokenInfo.getAuthorities() == null || tokenInfo.getAuthorities().isEmpty()) {
+        if (Objects.isNull(tokenInfo.getAuthorities()) || tokenInfo.getAuthorities().isEmpty()) {
             log.debug("No authorities found for userId={}", tokenInfo.getUserId());
             return List.of();
         }
-        
+
         return tokenInfo.getAuthorities().stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());

@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package services;
+
+option java_package = "com.example.spring_ecom.grpc.services";
+option java_outer_classname = "NotificationServiceProto";
+
+import "domain/notification.proto";
+
+service NotificationService {
+  // Send notification to specific user via MQTT
+  rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+  
+  // Broadcast notification to all users via MQTT
+  rpc BroadcastNotification(BroadcastNotificationRequest) returns (BroadcastNotificationResponse);
+}
+
+message SendNotificationRequest {
+  int64 user_id = 1;
+  string type = 2;
+  string title = 3;
+  string message = 4;
+  int64 reference_id = 5;
+  string reference_type = 6;
+  string image_url = 7;
+  string action_url = 8;
+}
+
+message SendNotificationResponse {
+  bool success = 1;
+  string message = 2;
+  string event_id = 3;
+}
+
+message BroadcastNotificationRequest {
+  string type = 1;
+  string title = 2;
+  string message = 3;
+  int64 reference_id = 4;
+  string reference_type = 5;
+  string image_url = 6;
+  string action_url = 7;
+}
+
+message BroadcastNotificationResponse {
+  bool success = 1;
+  string message = 2;
+  string event_id = 3;
+}

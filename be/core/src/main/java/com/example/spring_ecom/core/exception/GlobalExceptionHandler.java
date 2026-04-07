@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.io.IOException;
+import java.util.Objects;
 
 @Slf4j
 @RestControllerAdvice
@@ -50,7 +51,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IOException.class)
     public void handleIOException(IOException ex) {
         String message = ex.getMessage();
-        if (message != null && (message.contains("connection was aborted") || 
+        if (Objects.nonNull(message) && (message.contains("connection was aborted") || 
                                message.contains("Broken pipe") ||
                                message.contains("Connection reset"))) {
             log.debug("Client connection issue: {}", message);
@@ -71,9 +72,9 @@ public class GlobalExceptionHandler {
         log.error("DataIntegrityViolationException: {}", ex.getMessage(), ex);
         
         String message = "Data integrity violation";
-        String rootCauseMessage = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
+        String rootCauseMessage = Objects.nonNull(ex.getRootCause()) ? ex.getRootCause().getMessage() : ex.getMessage();
         
-        if (rootCauseMessage != null) {
+        if (Objects.nonNull(rootCauseMessage)) {
             if (rootCauseMessage.contains("duplicate key value violates unique constraint")) {
                 if (rootCauseMessage.contains("products_slug_key")) {
                     message = "Product slug already exists";

@@ -21,7 +21,7 @@ public class UploadController implements UploadAPI {
     private final UploadUseCase uploadUseCase;
 
     @Override
-    @RateLimit(type = RateLimitType.USER, limit = 20, duration = 1, unit = ChronoUnit.HOURS,
+    @RateLimit(type = RateLimitType.USER, limit = 100, duration = 1, unit = ChronoUnit.MINUTES,
                message = "Too many file upload attempts. Please try again later.")
     public ApiResponse<UploadResponse> uploadImage(MultipartFile file, Authentication authentication) {
         Map<String, Object> uploadResult = uploadUseCase.uploadImage(file);

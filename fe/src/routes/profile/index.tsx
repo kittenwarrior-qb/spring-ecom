@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Package, Settings, CreditCard, MapPin } from 'lucide-react'
+import { Package, Settings } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useUserProfile, useUpdateAvatar } from '@/hooks/use-user'
 import { useMyOrders } from '@/hooks/use-order'
+import { useFileUpload } from '@/hooks/use-file'
 import { Skeleton } from '@/components/ui/skeleton'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/profile/')({
   component: ProfilePage,
@@ -31,6 +33,7 @@ function ProfilePage() {
   const { data: profile, isLoading: profileLoading } = useUserProfile()
   const { data: ordersData, isLoading: ordersLoading } = useMyOrders(0, 5)
   const updateAvatar = useUpdateAvatar()
+  const uploadFile = useFileUpload()
 
   const isLoading = profileLoading || ordersLoading
 
@@ -59,16 +62,28 @@ function ProfilePage() {
   // Calculate total spent
   const totalSpent = orders.reduce((sum, order) => sum + order.total, 0)
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      // Upload to server and get URL
-      const reader = new FileReader()
-      reader.onload = () => {
-        const avatarUrl = reader.result as string
-        updateAvatar.mutate({ avatarUrl })
-      }
-      reader.readAsDataURL(file)
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB')
+      return
+    }
+
+    try {
+      const avatarUrl = await uploadFile.mutateAsync(file)
+      updateAvatar.mutate({ avatarUrl })
+      toast.success('Avatar updated successfully')
+    } catch {
+      toast.error('Failed to upload avatar')
     }
   }
 

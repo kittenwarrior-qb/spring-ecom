@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -46,8 +47,8 @@ public class SepayWebhookService {
     @Transactional
     public void processPayment(SepayWebhookRequest request, String authorization) {
         // Verify API key
-        if (webhookApiKey != null && !webhookApiKey.isEmpty()) {
-            if (authorization == null || !authorization.startsWith("Apikey ")) {
+        if (Objects.nonNull(webhookApiKey) && !webhookApiKey.isEmpty()) {
+            if (Objects.isNull(authorization) || !authorization.startsWith("Apikey ")) {
                 log.error("Invalid webhook API key format");
                 throw new BaseException(ResponseCode.UNAUTHORIZED, "Invalid API key format");
             }
@@ -93,7 +94,7 @@ public class SepayWebhookService {
         log.info("SePay transaction {} saved successfully", request.id());
         
         // Process payment if it's an incoming transfer with payment code
-        if ("in".equals(request.transferType()) && request.code() != null && !request.code().trim().isEmpty()) {
+        if ("in".equals(request.transferType()) && Objects.nonNull(request.code()) && !request.code().trim().isEmpty()) {
             processOrderPayment(savedTransaction);
         }
     }
@@ -179,7 +180,7 @@ public class SepayWebhookService {
             List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(order.id());
             
             List<OrderEvent.OrderItemPayload> itemPayloads = orderItems.stream()
-                    .filter(item -> item.getStatus() == null || 
+                    .filter(item -> Objects.isNull(item.getStatus()) || 
                             item.getStatus() == com.example.spring_ecom.domain.order.OrderItem.OrderItemStatus.ACTIVE)
                     .map(item -> OrderEvent.OrderItemPayload.builder()
                             .productId(item.getProductId())

@@ -56,7 +56,7 @@ public class AuthCommandService {
     private final RolePermissionRepository rolePermissionRepository;
     private final PermissionRepository permissionRepository;
 
-    public LoginResponse login(LoginDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
+    protected LoginResponse login(LoginDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
         UserEntity userEntity = validateAndGetUser(command);
         updateLastLogin(userEntity);
         
@@ -64,7 +64,7 @@ public class AuthCommandService {
         return generateLoginResponse(sessionId, userEntity, response);
     }
 
-    public LoginResponse register(RegisterDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
+    protected LoginResponse register(RegisterDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
         validateUserRegistration(command);
         
         UserEntity userEntity = createUser(command);
@@ -73,7 +73,7 @@ public class AuthCommandService {
         return new LoginResponse(null, null, null, null);
     }
     
-    public LoginResponse refreshToken(String oldRefreshToken, String deviceInfo, String ipAddress, HttpServletResponse response) {
+    protected LoginResponse refreshToken(String oldRefreshToken, String deviceInfo, String ipAddress, HttpServletResponse response) {
         validateRefreshToken(oldRefreshToken);
         
         TokenInfo tokenInfo = tokenService.validateRefreshToken(oldRefreshToken);
@@ -87,7 +87,7 @@ public class AuthCommandService {
         return generateLoginResponse(newSessionId, userEntity, response);
     }
     
-    public void logout(String refreshToken) {
+    protected void logout(String refreshToken) {
         Optional.ofNullable(refreshToken)
                 .filter(token -> !token.trim().isEmpty())
                 .ifPresent(token -> {
@@ -102,7 +102,7 @@ public class AuthCommandService {
                 });
     }
     
-    public void logoutBySessionId(String sessionId) {
+    protected void logoutBySessionId(String sessionId) {
         Optional.ofNullable(sessionId)
                 .filter(id -> !id.trim().isEmpty())
                 .ifPresent(redisService::revokeSession);
@@ -163,7 +163,7 @@ public class AuthCommandService {
     
     private String createTokenSession(TokenInfo tokenInfo, String deviceInfo, String ipAddress) {
         // Reuse authorities from existing token if available
-        String authorities = tokenInfo.getAuthorities() != null ? 
+        String authorities = Objects.nonNull(tokenInfo.getAuthorities()) ?
                 String.join(",", tokenInfo.getAuthorities()) : null;
         
         return redisService.createSession(

@@ -1,26 +1,33 @@
 package com.example.spring_ecom.controller.api.order.orderItem.model;
 
 import com.example.spring_ecom.config.MapStructGlobalConfig;
+import com.example.spring_ecom.config.MinioConfig;
 import com.example.spring_ecom.domain.order.OrderItem.OrderItemWithProductDto;
 import com.example.spring_ecom.repository.database.order.dao.OrderItemWithProductDao;
 import com.example.spring_ecom.repository.database.order.dao.OrderWithUserDao;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import java.util.Objects;
 
 @Mapper(config = MapStructGlobalConfig.class)
-public interface OrderDetailResponseMapper {
+public abstract class OrderDetailResponseMapper {
     
-    OrderItemWithProductDto toDto(OrderItemWithProductDao dao);
+    @Autowired
+    protected MinioConfig minioConfig;
     
-    @Mapping(source = "productCoverImageUrl", target = "productImage")
-    OrderItemResponse toResponse(OrderItemWithProductDto dto);
+    public abstract OrderItemWithProductDto toDto(OrderItemWithProductDao dao);
     
-    List<OrderItemWithProductDto> toDtoList(List<OrderItemWithProductDao> daoList);
+    @Mapping(target = "productImage", source = "productCoverImageUrl", qualifiedByName = "toFullUrl")
+    public abstract OrderItemResponse toResponse(OrderItemWithProductDto dto);
     
-    List<OrderItemResponse> toResponseList(List<OrderItemWithProductDto> dtoList);
+    public abstract List<OrderItemWithProductDto> toDtoList(List<OrderItemWithProductDao> daoList);
+    
+    public abstract List<OrderItemResponse> toResponseList(List<OrderItemWithProductDto> dtoList);
     
     @Mapping(source = "order.id", target = "id")
     @Mapping(source = "order.orderNumber", target = "orderNumber")
@@ -45,5 +52,18 @@ public interface OrderDetailResponseMapper {
     @Mapping(source = "order.createdAt", target = "createdAt")
     @Mapping(source = "order.updatedAt", target = "updatedAt")
     @Mapping(source = "order.cancelledAt", target = "cancelledAt")
-    OrderDetailResponse toDetailResponse(OrderWithUserDao order, List<OrderItemResponse> items);
+    public abstract OrderDetailResponse toDetailResponse(OrderWithUserDao order, List<OrderItemResponse> items);
+    
+    @Named("toFullUrl")
+    protected String toFullUrl(String filename) {
+        if (Objects.isNull(filename) || filename.isBlank()) {
+            return null;
+        }
+        // Already a full URL
+        if (filename.startsWith("http://") || filename.startsWith("https://")) {
+            return filename;
+        }
+        // Convert filename to full URL
+        return minioConfig.getEndpoint() + "/" + minioConfig.getBucket() + "/" + filename;
+    }
 }

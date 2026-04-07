@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -81,7 +82,7 @@ public class CouponQueryService {
         }
         
         // Check usage limit
-        if (entity.getUsageLimit() != null && entity.getUsedCount() >= entity.getUsageLimit()) {
+        if (Objects.nonNull(entity.getUsageLimit()) && entity.getUsedCount() >= entity.getUsageLimit()) {
             return CouponUseCase.CouponValidationResult.invalid("Coupon usage limit reached");
         }
         

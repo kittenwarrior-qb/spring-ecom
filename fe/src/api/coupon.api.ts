@@ -21,6 +21,12 @@ export const couponApi = {
     return response.data.data
   },
 
+  // Public: Get all active coupons for coupons page
+  getPublicCoupons: async (): Promise<CouponResponse[]> => {
+    const response = await apiClient.get<ApiResponse<CouponResponse[]>>(`${COUPON_BASE_URL}/public`)
+    return response.data.data
+  },
+
   // Public: Get coupon by code
   getCouponByCode: async (code: string): Promise<CouponResponse> => {
     const response = await apiClient.get<ApiResponse<CouponResponse>>(`${COUPON_BASE_URL}/code/${code}`)

@@ -82,7 +82,7 @@ public class CouponQueryService {
         }
         
         // Check usage limit
-        if (entity.getUsageLimit() != null && entity.getUsedCount() >= entity.getUsageLimit()) {
+        if (Objects.nonNull(entity.getUsageLimit()) && entity.getUsedCount() >= entity.getUsageLimit()) {
             return CouponUseCase.CouponValidationResult.invalid("Coupon usage limit reached");
         }
         

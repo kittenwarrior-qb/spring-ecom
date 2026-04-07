@@ -5,7 +5,7 @@ import com.example.spring_ecom.controller.api.order.model.CreateOrderRequestMapp
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.cart.CartItem;
-import com.example.spring_ecom.domain.order.CreateOrderFromCartRequest;
+
 import com.example.spring_ecom.repository.database.order.dao.CreateOrderFromCartDao;
 import com.example.spring_ecom.domain.order.Order;
 import com.example.spring_ecom.domain.order.OrderCalculation;
@@ -16,6 +16,7 @@ import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.OrderEntityMapper;
 import com.example.spring_ecom.repository.database.order.dao.CreateOrderFromCartDao;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
+import com.example.spring_ecom.service.notification.NotificationUseCase;
 import com.example.spring_ecom.service.order.orderItem.OrderItemUseCase;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
 import com.example.spring_ecom.repository.database.user.UserRepository;
@@ -42,6 +43,7 @@ public class OrderCommandService {
     private final CartUseCase cartUseCase;
     private final OrderEntityMapper mapper;
     private final CreateOrderRequestMapper requestMapper;
+    private final NotificationUseCase notificationUseCase;
     
     // ========== MAIN COMMAND METHODS ==========
     
@@ -134,8 +136,13 @@ public class OrderCommandService {
     }
     
     private void handlePaymentStatusChange(OrderEntity entity, PaymentStatus paymentStatus) {
+        log.info("[ORDER] handlePaymentStatusChange: orderId={}, paymentStatus={}, currentOrderStatus={}", 
+                entity.getId(), paymentStatus, entity.getStatus());
         if (paymentStatus == PaymentStatus.PAID && entity.getStatus() == OrderStatus.PENDING) {
+            log.info("[ORDER] Changing order status from PENDING to CONFIRMED due to payment");
             mapper.updateOrderStatus(entity, OrderStatus.CONFIRMED);
+            // Send notification for status change
+            handleStatusChange(entity, OrderStatus.CONFIRMED);
         }
     }
     
@@ -263,6 +270,8 @@ public class OrderCommandService {
     }
     
     private void handleStatusChange(OrderEntity entity, OrderStatus status) {
+        sendOrderStatusNotification(entity, status);
+        
         if (status == OrderStatus.CANCELLED) {
             orderItemUseCase.restoreStockForOrder(entity.getId());
             if (entity.getPaymentStatus() == PaymentStatus.PAID) {
@@ -275,6 +284,62 @@ public class OrderCommandService {
             }
         }
     }
+    
+    private void sendOrderStatusNotification(OrderEntity entity, OrderStatus status) {
+        if (Objects.isNull(entity.getUserId())) {
+            log.warn("[NOTIFICATION] No userId for orderId={}", entity.getId());
+            return;
+        }
+        
+        try {
+            String title = "Cập nhật đơn hàng";
+            String message = mapStatusToMessage(entity.getOrderNumber(), status);
+            String type = mapStatusToType(status);
+            String actionUrl = "/orders/" + entity.getId();
+            
+            notificationUseCase.createAndSend(
+                    entity.getUserId(),
+                    type,
+                    title,
+                    message,
+                    entity.getId(),
+                    "ORDER",
+                    null,
+                    actionUrl
+            );
+            
+            log.info("[ORDER] Notification sent: orderId={}, status={}", entity.getId(), status);
+        } catch (Exception e) {
+            log.error("[ORDER] Failed to send notification: {}", e.getMessage());
+            // Don't fail the order status update if notification fails
+        }
+    }
+    
+    private String mapStatusToMessage(String orderNumber, OrderStatus status) {
+        String statusText = switch (status) {
+            case CONFIRMED -> "đã được xác nhận";
+            case PENDING -> "đang được xử lý";
+            case SHIPPED -> "đã được giao cho đơn vị vận chuyển";
+            case DELIVERED -> "đã được giao thành công";
+            case CANCELLED -> "đã bị hủy";
+            case STOCK_RESERVED -> "đã được xác nhận tồn kho";
+            default -> "đã được cập nhật";
+        };
+        return String.format("Đơn hàng #%s %s", orderNumber, statusText);
+    }
+    
+    private String mapStatusToType(OrderStatus status) {
+        return switch (status) {
+            case CONFIRMED -> "ORDER_CONFIRMED";
+            case PENDING -> "ORDER_STATUS";
+            case SHIPPED -> "ORDER_SHIPPED";
+            case DELIVERED -> "ORDER_DELIVERED";
+            case CANCELLED -> "ORDER_CANCELLED";
+            case STOCK_RESERVED -> "ORDER_CONFIRMED";
+            default -> "ORDER_STATUS";
+        };
+    }
+
     
     private String generateOrderNumber() {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));

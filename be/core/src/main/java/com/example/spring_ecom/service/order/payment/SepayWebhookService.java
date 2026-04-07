@@ -8,7 +8,7 @@ import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentMethod;
 import com.example.spring_ecom.domain.order.PaymentStatus;
 import com.example.spring_ecom.domain.order.SepayTransaction;
-import com.example.spring_ecom.repository.database.SepayTransactionRepository;
+import com.example.spring_ecom.repository.database.payment.SepayTransactionRepository;
 import com.example.spring_ecom.service.order.OrderUseCase;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

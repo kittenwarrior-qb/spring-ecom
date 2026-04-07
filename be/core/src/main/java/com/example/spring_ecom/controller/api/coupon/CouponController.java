@@ -12,8 +12,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/v1/api/coupons")
@@ -31,6 +35,16 @@ public class CouponController {
         Page<CouponResponse> coupons = couponUseCase.findActiveCoupons(pageable)
                 .map(responseMapper::toResponse);
         return ResponseEntity.ok(ApiResponse.Success.of(coupons));
+    }
+    
+    @Operation(summary = "Get all active coupons for public page", description = "Get all currently active coupons as a list")
+    @GetMapping("/public")
+    public ResponseEntity<ApiResponse<List<CouponResponse>>> getPublicCoupons() {
+        // Get all active coupons without pagination
+        PageRequest pageRequest = PageRequest.of(0, 100, Sort.by("endDate").ascending());
+        Page<CouponResponse> coupons = couponUseCase.findActiveCoupons(pageRequest)
+                .map(responseMapper::toResponse);
+        return ResponseEntity.ok(ApiResponse.Success.of(coupons.getContent()));
     }
     
     @Operation(summary = "Get coupon by code", description = "Get coupon details by code")

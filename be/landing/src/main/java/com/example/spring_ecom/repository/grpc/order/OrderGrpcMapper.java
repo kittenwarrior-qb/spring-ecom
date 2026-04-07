@@ -6,6 +6,8 @@ import com.example.spring_ecom.domain.order.Order;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentStatus;
 import com.example.spring_ecom.domain.order.PaymentMethod;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -16,7 +18,7 @@ import java.math.BigDecimal;
 public interface OrderGrpcMapper {
 
     // ========== Proto -> Domain ==========
-    
+
     @Mapping(target = "id", expression = "java(zeroToNullLong(proto.getId()))")
     @Mapping(target = "orderNumber", expression = "java(emptyToNull(proto.getOrderNumber()))")
     @Mapping(target = "userId", expression = "java(zeroToNullLong(proto.getUserId()))")
@@ -42,59 +44,56 @@ public interface OrderGrpcMapper {
     Order toDomain(OrderProto.Order proto);
 
     // ========== Domain -> Proto ==========
-    // Proto uses builder pattern, use default method with manual builder
-    
-    default OrderProto.Order toProto(Order order) {
-        if (order == null) return null;
-        
-        return OrderProto.Order.newBuilder()
-                .setId(order.id() != null ? order.id() : 0L)
-                .setOrderNumber(nullToEmpty(order.orderNumber()))
-                .setUserId(order.userId() != null ? order.userId() : 0L)
-                .setStatus(order.status() != null ? order.status().name() : "")
-                .setPaymentMethod(order.paymentMethod() != null ? order.paymentMethod().name() : "")
-                .setPaymentStatus(order.paymentStatus() != null ? order.paymentStatus().name() : "")
-                .setSubtotal(bigDecimalToDouble(order.subtotal()))
-                .setShippingFee(bigDecimalToDouble(order.shippingFee()))
-                .setDiscount(bigDecimalToDouble(order.discount()))
-                .setTotal(bigDecimalToDouble(order.total()))
-                .setShippingAddress(nullToEmpty(order.shippingAddress()))
-                .setShippingCity(nullToEmpty(order.shippingCity()))
-                .setShippingDistrict(nullToEmpty(order.shippingDistrict()))
-                .setShippingWard(nullToEmpty(order.shippingWard()))
-                .setRecipientName(nullToEmpty(order.recipientName()))
-                .setRecipientPhone(nullToEmpty(order.recipientPhone()))
-                .setNote(nullToEmpty(order.note()))
-                .build();
-    }
+
+    @BeanMapping(builder = @Builder(buildMethod = "build"))
+    @Mapping(target = "id", expression = "java(order.id() != null ? order.id() : 0L)")
+    @Mapping(target = "orderNumber", expression = "java(nullToEmpty(order.orderNumber()))")
+    @Mapping(target = "userId", expression = "java(order.userId() != null ? order.userId() : 0L)")
+    @Mapping(target = "status", expression = "java(order.status() != null ? order.status().name() : \"\")")
+    @Mapping(target = "paymentMethod", expression = "java(order.paymentMethod() != null ? order.paymentMethod().name() : \"\")")
+    @Mapping(target = "paymentStatus", expression = "java(order.paymentStatus() != null ? order.paymentStatus().name() : \"\")")
+    @Mapping(target = "subtotal", expression = "java(bigDecimalToDouble(order.subtotal()))")
+    @Mapping(target = "shippingFee", expression = "java(bigDecimalToDouble(order.shippingFee()))")
+    @Mapping(target = "discount", expression = "java(bigDecimalToDouble(order.discount()))")
+    @Mapping(target = "total", expression = "java(bigDecimalToDouble(order.total()))")
+    @Mapping(target = "shippingAddress", expression = "java(nullToEmpty(order.shippingAddress()))")
+    @Mapping(target = "shippingCity", expression = "java(nullToEmpty(order.shippingCity()))")
+    @Mapping(target = "shippingDistrict", expression = "java(nullToEmpty(order.shippingDistrict()))")
+    @Mapping(target = "shippingWard", expression = "java(nullToEmpty(order.shippingWard()))")
+    @Mapping(target = "recipientName", expression = "java(nullToEmpty(order.recipientName()))")
+    @Mapping(target = "recipientPhone", expression = "java(nullToEmpty(order.recipientPhone()))")
+    @Mapping(target = "note", expression = "java(nullToEmpty(order.note()))")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    OrderProto.Order toProto(Order order);
 
     // ========== Helper methods ==========
-    
+
     @Named("zeroToNullLong")
     default Long zeroToNullLong(long value) {
         return value == 0 ? null : value;
     }
-    
+
     @Named("emptyToNull")
     default String emptyToNull(String value) {
         return value == null || value.isEmpty() ? null : value;
     }
-    
+
     @Named("nullToEmpty")
     default String nullToEmpty(String value) {
         return value == null ? "" : value;
     }
-    
+
     @Named("doubleToBigDecimal")
     default BigDecimal doubleToBigDecimal(double value) {
         return value == 0 ? BigDecimal.ZERO : BigDecimal.valueOf(value);
     }
-    
+
     @Named("bigDecimalToDouble")
     default double bigDecimalToDouble(BigDecimal value) {
         return value == null ? 0 : value.doubleValue();
     }
-    
+
     @Named("toOrderStatus")
     default OrderStatus toOrderStatus(String value) {
         if (value == null || value.isEmpty()) return null;
@@ -104,7 +103,7 @@ public interface OrderGrpcMapper {
             return null;
         }
     }
-    
+
     @Named("toPaymentStatus")
     default PaymentStatus toPaymentStatus(String value) {
         if (value == null || value.isEmpty()) return null;
@@ -114,7 +113,7 @@ public interface OrderGrpcMapper {
             return null;
         }
     }
-    
+
     @Named("toPaymentMethod")
     default PaymentMethod toPaymentMethod(String value) {
         if (value == null || value.isEmpty()) return null;

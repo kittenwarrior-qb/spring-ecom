@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthUseCaseService implements AuthUseCase {
     private final AuthCommandService commandService;
+    private final AuthQueryService queryService;
     private final CookieUtil cookieUtil;
 
     @Override
@@ -51,5 +52,11 @@ public class AuthUseCaseService implements AuthUseCase {
     @Transactional
     public void logoutBySessionId(String sessionId) {
         commandService.logoutBySessionId(sessionId);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isEmailVerified(String email) {
+        return queryService.isEmailVerified(email);
     }
 }

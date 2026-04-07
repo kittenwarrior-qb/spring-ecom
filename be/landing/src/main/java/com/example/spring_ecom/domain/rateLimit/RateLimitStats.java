@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Objects;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -16,9 +18,9 @@ public class RateLimitStats {
     private Integer activeRateLimits;
     
     public Double getBlockRate() {
-        if (totalRequests == null || totalRequests == 0) {
+        if (Objects.isNull(totalRequests) || totalRequests == 0) {
             return 0.0;
         }
-        return (blockedRequests != null ? blockedRequests.doubleValue() : 0.0) / totalRequests.doubleValue() * 100;
+        return (Objects.nonNull(blockedRequests) ? blockedRequests.doubleValue() : 0.0) / totalRequests.doubleValue() * 100;
     }
 }

@@ -2,6 +2,7 @@ package com.example.spring_ecom.controller.api.order.orderItem.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public record OrderItemResponse(
     Long id,
@@ -18,7 +19,7 @@ public record OrderItemResponse(
     LocalDateTime cancelledAt
 ) {
     public Integer getAvailableQuantity() {
-        int cancelled = cancelledQuantity != null ? cancelledQuantity : 0;
+        int cancelled = Objects.nonNull(cancelledQuantity) ? cancelledQuantity : 0;
         return quantity - cancelled;
     }
 }

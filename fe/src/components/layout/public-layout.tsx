@@ -14,6 +14,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuth, useUser } from '@/stores/auth-store'
 import { authApi } from '@/api/auth.api'
+import { NotificationBell } from '@/components/notification-bell'
+import { useNotificationMqtt } from '@/hooks/use-notification'
+import { useNotificationToast } from '@/hooks/use-notification-toast'
 
 interface PublicLayoutProps {
   children: React.ReactNode
@@ -23,27 +26,33 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   const auth = useAuth()
   const user = useUser()
   const [searchValue, setSearchValue] = useState('')
-  const debouncedSearchValue = useDebounce(searchValue, 1000)
+  useDebounce(searchValue, 1000) // Keep debounced value for future use
+
+  // Connect to MQTT for notifications
+  const userId = user?.id ? Number(user.id) : null
+  const token = auth.accessToken || null
+  useNotificationMqtt(userId, token)
+  useNotificationToast()
 
   const handleLogout = async () => {
     try {
       await authApi.logout()
       auth.reset()
       window.location.href = '/'
-    } catch (error) {
+    } catch (_error) {
       // Even if API call fails, still logout locally
       auth.reset()
       window.location.href = '/'
     }
   }
 
-  const userRole = user?.role || (user as any)?.roleName || ((user as any)?.roleId === 1 ? 'ADMIN' : (user as any)?.roleId === 2 ? 'SELLER' : 'USER')
+  const userRole = user?.role || (user as { roleName?: string })?.roleName || ((user as { roleId?: number })?.roleId === 1 ? 'ADMIN' : (user as { roleId?: number })?.roleId === 2 ? 'SELLER' : 'USER')
   const isAdminOrSeller = userRole === 'ADMIN' || userRole === 'SELLER'
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
@@ -65,6 +74,8 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
           {/* Actions */}
           <div className="flex items-center space-x-4">
+            <NotificationBell />
+            
             <Link to="/">
               <Button variant="ghost" size="icon">
                 <ShoppingCart className="h-5 w-5" />

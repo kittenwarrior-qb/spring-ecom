@@ -3,6 +3,7 @@ import { getCookie } from './cookies'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/v1'
 const AUTH_BASE_URL = import.meta.env.VITE_ADMIN_API_BASE_URL || 'http://localhost:8081/v1'
+const NOTIFICATION_BASE_URL = import.meta.env.VITE_NOTIFICATION_API_BASE_URL || 'http://localhost:8081/v1'
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -13,10 +14,39 @@ const apiClient: AxiosInstance = axios.create({
   withCredentials: true, 
 })
 
+// Separate client for notification service (port 8081)
+const notificationApiClient: AxiosInstance = axios.create({
+  baseURL: NOTIFICATION_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+})
+
+// Add auth interceptor to notification client
+notificationApiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const tokenCookie = getCookie('accessToken')
+    if (tokenCookie) {
+      const token = JSON.parse(tokenCookie)
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
 // Request interceptor - add access token to headers
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (config.url?.includes('/auth/')) {
+      config.baseURL = AUTH_BASE_URL
+    }
+    // Route coupon APIs to Core (8081)
+    else if (config.url?.includes('/coupons/')) {
       config.baseURL = AUTH_BASE_URL
     }
 
@@ -121,3 +151,4 @@ apiClient.interceptors.response.use(
 )
 
 export default apiClient
+export { notificationApiClient }

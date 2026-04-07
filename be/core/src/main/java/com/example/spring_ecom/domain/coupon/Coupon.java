@@ -4,6 +4,7 @@ import com.example.spring_ecom.repository.database.coupon.DiscountType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public record Coupon(
     Long id,
@@ -38,7 +39,7 @@ public record Coupon(
         }
         
         // Apply max discount cap if set
-        if (maxDiscount != null && discount.compareTo(maxDiscount) > 0) {
+        if (Objects.nonNull(maxDiscount) && discount.compareTo(maxDiscount) > 0) {
             discount = maxDiscount;
         }
         
@@ -56,10 +57,10 @@ public record Coupon(
     public boolean isValidNow() {
         LocalDateTime now = LocalDateTime.now();
         return isActive 
-            && deletedAt == null
-            && (startDate == null || !now.isBefore(startDate))
-            && (endDate == null || !now.isAfter(endDate))
-            && (usageLimit == null || usedCount < usageLimit);
+            && Objects.isNull(deletedAt)
+            && (Objects.isNull(startDate) || !now.isBefore(startDate))
+            && (Objects.isNull(endDate) || !now.isAfter(endDate))
+            && (Objects.isNull(usageLimit) || usedCount < usageLimit);
     }
     
     /**

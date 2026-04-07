@@ -1,7 +1,5 @@
 package com.example.spring_ecom.scheduler;
 
-import com.example.spring_ecom.kafka.domain.OrderEvent;
-import com.example.spring_ecom.repository.kafka.producer.OrderKafkaProducerImpl;
 import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
 import com.example.spring_ecom.repository.database.product.ProductEntity;
@@ -18,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Scheduler để release expired stock reservations
@@ -31,7 +30,6 @@ public class StockReservationScheduler {
     private final StockReservationRepository reservationRepository;
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
-    private final OrderKafkaProducerImpl kafkaProducer;
     
     /**
      * Run every minute to release expired reservations
@@ -64,13 +62,21 @@ public class StockReservationScheduler {
     private void releaseReservation(StockReservationEntity reservation) {
         Long orderId = reservation.getOrderId();
         
-        // Update product's reservedQuantity
-        ProductEntity product = productRepository.findById(reservation.getProductId()).orElse(null);
-        if (product != null) {
-            product.setReservedQuantity(Math.max(0, product.getReservedQuantity() - reservation.getQuantity()));
-            productRepository.save(product);
-            log.info("Released expired reservation: productId={}, quantity={}, orderId={}", 
-                    reservation.getProductId(), reservation.getQuantity(), orderId);
+        // PESSIMISTIC LOCK - prevents race condition with order cancel
+        ProductEntity product = productRepository.findByIdWithLock(reservation.getProductId()).orElse(null);
+        
+        if (Objects.nonNull(product)) {
+            if (product.getReservedQuantity() >= reservation.getQuantity()) {
+                product.setReservedQuantity(product.getReservedQuantity() - reservation.getQuantity());
+                productRepository.save(product);
+                log.info("[SCHEDULER] Released expired reservation: productId={}, quantity={}, orderId={}", 
+                        reservation.getProductId(), reservation.getQuantity(), orderId);
+            } else {
+                log.warn("[SCHEDULER] Insufficient reserved quantity: productId={}, reserved={}, requested={}", 
+                        reservation.getProductId(), product.getReservedQuantity(), reservation.getQuantity());
+            }
+        } else {
+            log.warn("[SCHEDULER] Product not found for release: productId={}", reservation.getProductId());
         }
         
         // Update reservation status
@@ -81,8 +87,7 @@ public class StockReservationScheduler {
         // Update order status to CANCELLED (reservation expired = payment timeout)
         updateOrderStatusToCancelled(orderId);
         
-        // Send STOCK_RELEASED event to client
-        sendStockReleasedEvent(reservation);
+        log.info("[SCHEDULER] Reservation released and order cancelled: orderId={}", orderId);
     }
     
     /**
@@ -103,23 +108,5 @@ public class StockReservationScheduler {
                 },
                 () -> log.warn("Order not found for status update: orderId={}", orderId)
         );
-    }
-    
-    /**
-     * Send STOCK_RELEASED event to client
-     */
-    private void sendStockReleasedEvent(StockReservationEntity reservation) {
-        OrderEvent event = OrderEvent.builder()
-                .eventId(java.util.UUID.randomUUID().toString())
-                .eventType(OrderEvent.STOCK_RELEASED)
-                .timestamp(Instant.now())
-                .source("server")
-                .orderId(reservation.getOrderId())
-                .status("STOCK_RELEASED")
-                .failureReason("Reservation expired (TTL)")
-                .build();
-        
-        kafkaProducer.send(event);
-        log.info("[KAFKA] Sent STOCK_RELEASED event for expired reservation: orderId={}", reservation.getOrderId());
     }
 }

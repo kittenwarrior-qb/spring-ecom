@@ -15,17 +15,17 @@ public class AuthQueryService {
     
     private final UserRepository userRepository;
     
-    public boolean isEmailVerified(String email) {
+    protected boolean isEmailVerified(String email) {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
         return user.getIsEmailVerified();
     }
     
-    public boolean isValidVerificationToken(String token) {
+    protected boolean isValidVerificationToken(String token) {
         return userRepository.findByEmailVerificationToken(token).isPresent();
     }
     
-    public boolean isValidPasswordResetToken(String token) {
+    protected boolean isValidPasswordResetToken(String token) {
         return userRepository.findByPasswordResetToken(token).isPresent();
     }
 }

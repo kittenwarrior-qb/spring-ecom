@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -47,7 +48,6 @@ public class OrderItemCommandService {
                 })
                 .toList();
         
-        // KHÔNG còn gọi gRPC updateProductStock ở đây nữa
         // Stock sẽ được trừ bởi Server consumer khi nhận ORDER_CREATED event
         
         orderItemRepository.saveAll(orderItems);
@@ -69,7 +69,6 @@ public class OrderItemCommandService {
     }
     
     /**
-     * Restore stock - KHÔNG dùng gRPC nữa, sẽ gửi Kafka event
      * Server consumer sẽ xử lý restore stock
      */
     public List<OrderItemEntity> getOrderItemsForRestore(Long orderId) {
@@ -112,7 +111,7 @@ public class OrderItemCommandService {
     
     private OrderItemEntity validateAndGetOrderItem(Map<Long, OrderItemEntity> itemMap, Long orderItemId) {
         OrderItemEntity orderItem = itemMap.get(orderItemId);
-        if (orderItem == null) {
+        if (Objects.isNull(orderItem)) {
             throw new BaseException(ResponseCode.BAD_REQUEST,
                     "Order item not found: " + orderItemId);
         }
@@ -131,7 +130,6 @@ public class OrderItemCommandService {
             orderItem.setCancelledAt(LocalDateTime.now());
         }
         
-        // KHÔNG dùng gRPC updateProductStock ở đây nữa
         // Stock sẽ được restore bởi Server consumer khi nhận ORDER_CANCELLED event
     }
     

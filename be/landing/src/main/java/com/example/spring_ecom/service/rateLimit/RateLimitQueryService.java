@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -60,18 +61,18 @@ public class RateLimitQueryService {
         String key = rateLimitDao.createKey(rateLimitType, endpoint, identifier);
         RateLimitInfo info = rateLimitDao.getCurrentInfo(key);
         
-        if (info == null) {
+        if (Objects.isNull(info)) {
             return false; // No rate limit entry = not limited
         }
         
         // Check if window expired
         LocalDateTime now = LocalDateTime.now();
-        if (info.getWindowEnd() != null && now.isAfter(info.getWindowEnd())) {
+        if (Objects.nonNull(info.getWindowEnd()) && now.isAfter(info.getWindowEnd())) {
             return false; // Window expired = not limited
         }
         
         // Check if exceeded limit
-        return info.getCurrentRequests() != null && 
+        return Objects.nonNull(info.getCurrentRequests()) && 
                info.getCurrentRequests() >= maxRequests;
     }
     
@@ -81,7 +82,7 @@ public class RateLimitQueryService {
     public int getRemainingRequests(String rateLimitType, String identifier, String endpoint, int maxRequests) {
         RateLimitInfo info = getRateLimitInfo(rateLimitType, identifier, endpoint);
         
-        if (info == null || info.getCurrentRequests() == null) {
+        if (Objects.isNull(info) || Objects.isNull(info.getCurrentRequests())) {
             return maxRequests;
         }
         
@@ -94,7 +95,7 @@ public class RateLimitQueryService {
     public long getResetTimeSeconds(String rateLimitType, String identifier, String endpoint) {
         RateLimitInfo info = getRateLimitInfo(rateLimitType, identifier, endpoint);
         
-        if (info == null || info.getRemainingTimeSeconds() == null) {
+        if (Objects.isNull(info) || Objects.isNull(info.getRemainingTimeSeconds())) {
             return 0;
         }
         

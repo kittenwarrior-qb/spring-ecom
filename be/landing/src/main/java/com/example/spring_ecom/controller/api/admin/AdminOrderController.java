@@ -56,7 +56,7 @@ public class AdminOrderController implements AdminOrderAPI {
         log.info("Admin cancelling order: {}", id);
         try {
             orderUseCase.cancelOrder(id, null, true);
-            return ApiResponse.Success.of(null);
+            return ApiResponse.Success.of();
         } catch (Exception e) {
             log.error("Error cancelling order: {}", e.getMessage(), e);
             return ApiResponse.Error.of(null, "Failed to cancel order");

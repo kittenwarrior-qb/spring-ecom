@@ -1,10 +1,14 @@
 package com.example.spring_ecom.service.product;
 
+import com.example.spring_ecom.config.MinioConfig;
+import com.example.spring_ecom.controller.api.product.model.ProductResponse;
+import com.example.spring_ecom.controller.api.product.model.ProductResponseMapper;
 import com.example.spring_ecom.domain.product.Product;
 import com.example.spring_ecom.domain.product.ProductWithCategory;
 import com.example.spring_ecom.repository.database.product.ProductEntity;
 import com.example.spring_ecom.repository.database.product.ProductEntityMapper;
 import com.example.spring_ecom.repository.database.product.ProductRepository;
+import com.example.spring_ecom.service.file.FileQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,6 +25,9 @@ public class ProductQueryService {
     
     private final ProductRepository productRepository;
     private final ProductEntityMapper mapper;
+    private final ProductResponseMapper responseMapper;
+    private final FileQueryService fileQueryService;
+    private final MinioConfig minioConfig;
     
     public Page<Product> findAll(Pageable pageable) {
         return productRepository.findProductsWithFilters(null, null, null, null, pageable)
@@ -81,5 +88,84 @@ public class ProductQueryService {
     public Page<ProductWithCategory> findAllWithCategory(Pageable pageable) {
         return productRepository.findAllWithCategory(pageable)
                 .map(mapper::toDomain);
+    }
+    
+    // ========== Response Mapping with Presigned URL ==========
+    
+    public ProductResponse toProductResponse(Product product) {
+        ProductResponse response = responseMapper.toResponse(product);
+        return convertCoverImageUrlToPresigned(response);
+    }
+    
+    public ProductResponse toProductResponse(ProductEntity entity) {
+        ProductResponse response = responseMapper.toResponse(entity);
+        return convertCoverImageUrlToPresigned(response);
+    }
+    
+    public ProductResponse toProductResponse(ProductWithCategory domain) {
+        ProductResponse response = responseMapper.toResponse(domain);
+        return convertCoverImageUrlToPresigned(response);
+    }
+    
+    public Page<ProductResponse> toProductResponsePage(Page<Product> products) {
+        return products.map(this::toProductResponse);
+    }
+    
+    public Page<ProductResponse> toProductResponsePageFromEntities(Page<ProductEntity> entities) {
+        return entities.map(this::toProductResponse);
+    }
+    
+    public Page<ProductResponse> toProductResponsePageFromWithCategory(Page<ProductWithCategory> products) {
+        return products.map(this::toProductResponse);
+    }
+    
+    private ProductResponse convertCoverImageUrlToPresigned(ProductResponse response) {
+        if (response.coverImageUrl() == null || response.coverImageUrl().isBlank()) {
+            return response;
+        }
+        
+        String presignedUrl = toPresignedUrl(response.coverImageUrl());
+        return new ProductResponse(
+                response.id(),
+                response.title(),
+                response.slug(),
+                response.author(),
+                response.publisher(),
+                response.publicationYear(),
+                response.language(),
+                response.pages(),
+                response.format(),
+                response.description(),
+                response.price(),
+                response.discountPrice(),
+                response.stockQuantity(),
+                presignedUrl,
+                response.isBestseller(),
+                response.isActive(),
+                response.viewCount(),
+                response.soldCount(),
+                response.ratingAverage(),
+                response.ratingCount(),
+                response.createdAt(),
+                response.updatedAt(),
+                response.categoryId(),
+                response.categoryName()
+        );
+    }
+    
+    private String toPresignedUrl(String coverImageUrl) {
+        String filename = coverImageUrl;
+        if (coverImageUrl.startsWith("http://") || coverImageUrl.startsWith("https://")) {
+            String path = coverImageUrl.split("\\?")[0];
+            String[] parts = path.split("/");
+            filename = parts[parts.length - 1];
+        }
+        
+        try {
+            return fileQueryService.getPresignedUrl(filename);
+        } catch (Exception e) {
+            log.warn("[PRODUCT-QUERY] Failed to generate presigned URL for {}: {}", filename, e.getMessage());
+            return minioConfig.getEndpoint() + "/" + minioConfig.getBucket() + "/" + filename;
+        }
     }
 }

@@ -4,6 +4,7 @@ import com.example.spring_ecom.repository.database.coupon.DiscountType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public record CouponResponse(
     Long id,
@@ -25,14 +26,14 @@ public record CouponResponse(
 ) {
     public Boolean isValid() {
         LocalDateTime now = LocalDateTime.now();
-        return isActive 
-            && (startDate == null || !now.isBefore(startDate))
-            && (endDate == null || !now.isAfter(endDate))
-            && (usageLimit == null || usedCount < usageLimit);
+        return isActive
+            && (Objects.isNull(startDate) || !now.isBefore(startDate))
+            && (Objects.isNull(endDate) || !now.isAfter(endDate))
+            && (Objects.isNull(usageLimit) || usedCount < usageLimit);
     }
     
     public Integer remainingUses() {
-        if (usageLimit == null) {
+        if (Objects.isNull(usageLimit)) {
             return null; // Unlimited
         }
         return Math.max(0, usageLimit - usedCount);

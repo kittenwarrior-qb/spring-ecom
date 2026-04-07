@@ -5,6 +5,8 @@ import com.example.spring_ecom.grpc.domain.ProductProto;
 import com.example.spring_ecom.controller.api.product.model.ProductRequest;
 import com.example.spring_ecom.controller.api.product.model.ProductResponse;
 import com.example.spring_ecom.domain.product.Product;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -15,7 +17,7 @@ import java.math.BigDecimal;
 public interface ProductGrpcMapper {
 
     // ========== Proto -> Domain ==========
-    
+
     @Mapping(target = "id", expression = "java(zeroToNullLong(proto.getId()))")
     @Mapping(target = "title", expression = "java(emptyToNull(proto.getTitle()))")
     @Mapping(target = "slug", expression = "java(emptyToNull(proto.getSlug()))")
@@ -36,7 +38,7 @@ public interface ProductGrpcMapper {
     Product toDomain(ProductProto.Product proto);
 
     // ========== Proto -> Response ==========
-    
+
     @Mapping(target = "id", expression = "java(zeroToNullLong(proto.getId()))")
     @Mapping(target = "title", expression = "java(emptyToNull(proto.getTitle()))")
     @Mapping(target = "slug", expression = "java(emptyToNull(proto.getSlug()))")
@@ -57,100 +59,93 @@ public interface ProductGrpcMapper {
     ProductResponse toResponse(ProductProto.Product proto);
 
     // ========== Domain -> Proto ==========
-    // Proto uses builder pattern, use default method with manual builder
-    
-    default ProductProto.Product toProto(Product product) {
-        if (product == null) return null;
-        
-        ProductProto.Product.Builder builder = ProductProto.Product.newBuilder()
-                .setId(product.id() != null ? product.id() : 0L)
-                .setTitle(nullToEmpty(product.title()))
-                .setSlug(nullToEmpty(product.slug()))
-                .setAuthor(nullToEmpty(product.author()))
-                .setPublisher(nullToEmpty(product.publisher()))
-                .setPublicationYear(product.publicationYear() != null ? product.publicationYear() : 0)
-                .setLanguage(product.language() != null ? product.language() : "Vietnamese")
-                .setPages(product.pages() != null ? product.pages() : 0)
-                .setFormat(product.format() != null ? product.format() : "Paperback")
-                .setDescription(nullToEmpty(product.description()))
-                .setPrice(bigDecimalToDouble(product.price()))
-                .setDiscountPrice(product.discountPrice() != null ? product.discountPrice().doubleValue() : 0.0)
-                .setStockQuantity(product.stockQuantity() != null ? product.stockQuantity() : 0)
-                .setCoverImageUrl(nullToEmpty(product.coverImageUrl()))
-                .setIsBestseller(product.isBestseller() != null ? product.isBestseller() : false)
-                .setIsActive(product.isActive() != null ? product.isActive() : true)
-                .setViewCount(product.viewCount() != null ? product.viewCount() : 0)
-                .setSoldCount(product.soldCount() != null ? product.soldCount() : 0)
-                .setRatingAverage(bigDecimalToDouble(product.ratingAverage()))
-                .setRatingCount(product.ratingCount() != null ? product.ratingCount() : 0)
-                .setCategoryId(product.categoryId() != null ? product.categoryId() : 0L);
 
-        return builder.build();
-    }
+    @BeanMapping(builder = @Builder(buildMethod = "build"))
+    @Mapping(target = "id", expression = "java(product.id() != null ? product.id() : 0L)")
+    @Mapping(target = "title", expression = "java(nullToEmpty(product.title()))")
+    @Mapping(target = "slug", expression = "java(nullToEmpty(product.slug()))")
+    @Mapping(target = "author", expression = "java(nullToEmpty(product.author()))")
+    @Mapping(target = "publisher", expression = "java(nullToEmpty(product.publisher()))")
+    @Mapping(target = "publicationYear", expression = "java(product.publicationYear() != null ? product.publicationYear() : 0)")
+    @Mapping(target = "language", expression = "java(product.language() != null ? product.language() : \"Vietnamese\")")
+    @Mapping(target = "pages", expression = "java(product.pages() != null ? product.pages() : 0)")
+    @Mapping(target = "format", expression = "java(product.format() != null ? product.format() : \"Paperback\")")
+    @Mapping(target = "description", expression = "java(nullToEmpty(product.description()))")
+    @Mapping(target = "price", expression = "java(bigDecimalToDouble(product.price()))")
+    @Mapping(target = "discountPrice", expression = "java(product.discountPrice() != null ? product.discountPrice().doubleValue() : 0.0)")
+    @Mapping(target = "stockQuantity", expression = "java(product.stockQuantity() != null ? product.stockQuantity() : 0)")
+    @Mapping(target = "coverImageUrl", expression = "java(nullToEmpty(product.coverImageUrl()))")
+    @Mapping(target = "isBestseller", expression = "java(product.isBestseller() != null ? product.isBestseller() : false)")
+    @Mapping(target = "isActive", expression = "java(product.isActive() != null ? product.isActive() : true)")
+    @Mapping(target = "viewCount", expression = "java(product.viewCount() != null ? product.viewCount() : 0)")
+    @Mapping(target = "soldCount", expression = "java(product.soldCount() != null ? product.soldCount() : 0)")
+    @Mapping(target = "ratingAverage", expression = "java(bigDecimalToDouble(product.ratingAverage()))")
+    @Mapping(target = "ratingCount", expression = "java(product.ratingCount() != null ? product.ratingCount() : 0)")
+    @Mapping(target = "categoryId", expression = "java(product.categoryId() != null ? product.categoryId() : 0L)")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    ProductProto.Product toProto(Product product);
 
     // ========== Request -> Proto ==========
-    
-    default ProductProto.Product toProto(ProductRequest request) {
-        if (request == null) return null;
-        
-        ProductProto.Product.Builder builder = ProductProto.Product.newBuilder()
-                .setId(0L)
-                .setTitle(nullToEmpty(request.title()))
-                .setSlug(nullToEmpty(request.slug()))
-                .setAuthor(nullToEmpty(request.author()))
-                .setPublisher(nullToEmpty(request.publisher()))
-                .setPublicationYear(request.publicationYear() != null ? request.publicationYear() : 0)
-                .setLanguage(request.language() != null ? request.language() : "Vietnamese")
-                .setPages(request.pages() != null ? request.pages() : 0)
-                .setFormat(request.format() != null ? request.format() : "Paperback")
-                .setDescription(nullToEmpty(request.description()))
-                .setPrice(bigDecimalToDouble(request.price()))
-                .setDiscountPrice(request.discountPrice() != null ? request.discountPrice().doubleValue() : 0.0)
-                .setStockQuantity(request.stockQuantity() != null ? request.stockQuantity() : 0)
-                .setCoverImageUrl(nullToEmpty(request.coverImageUrl()))
-                .setIsBestseller(request.isBestseller() != null ? request.isBestseller() : false)
-                .setIsActive(request.isActive() != null ? request.isActive() : true)
-                .setViewCount(0)
-                .setSoldCount(0)
-                .setRatingAverage(0.0)
-                .setRatingCount(0)
-                .setCategoryId(request.categoryId() != null ? request.categoryId() : 0L);
 
-        return builder.build();
-    }
+    @BeanMapping(builder = @Builder(buildMethod = "build"))
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "title", expression = "java(nullToEmpty(request.title()))")
+    @Mapping(target = "slug", expression = "java(nullToEmpty(request.slug()))")
+    @Mapping(target = "author", expression = "java(nullToEmpty(request.author()))")
+    @Mapping(target = "publisher", expression = "java(nullToEmpty(request.publisher()))")
+    @Mapping(target = "publicationYear", expression = "java(request.publicationYear() != null ? request.publicationYear() : 0)")
+    @Mapping(target = "language", expression = "java(request.language() != null ? request.language() : \"Vietnamese\")")
+    @Mapping(target = "pages", expression = "java(request.pages() != null ? request.pages() : 0)")
+    @Mapping(target = "format", expression = "java(request.format() != null ? request.format() : \"Paperback\")")
+    @Mapping(target = "description", expression = "java(nullToEmpty(request.description()))")
+    @Mapping(target = "price", expression = "java(bigDecimalToDouble(request.price()))")
+    @Mapping(target = "discountPrice", expression = "java(request.discountPrice() != null ? request.discountPrice().doubleValue() : 0.0)")
+    @Mapping(target = "stockQuantity", expression = "java(request.stockQuantity() != null ? request.stockQuantity() : 0)")
+    @Mapping(target = "coverImageUrl", expression = "java(nullToEmpty(request.coverImageUrl()))")
+    @Mapping(target = "isBestseller", expression = "java(request.isBestseller() != null ? request.isBestseller() : false)")
+    @Mapping(target = "isActive", expression = "java(request.isActive() != null ? request.isActive() : true)")
+    @Mapping(target = "viewCount", constant = "0")
+    @Mapping(target = "soldCount", constant = "0")
+    @Mapping(target = "ratingAverage", constant = "0.0")
+    @Mapping(target = "ratingCount", constant = "0")
+    @Mapping(target = "categoryId", expression = "java(request.categoryId() != null ? request.categoryId() : 0L)")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    ProductProto.Product toProto(ProductRequest request);
 
     // ========== Helper methods ==========
-    
+
     @Named("zeroToNullLong")
     default Long zeroToNullLong(long value) {
         return value == 0 ? null : value;
     }
-    
+
     @Named("zeroToNullInt")
     default Integer zeroToNullInt(int value) {
         return value == 0 ? null : value;
     }
-    
+
     @Named("emptyToNull")
     default String emptyToNull(String value) {
         return value == null || value.isEmpty() ? null : value;
     }
-    
+
     @Named("nullToEmpty")
     default String nullToEmpty(String value) {
         return value == null ? "" : value;
     }
-    
+
     @Named("doubleToBigDecimal")
     default BigDecimal doubleToBigDecimal(double value) {
         return value == 0 ? BigDecimal.ZERO : BigDecimal.valueOf(value);
     }
-    
+
     @Named("doubleToBigDecimalOrNull")
     default BigDecimal doubleToBigDecimalOrNull(double value) {
         return value == 0 ? null : BigDecimal.valueOf(value);
     }
-    
+
     @Named("bigDecimalToDouble")
     default double bigDecimalToDouble(BigDecimal value) {
         return value == null ? 0 : value.doubleValue();

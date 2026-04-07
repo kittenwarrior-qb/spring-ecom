@@ -22,3 +22,43 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  emqx:
+    image: emqx/emqx:5.5.0
+    container_name: emqx
+    ports:
+      - "1883:1883"      # MQTT TCP
+      - "8083:8083"      # WebSocket
+      - "8084:8084"      # WebSocket SSL
+      - "18083:18083"    # Dashboard UI
+    environment:
+      EMQX_NAME: emqx
+      EMQX_HOST: 0.0.0.0
+      EMQX_DASHBOARD__DEFAULT_USERNAME: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: admin123
+      # Allow all clients without authentication for development
+      EMQX_AUTHORIZATION__NO_MATCH: allow
+      EMQX_AUTHORIZATION__DENY_ACTION: disconnect
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+    restart: unless-stopped
+
+volumes:
+  minio_data:
+  emqx_data:
+  emqx_log:

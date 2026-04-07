@@ -7,20 +7,21 @@ import com.example.spring_ecom.repository.database.order.dao.OrderWithUserDao;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
 import java.util.List;
 
 @Mapper(config = MapStructGlobalConfig.class)
-public interface OrderDetailResponseMapper {
+public abstract class OrderDetailResponseMapper {
     
-    OrderItemWithProductDto toDto(OrderItemWithProductDao dao);
+    public abstract OrderItemWithProductDto toDto(OrderItemWithProductDao dao);
     
-    @Mapping(source = "productCoverImageUrl", target = "productImage")
-    OrderItemResponse toResponse(OrderItemWithProductDto dto);
+    @Mapping(target = "productImage", source = "productCoverImageUrl", qualifiedByName = "ensureFullUrl")
+    public abstract OrderItemResponse toResponse(OrderItemWithProductDto dto);
     
-    List<OrderItemWithProductDto> toDtoList(List<OrderItemWithProductDao> daoList);
+    public abstract List<OrderItemWithProductDto> toDtoList(List<OrderItemWithProductDao> daoList);
     
-    List<OrderItemResponse> toResponseList(List<OrderItemWithProductDto> dtoList);
+    public abstract List<OrderItemResponse> toResponseList(List<OrderItemWithProductDto> dtoList);
     
     @Mapping(source = "order.id", target = "id")
     @Mapping(source = "order.orderNumber", target = "orderNumber")
@@ -45,5 +46,22 @@ public interface OrderDetailResponseMapper {
     @Mapping(source = "order.createdAt", target = "createdAt")
     @Mapping(source = "order.updatedAt", target = "updatedAt")
     @Mapping(source = "order.cancelledAt", target = "cancelledAt")
-    OrderDetailResponse toDetailResponse(OrderWithUserDao order, List<OrderItemResponse> items);
+    public abstract OrderDetailResponse toDetailResponse(OrderWithUserDao order, List<OrderItemResponse> items);
+    
+    /**
+     * Ensure URL is full URL - if already full URL, return as-is
+     * Core module handles the conversion, this is just a safety check
+     */
+    @Named("ensureFullUrl")
+    protected String ensureFullUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+        // Already a full URL - return as-is
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            return url;
+        }
+        // If filename only, return as-is (Core should have converted it)
+        return url;
+    }
 }

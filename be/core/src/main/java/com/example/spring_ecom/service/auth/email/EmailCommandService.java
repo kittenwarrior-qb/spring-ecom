@@ -4,7 +4,7 @@ import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.repository.database.user.UserEntity;
 import com.example.spring_ecom.repository.database.user.UserRepository;
-import com.example.spring_ecom.service.auth.AuthQueryService;
+import com.example.spring_ecom.service.auth.AuthUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +25,7 @@ import java.util.UUID;
 public class EmailCommandService {
     
     private final UserRepository userRepository;
-    private final AuthQueryService authQueryService;
+    private final AuthUseCase authUseCase;
     private final RestTemplate restTemplate = new RestTemplate();
     
     @Value("${app.resend.api-key}")
@@ -88,7 +88,7 @@ public class EmailCommandService {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
         
-        if (authQueryService.isEmailVerified(email)) {
+        if (authUseCase.isEmailVerified(email)) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Email is already verified");
         }
         

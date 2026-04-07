@@ -2,11 +2,11 @@ package com.example.spring_ecom.controller.api.admin.product;
 
 import com.example.spring_ecom.controller.api.product.model.CreateProductRequest;
 import com.example.spring_ecom.controller.api.product.model.ProductResponse;
-import com.example.spring_ecom.controller.api.product.model.ProductResponseMapper;
 import com.example.spring_ecom.controller.api.product.model.UpdateProductRequest;
 import com.example.spring_ecom.core.response.ApiResponse;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.product.Product;
+import com.example.spring_ecom.service.product.ProductQueryService;
 import com.example.spring_ecom.service.product.ProductUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 /**
  * Trực tiếp truy xuất DB, không qua gRPC
@@ -33,7 +34,7 @@ import java.math.BigDecimal;
 public class AdminProductController {
 
     private final ProductUseCase productUseCase;
-    private final ProductResponseMapper productResponseMapper;
+    private final ProductQueryService productQueryService;
 
     @Operation(summary = "Get all products", description = "Get paginated list of all products (Admin only)")
     @GetMapping
@@ -45,12 +46,12 @@ public class AdminProductController {
         try {
             log.info("Admin getting all products with pagination");
             Page<Product> products;
-            if (search != null && !search.isBlank()) {
+            if (Objects.nonNull(search) && !search.isBlank()) {
                 products = productUseCase.searchProducts(search, pageable);
             } else {
                 products = productUseCase.findAll(pageable);
             }
-            Page<ProductResponse> response = products.map(productResponseMapper::toResponse);
+            Page<ProductResponse> response = productQueryService.toProductResponsePage(products);
             return ResponseEntity.ok(ApiResponse.Success.of(response));
         } catch (Exception e) {
             log.error("Error getting all products: {}", e.getMessage(), e);
@@ -66,7 +67,7 @@ public class AdminProductController {
         try {
             log.info("Admin getting product by ID: {}", productId);
             return productUseCase.findById(productId)
-                    .map(product -> ResponseEntity.ok(ApiResponse.Success.of(productResponseMapper.toResponse(product))))
+                    .map(product -> ResponseEntity.ok(ApiResponse.Success.of(productQueryService.toProductResponse(product))))
                     .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {
             log.error("Error getting product: {}", e.getMessage(), e);
@@ -88,16 +89,16 @@ public class AdminProductController {
                     request.getAuthor(),
                     request.getPublisher(),
                     request.getPublicationYear(),
-                    request.getLanguage() != null ? request.getLanguage() : "Vietnamese",
+                    Objects.nonNull(request.getLanguage()) ? request.getLanguage() : "Vietnamese",
                     request.getPages(),
-                    request.getFormat() != null ? request.getFormat() : "Paperback",
+                    Objects.nonNull(request.getFormat()) ? request.getFormat() : "Paperback",
                     request.getDescription(),
                     request.getPrice(),
                     request.getDiscountPrice(),
-                    request.getStockQuantity() != null ? request.getStockQuantity() : 0,
+                    Objects.nonNull(request.getStockQuantity()) ? request.getStockQuantity() : 0,
                     request.getCoverImageUrl(),
-                    request.getIsBestseller() != null ? request.getIsBestseller() : false,
-                    request.getIsActive() != null ? request.getIsActive() : true,
+                    Objects.nonNull(request.getIsBestseller()) ? request.getIsBestseller() : false,
+                    Objects.nonNull(request.getIsActive()) ? request.getIsActive() : true,
                     0,
                     0,
                     BigDecimal.ZERO,
@@ -110,7 +111,7 @@ public class AdminProductController {
             return productUseCase.create(product)
                     .map(created -> ResponseEntity.ok(
                             ApiResponse.Success.of(ResponseCode.CREATED, "Product created successfully",
-                                    productResponseMapper.toResponse(created))))
+                                    productQueryService.toProductResponse(created))))
                     .orElse(ResponseEntity.internalServerError()
                             .body(ApiResponse.Error.of(ResponseCode.INTERNAL_SERVER_ERROR, "Failed to create product")));
         } catch (Exception e) {
@@ -132,21 +133,21 @@ public class AdminProductController {
 
             Product updated = new Product(
                     existing.id(),
-                    request.getTitle() != null ? request.getTitle() : existing.title(),
+                    Objects.nonNull(request.getTitle()) ? request.getTitle() : existing.title(),
                     existing.slug(),
-                    request.getAuthor() != null ? request.getAuthor() : existing.author(),
-                    request.getPublisher() != null ? request.getPublisher() : existing.publisher(),
-                    request.getPublicationYear() != null ? request.getPublicationYear() : existing.publicationYear(),
-                    request.getLanguage() != null ? request.getLanguage() : existing.language(),
-                    request.getPages() != null ? request.getPages() : existing.pages(),
-                    request.getFormat() != null ? request.getFormat() : existing.format(),
-                    request.getDescription() != null ? request.getDescription() : existing.description(),
-                    request.getPrice() != null ? request.getPrice() : existing.price(),
-                    request.getDiscountPrice() != null ? request.getDiscountPrice() : existing.discountPrice(),
-                    request.getStockQuantity() != null ? request.getStockQuantity() : existing.stockQuantity(),
-                    request.getCoverImageUrl() != null ? request.getCoverImageUrl() : existing.coverImageUrl(),
-                    request.getIsBestseller() != null ? request.getIsBestseller() : existing.isBestseller(),
-                    request.getIsActive() != null ? request.getIsActive() : existing.isActive(),
+                    Objects.nonNull(request.getAuthor()) ? request.getAuthor() : existing.author(),
+                    Objects.nonNull(request.getPublisher()) ? request.getPublisher() : existing.publisher(),
+                    Objects.nonNull(request.getPublicationYear()) ? request.getPublicationYear() : existing.publicationYear(),
+                    Objects.nonNull(request.getLanguage()) ? request.getLanguage() : existing.language(),
+                    Objects.nonNull(request.getPages()) ? request.getPages() : existing.pages(),
+                    Objects.nonNull(request.getFormat()) ? request.getFormat() : existing.format(),
+                    Objects.nonNull(request.getDescription()) ? request.getDescription() : existing.description(),
+                    Objects.nonNull(request.getPrice()) ? request.getPrice() : existing.price(),
+                    Objects.nonNull(request.getDiscountPrice()) ? request.getDiscountPrice() : existing.discountPrice(),
+                    Objects.nonNull(request.getStockQuantity()) ? request.getStockQuantity() : existing.stockQuantity(),
+                    Objects.nonNull(request.getCoverImageUrl()) ? request.getCoverImageUrl() : existing.coverImageUrl(),
+                    Objects.nonNull(request.getIsBestseller()) ? request.getIsBestseller() : existing.isBestseller(),
+                    Objects.nonNull(request.getIsActive()) ? request.getIsActive() : existing.isActive(),
                     existing.viewCount(),
                     existing.soldCount(),
                     existing.ratingAverage(),
@@ -154,13 +155,13 @@ public class AdminProductController {
                     existing.createdAt(),
                     null,
                     existing.deletedAt(),
-                    request.getCategoryId() != null ? request.getCategoryId() : existing.categoryId()
+                    Objects.nonNull(request.getCategoryId()) ? request.getCategoryId() : existing.categoryId()
             );
 
             return productUseCase.update(productId, updated)
                     .map(result -> ResponseEntity.ok(
                             ApiResponse.Success.of(ResponseCode.OK, "Product updated successfully",
-                                    productResponseMapper.toResponse(result))))
+                                    productQueryService.toProductResponse(result))))
                     .orElse(ResponseEntity.internalServerError()
                             .body(ApiResponse.Error.of(ResponseCode.INTERNAL_SERVER_ERROR, "Failed to update product")));
         } catch (Exception e) {
@@ -209,7 +210,7 @@ public class AdminProductController {
             return productUseCase.update(productId, updated)
                     .map(result -> ResponseEntity.ok(
                             ApiResponse.Success.of(ResponseCode.OK, "Stock updated successfully",
-                                    productResponseMapper.toResponse(result))))
+                                    productQueryService.toProductResponse(result))))
                     .orElse(ResponseEntity.internalServerError()
                             .body(ApiResponse.Error.of(ResponseCode.INTERNAL_SERVER_ERROR, "Failed to update stock")));
         } catch (Exception e) {
