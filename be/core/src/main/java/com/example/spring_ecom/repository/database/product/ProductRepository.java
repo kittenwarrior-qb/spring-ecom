@@ -101,13 +101,7 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     }
     
     boolean existsBySlugAndDeletedAtIsNull(String slug);
-    
-    // ========== PESSIMISTIC LOCK METHODS (Prevent Race Condition) ==========
-    
-    /**
-     * Find product with pessimistic write lock for stock operations
-     * Use this for reserve/release/deduct stock operations
-     */
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM ProductEntity p WHERE p.id = :id AND p.deletedAt IS NULL")
     Optional<ProductEntity> findByIdWithLock(@Param("id") Long id);

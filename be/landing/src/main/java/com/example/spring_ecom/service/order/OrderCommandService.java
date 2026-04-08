@@ -14,17 +14,18 @@ import com.example.spring_ecom.domain.order.PaymentMethod;
 import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.OrderEntityMapper;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
-import com.example.spring_ecom.service.coupon.CouponUseCase;
+import com.example.spring_ecom.repository.grpc.coupon.CouponGrpcClient;
 import com.example.spring_ecom.service.order.orderItem.OrderItemUseCase;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
 import com.example.spring_ecom.repository.grpc.user.UserGrpcClient;
-import com.example.spring_ecom.service.product.ProductCommandService;
+import com.example.spring_ecom.service.product.ProductUseCase;
 import com.example.spring_ecom.service.cart.CartUseCase;
 import com.example.spring_ecom.kafka.service.OrderKafkaProducer;
 import com.example.spring_ecom.kafka.domain.OrderEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -46,13 +47,13 @@ public class OrderCommandService {
     
     private final OrderRepository orderRepository;
     private final UserGrpcClient userGrpcClient;
-    private final ProductCommandService productCommandService;
+    private final ProductUseCase productUseCase;
     private final OrderItemUseCase orderItemUseCase;
     private final CartUseCase cartUseCase;
     private final OrderEntityMapper mapper;
     private final CreateOrderRequestMapper requestMapper;
     private final OrderKafkaProducer orderKafkaProducer;
-    private final CouponUseCase couponUseCase;
+    private final CouponGrpcClient couponGrpcClient;
     
     // ========== MAIN COMMAND METHODS ==========
     
@@ -77,30 +78,26 @@ public class OrderCommandService {
         return createFromCartDomain(domainRequest);
     }
     
+    @Transactional
     public Optional<Order> createFromCartDomain(CreateOrderFromCartDao request) {
         List<CartItem> cartItems = cartUseCase.getCartItems(request.userId());
         if (cartItems.isEmpty()) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Cart is empty");
         }
         
-        // BƯỚC 1: Check stock qua gRPC
         validateStockAvailability(cartItems);
         
-        // BƯỚC 2: Calculate totals with coupon if provided
         OrderCalculation calculation = calculateOrderTotalsWithCoupon(cartItems, request.couponCode());
         OrderEntity entity = createOrderEntityFromCart(request, calculation);
         OrderEntity saved = orderRepository.save(entity);
         
-        // Increment coupon usage if applied
         if (Objects.nonNull(calculation.couponId())) {
-            couponUseCase.incrementUsage(calculation.couponId());
+            couponGrpcClient.incrementUsage(calculation.couponId());
         }
         
-        // BƯỚC 3: Create order items (không update stock)
         List<OrderItemEntity> orderItems = orderItemUseCase.createOrderItems(saved, cartItems);
         cartUseCase.clearCart(request.userId());
         
-        // BƯỚC 4: Gửi Kafka event để Server xử lý stock
         Order domainOrder = mapper.toDomain(saved);
         publishOrderCreatedEvent(domainOrder, orderItems, cartItems);
         
@@ -118,9 +115,7 @@ public class OrderCommandService {
         OrderEntity updated = orderRepository.save(entity);
         Order domainOrder = mapper.toDomain(updated);
         
-        // Gửi event phù hợp theo status
         if (status == OrderStatus.DELIVERED) {
-            // Gửi ORDER_DELIVERED với items để server update sold count
             List<OrderItemEntity> orderItems = orderItemUseCase.findByOrderId(id);
             publishOrderDeliveredEvent(domainOrder, orderItems);
         } else {
@@ -213,14 +208,14 @@ public class OrderCommandService {
         }
         
         // Validate and apply coupon
-        var validationResult = couponUseCase.validateCoupon(couponCode, subtotal);
+        var validationResult = couponGrpcClient.validateCoupon(couponCode, subtotal);
         if (validationResult.isEmpty()) {
             log.warn("Invalid coupon code: {}", couponCode);
             return OrderCalculation.withoutCoupon(subtotal, shippingFee);
         }
         
         var result = validationResult.get();
-        Long couponId = result.coupon().id();
+        Long couponId = result.couponId();
         BigDecimal discount = result.discountAmount();
         
         log.info("Applied coupon {} with discount {}", couponCode, discount);
@@ -265,22 +260,18 @@ public class OrderCommandService {
     private void validateStatusTransition(OrderEntity entity, OrderStatus newStatus) {
         OrderStatus currentStatus = entity.getStatus();
         
-        // Cannot update cancelled order
         if (currentStatus == OrderStatus.CANCELLED) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Cannot update cancelled order");
         }
         
-        // Cannot update stock failed order
         if (currentStatus == OrderStatus.STOCK_FAILED) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Cannot update stock failed order");
         }
         
-        // Same status is allowed (idempotent)
         if (currentStatus == newStatus) {
             return;
         }
         
-        // Validate transition using allowed transitions map
         Set<OrderStatus> allowedNextStatus = ALLOWED_STATUS_TRANSITIONS.get(currentStatus);
         if (Objects.isNull(allowedNextStatus) || !allowedNextStatus.contains(newStatus)) {
             throw new BaseException(ResponseCode.BAD_REQUEST, 
@@ -289,17 +280,12 @@ public class OrderCommandService {
         }
     }
     
-    /**
-     * Define allowed status transitions for order lifecycle
-     */
     private static final Map<OrderStatus, Set<OrderStatus>> ALLOWED_STATUS_TRANSITIONS = Map.of(
-        // PENDING (old flow) → CONFIRMED, CANCELLED
         OrderStatus.PENDING, Set.of(
             OrderStatus.CONFIRMED, 
             OrderStatus.CANCELLED
         ),
         
-        // PENDING_STOCK → STOCK_RESERVED, STOCK_FAILED, CANCELLED
         OrderStatus.PENDING_STOCK, Set.of(
             OrderStatus.STOCK_RESERVED, 
             OrderStatus.STOCK_FAILED, 
@@ -457,7 +443,7 @@ public class OrderCommandService {
     // ========== NEW KAFKA EVENT METHODS ==========
 
     private void validateStockAvailability(List<CartItem> cartItems) {
-        productCommandService.validateStockForOrder(cartItems);
+        productUseCase.validateStockForOrder(cartItems);
     }
 
     private void publishOrderCreatedEvent(Order order, List<OrderItemEntity> orderItems, List<CartItem> cartItems) {
@@ -497,11 +483,7 @@ public class OrderCommandService {
             log.error("Failed to send ORDER_CREATED event: {}", e.getMessage());
         }
     }
-    
-    /**
-     * Publish ORDER_CANCELLED event với order items
-     * Server consumer sẽ: restore stock
-     */
+
     private void publishOrderCancelledEvent(Order order, List<OrderItemEntity> orderItems) {
         try {
             List<OrderEvent.OrderItemPayload> itemPayloads = orderItems.stream()

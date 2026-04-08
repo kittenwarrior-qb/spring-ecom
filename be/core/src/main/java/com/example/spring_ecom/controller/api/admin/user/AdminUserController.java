@@ -139,7 +139,6 @@ public class AdminUserController implements AdminUserAPI {
         }
     }
 
-    @Override
     public ResponseEntity<ApiResponse<Void>> removeRoleFromUser(Long userId, Long roleId) {
         try {
             log.info("Admin removing role {} from user {}", roleId, userId);
@@ -155,13 +154,27 @@ public class AdminUserController implements AdminUserAPI {
     @Override
     public ResponseEntity<ApiResponse<Void>> setUserRoles(Long userId, SetUserRolesRequest request) {
         try {
-            log.info("Admin setting roles for user {}: {}", userId, request.roleIds());
+            log.info("Admin setting roles for user: {}, roleIds: {}", userId, request.roleIds());
             roleUseCase.setUserRoles(userId, request.roleIds());
-            return ResponseEntity.ok(ApiResponse.Success.of(ResponseCode.OK, "Roles updated successfully", null));
+            return ResponseEntity.ok(ApiResponse.Success.of(ResponseCode.OK, "User roles updated successfully", null));
         } catch (Exception e) {
             log.error("Error setting user roles: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                    .body(ApiResponse.Error.of(ResponseCode.INTERNAL_SERVER_ERROR, "Failed to set roles"));
+                    .body(ApiResponse.Error.of(ResponseCode.INTERNAL_SERVER_ERROR, "Failed to set user roles"));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<Page<UserResponse>>> searchUsersByEmail(String email, Pageable pageable) {
+        try {
+            log.info("Admin searching users by email: {}", email);
+            Page<User> users = userUseCase.searchByEmail(email, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()));
+            Page<UserResponse> responses = users.map(userResponseMapper::toResponse);
+            return ResponseEntity.ok(ApiResponse.Success.of(responses));
+        } catch (Exception e) {
+            log.error("Error searching users by email: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.Error.of(ResponseCode.INTERNAL_SERVER_ERROR, "Failed to search users"));
         }
     }
 }

@@ -20,9 +20,6 @@ public class NotificationGrpcClient {
     @GrpcClient("landingpage-service")
     private NotificationServiceGrpc.NotificationServiceBlockingStub stub;
 
-    /**
-     * Send notification to specific user via gRPC -> MQTT
-     */
     public void sendToUser(Notification notification) {
         if (Objects.isNull(notification) || Objects.isNull(notification.userId())) {
             log.warn("[GRPC] Invalid notification");
@@ -41,25 +38,18 @@ public class NotificationGrpcClient {
         }
     }
 
-    /**
-     * Broadcast notification to all users via gRPC -> MQTT
-     */
     public void broadcast(Notification notification) {
         if (Objects.isNull(notification)) {
             log.warn("[GRPC] Invalid notification");
             return;
         }
-
         try {
             NotificationServiceProto.BroadcastNotificationRequest request = mapper.toBroadcastRequest(notification);
-
             if (Objects.isNull(request)) {
                 log.error("[GRPC] Failed to create request");
                 return;
             }
-
             NotificationServiceProto.BroadcastNotificationResponse response = stub.broadcastNotification(request);
-
             if (!response.getSuccess()) {
                 log.error("[GRPC] Failed: {}", response.getMessage());
             }

@@ -25,4 +25,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     @Query("SELECT u FROM UserEntity u LEFT JOIN FETCH u.userInfo")
     Page<UserEntity> findAll(Pageable pageable);
 
+    @Query("SELECT u FROM UserEntity u LEFT JOIN FETCH u.userInfo WHERE LOWER(u.email) LIKE LOWER(CONCAT('%', :email, '%'))")
+    Page<UserEntity> findByEmailContainingIgnoreCase(@Param("email") String email, Pageable pageable);
+
 }

@@ -26,7 +26,8 @@ public class NotificationController implements NotificationApi {
 
     @Override
     public ResponseEntity<NotificationResponse> sendNotification(NotificationRequest request) {
-        log.info("[NOTIFICATION-CTRL] Send notification request - userId={}", request.userId());
+        log.info("[NOTIFICATION-CTRL] Send notification request - userId={}, type={}, title={}",
+                request.userId(), request.type(), request.title());
         
         NotificationEvent event = requestMapper.toEvent(request);
         notificationUseCase.sendToUser(event);
@@ -36,7 +37,8 @@ public class NotificationController implements NotificationApi {
 
     @Override
     public ResponseEntity<NotificationResponse> broadcastNotification(NotificationRequest request) {
-        log.info("[NOTIFICATION-CTRL] Broadcast notification request - type={}", request.type());
+        log.info("[NOTIFICATION-CTRL] Broadcast notification request - type={}, title={}, message={}",
+                request.type(), request.title(), request.message());
         
         NotificationEvent event = requestMapper.toEvent(request);
         notificationUseCase.broadcast(event);

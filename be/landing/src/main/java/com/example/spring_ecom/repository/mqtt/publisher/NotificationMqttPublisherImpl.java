@@ -15,10 +15,6 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * MQTT Publisher for notification events
- * Located in landingpage module - acts as publisher
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -29,17 +25,21 @@ public class NotificationMqttPublisherImpl implements NotificationMqttPublisher 
 
     @Override
     public void publishToUser(NotificationEvent event) {
-        String topic = topicForUser(event.getUserId(), event.getType());
+        String topic = String.format("%s%d/%s", NOTIFICATION_TOPIC_PREFIX, event.getUserId(), event.getType().toLowerCase());
         publish(topic, event);
+        log.info("[MQTT] Published to user: topic={}, userId={}, type={}, eventId={}",
+                topic, event.getUserId(), event.getType(), event.getEventId());
     }
 
     @Override
-    public void publish(String topic, NotificationEvent event) {
-        publish(topic, event, 1); // Default QoS 1
+    public void broadcast(NotificationEvent event) {
+        String topic = String.format("%sbroadcast/%s", NOTIFICATION_TOPIC_PREFIX, event.getType().toLowerCase());
+        publish(topic, event);
+        log.info("[MQTT] Broadcast: topic={}, type={}, title={}, eventId={}",
+                topic, event.getType(), event.getTitle(), event.getEventId());
     }
 
-    @Override
-    public void publish(String topic, NotificationEvent event, int qos) {
+    private void publish(String topic, NotificationEvent event) {
         try {
             if (Objects.isNull(event.getEventId())) {
                 event.setEventId(UUID.randomUUID().toString());
@@ -52,31 +52,16 @@ public class NotificationMqttPublisherImpl implements NotificationMqttPublisher 
             }
 
             String jsonPayload = objectMapper.writeValueAsString(event);
-            Message<String> message = MessageBuilder
-                    .withPayload(jsonPayload)
-                    .setHeader("mqtt_topic", topic)
-                    .setHeader("mqtt_qos", qos)
-                    .build();
+                Message<String> message = MessageBuilder
+                        .withPayload(jsonPayload)
+                        .setHeader("mqtt_topic", topic)
+                        .setHeader("mqtt_qos", 1)
+                        .build();
 
             mqttOutbound.handleMessage(message);
-            log.info("[MQTT] Published: topic={}", topic);
         } catch (JsonProcessingException e) {
             log.error("[MQTT] Failed to serialize: {}", e.getMessage());
             throw new RuntimeException("Failed to serialize", e);
         }
-    }
-
-    @Override
-    public void broadcast(NotificationEvent event) {
-        String topic = topicForBroadcast(event.getType());
-        publish(topic, event, 1);
-    }
-
-    private String topicForUser(Long userId, String type) {
-        return String.format("%s%d/%s", NOTIFICATION_TOPIC_PREFIX, userId, type.toLowerCase());
-    }
-
-    private String topicForBroadcast(String type) {
-        return String.format("%sbroadcast/%s", NOTIFICATION_TOPIC_PREFIX, type.toLowerCase());
     }
 }

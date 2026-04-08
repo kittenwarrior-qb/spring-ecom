@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -52,6 +53,12 @@ public class CouponUseCaseService implements CouponUseCase {
     @Transactional
     public Optional<Coupon> create(Coupon coupon) {
         return commandService.create(coupon);
+    }
+    
+    @Override
+    @Transactional
+    public Optional<Coupon> createWithNotification(Coupon coupon, NotificationType notificationType, List<Long> targetUserIds) {
+        return commandService.createWithNotification(coupon, notificationType, targetUserIds);
     }
     
     @Override

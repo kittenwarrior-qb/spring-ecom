@@ -62,7 +62,6 @@ public class StockReservationScheduler {
     private void releaseReservation(StockReservationEntity reservation) {
         Long orderId = reservation.getOrderId();
         
-        // PESSIMISTIC LOCK - prevents race condition with order cancel
         ProductEntity product = productRepository.findByIdWithLock(reservation.getProductId()).orElse(null);
         
         if (Objects.nonNull(product)) {

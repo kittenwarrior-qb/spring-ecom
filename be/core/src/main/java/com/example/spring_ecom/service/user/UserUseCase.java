@@ -24,4 +24,6 @@ public interface UserUseCase {
     Optional<UserInfo> getUserInfo(Long userId);
     
     Optional<UserInfo> updateUserInfo(UserInfo userInfo);
+
+    Page<User> searchByEmail(String email, PageRequest pageRequest);
 }

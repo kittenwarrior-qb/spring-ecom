@@ -81,4 +81,10 @@ public class UserUseCaseService implements UserUseCase {
     public Optional<UserInfo> updateUserInfo(UserInfo userInfo) {
         return userInfoUseCase.createOrUpdate(userInfo.userId(), userInfo);
     }
+
+    @Override
+    @Transactional
+    public Page<User> searchByEmail(String email, PageRequest pageRequest) {
+        return queryService.searchByEmail(email, pageRequest);
+    }
 }

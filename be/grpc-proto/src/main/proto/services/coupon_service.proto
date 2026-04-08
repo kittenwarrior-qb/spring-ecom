@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package services;
+
+option java_package = "com.example.spring_ecom.grpc.services";
+option java_outer_classname = "CouponServiceProto";
+
+import "domain/coupon.proto";
+
+service CouponService {
+  // Validate coupon for order (inter-service)
+  rpc ValidateCoupon(ValidateCouponRequest) returns (ValidateCouponResponse);
+  
+  // Increment usage count (inter-service)
+  rpc IncrementUsage(IncrementUsageRequest) returns (IncrementUsageResponse);
+  
+  // Get coupon by ID (inter-service)
+  rpc GetCouponById(GetCouponByIdRequest) returns (GetCouponByIdResponse);
+}
+
+message ValidateCouponRequest {
+  string code = 1;
+  double order_total = 2;
+}
+
+message ValidateCouponResponse {
+  domain.CouponValidationResult result = 1;
+}
+
+message IncrementUsageRequest {
+  int64 coupon_id = 1;
+}
+
+message IncrementUsageResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetCouponByIdRequest {
+  int64 coupon_id = 1;
+}
+
+message GetCouponByIdResponse {
+  domain.Coupon coupon = 1;
+  bool found = 2;
+}

@@ -8,9 +8,5 @@ public interface NotificationMqttPublisher {
 
     void publishToUser(NotificationEvent event);
 
-    void publish(String topic, NotificationEvent event);
-
-    void publish(String topic, NotificationEvent event, int qos);
-
     void broadcast(NotificationEvent event);
 }

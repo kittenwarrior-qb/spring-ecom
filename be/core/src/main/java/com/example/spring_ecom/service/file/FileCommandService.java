@@ -21,10 +21,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-/**
- * File Command Service
- * Handles file write operations - no @Transactional (managed by UseCase layer)
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor

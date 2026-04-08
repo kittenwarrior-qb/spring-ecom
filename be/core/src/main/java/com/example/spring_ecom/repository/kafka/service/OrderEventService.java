@@ -322,19 +322,13 @@ public class OrderEventService {
         
         return failedItems;
     }
-    
-    /**
-     * Reserve stock for ALL items in order with PESSIMISTIC LOCK
-     * Prevents race condition by locking product row during update
-     * @return List of failed items (empty if all OK)
-     */
+
     private List<OrderEvent.StockFailureItem> reserveStockForOrderAtomic(OrderEvent event) {
         Instant now = Instant.now();
         Instant expireAt = now.plus(reservationTtlMinutes, ChronoUnit.MINUTES);
         List<OrderEvent.StockFailureItem> failedItems = new ArrayList<>();
 
         for (OrderEvent.OrderItemPayload item : event.getItems()) {
-            // PESSIMISTIC LOCK - lock product row for update
             ProductEntity product = productRepository.findByIdWithLock(item.getProductId())
                     .orElse(null);
             
@@ -404,10 +398,7 @@ public class OrderEventService {
         
         log.info("[STOCK] Released: productId={}, qty={}", productId, quantity);
     }
-    
-    /**
-     * Deduct stock (convert reserved → sold) when payment confirmed with PESSIMISTIC LOCK
-     */
+
     private void deductStock(Long productId, Integer quantity, String productTitle) {
         ProductEntity product = productRepository.findByIdWithLock(productId).orElse(null);
         

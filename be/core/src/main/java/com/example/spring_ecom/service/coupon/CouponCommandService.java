@@ -3,9 +3,12 @@ package com.example.spring_ecom.service.coupon;
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.coupon.Coupon;
+import com.example.spring_ecom.domain.notification.Notification;
 import com.example.spring_ecom.repository.database.coupon.CouponEntity;
 import com.example.spring_ecom.repository.database.coupon.CouponEntityMapper;
 import com.example.spring_ecom.repository.database.coupon.CouponRepository;
+import com.example.spring_ecom.repository.database.coupon.DiscountType;
+import com.example.spring_ecom.service.notification.NotificationCommandService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,7 @@ public class CouponCommandService {
     
     private final CouponRepository couponRepository;
     private final CouponEntityMapper mapper;
+    private final NotificationCommandService notificationCommandService;
     
     @Transactional
     public Optional<Coupon> create(Coupon coupon) {
@@ -37,6 +41,16 @@ public class CouponCommandService {
         CouponEntity saved = couponRepository.save(entity);
         
         return Optional.of(mapper.toDomain(saved));
+    }
+    
+    @Transactional
+    public Optional<Coupon> createWithNotification(Coupon coupon, CouponUseCase.NotificationType notificationType, java.util.List<Long> targetUserIds) {
+        Coupon created = create(coupon).orElseThrow(
+                () -> new BaseException(ResponseCode.INTERNAL_SERVER_ERROR, "Failed to create coupon"));
+        
+        sendCouponNotification(created, notificationType, targetUserIds);
+        
+        return Optional.of(created);
     }
     
     @Transactional
@@ -120,6 +134,69 @@ public class CouponCommandService {
         // Validate usage limit
         if (Objects.nonNull(coupon.usageLimit()) && coupon.usageLimit() <= 0) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Usage limit must be positive");
+        }
+    }
+    
+    // ========== NOTIFICATION METHODS ==========
+    
+    private void sendCouponNotification(Coupon coupon, CouponUseCase.NotificationType notificationType, java.util.List<Long> targetUserIds) {
+        if (notificationType == null || notificationType == CouponUseCase.NotificationType.NONE) {
+            log.info("[COUPON] No notification requested for coupon: {}", coupon.code());
+            return;
+        }
+        
+        try {
+            String title = "🎁 Coupon mới!";
+            String message = String.format("Sử dụng mã %s để giảm %s",
+                    coupon.code(),
+                    formatDiscount(coupon));
+            String actionUrl = "/coupons";
+            
+            if (notificationType == CouponUseCase.NotificationType.BROADCAST) {
+                Notification notification = createCouponNotification(coupon, title, message, actionUrl, null);
+                notificationCommandService.broadcast(notification);
+                log.info("[COUPON] Broadcast notification sent for coupon: {}", coupon.code());
+                
+            } else if (notificationType == CouponUseCase.NotificationType.TARGETED) {
+                if (targetUserIds == null || targetUserIds.isEmpty()) {
+                    log.warn("[COUPON] TARGETED notification requested but no target users provided");
+                    return;
+                }
+                
+                for (Long userId : targetUserIds) {
+                    Notification notification = createCouponNotification(coupon, title, message, actionUrl, userId);
+                    notificationCommandService.createAndSend(notification);
+                }
+                log.info("[COUPON] Targeted notification sent to {} users for coupon: {}",
+                        targetUserIds.size(), coupon.code());
+            }
+        } catch (Exception e) {
+            log.error("[COUPON] Failed to send notification: {}", e.getMessage());
+        }
+    }
+    
+    private Notification createCouponNotification(Coupon coupon, String title, String message,
+            String actionUrl, Long userId) {
+        return new Notification(
+                null,
+                userId,
+                "NEW_COUPON",
+                title,
+                message,
+                coupon.id(),
+                "COUPON",
+                null,
+                actionUrl,
+                false,
+                null
+        );
+    }
+    
+    private String formatDiscount(Coupon coupon) {
+        if (coupon.discountType() == DiscountType.PERCENTAGE) {
+            return coupon.discountValue() + "%";
+        } else {
+            return coupon.discountValue() + "d";
         }
     }
 }

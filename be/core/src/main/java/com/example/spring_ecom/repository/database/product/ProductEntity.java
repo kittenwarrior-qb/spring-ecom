@@ -55,6 +55,10 @@ public class ProductEntity extends BaseAuditEntity {
     @Column(name = "discount_price", precision = 10, scale = 2)
     private BigDecimal discountPrice;
     
+    @Column(name = "cost_price", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal costPrice = BigDecimal.ZERO;
+    
     @Column(name = "stock_quantity", nullable = false)
     @Builder.Default
     private Integer stockQuantity = 0;

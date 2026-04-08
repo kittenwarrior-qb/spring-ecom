@@ -70,6 +70,7 @@ public interface ProductGrpcMapper {
     @Mapping(target = "description", expression = "java(emptyToNull(proto.getDescription()))")
     @Mapping(target = "price", expression = "java(doubleToBigDecimal(proto.getPrice()))")
     @Mapping(target = "discountPrice", expression = "java(doubleToBigDecimalOrNull(proto.getDiscountPrice()))")
+    @Mapping(target = "costPrice", ignore = true)
     @Mapping(target = "stockQuantity", expression = "java(proto.getStockQuantity())")
     @Mapping(target = "coverImageUrl", expression = "java(emptyToNull(proto.getCoverImageUrl()))")
     @Mapping(target = "isBestseller", expression = "java(proto.getIsBestseller())")

@@ -28,8 +28,8 @@ public class NotificationCommandService {
         validateEventFields(event);
         saveToDatabase(event);
         mqttPublisher.publishToUser(event);
-        log.info("[NOTIFICATION] Published to user: userId={}, type={}", 
-                event.getUserId(), event.getType());
+        log.info("[NOTIFICATION] Published to user: userId={}, type={}, title={}, eventId={}",
+                event.getUserId(), event.getType(), event.getTitle(), event.getEventId());
     }
 
     @Transactional
@@ -37,7 +37,8 @@ public class NotificationCommandService {
         validateEventFields(event);
         saveToDatabase(event);
         mqttPublisher.broadcast(event);
-        log.info("[NOTIFICATION] Broadcast: type={}", event.getType());
+        log.info("[NOTIFICATION] Broadcast: type={}, title={}, message={}, eventId={}",
+                event.getType(), event.getTitle(), event.getMessage(), event.getEventId());
     }
 
     private void saveToDatabase(NotificationEvent event) {

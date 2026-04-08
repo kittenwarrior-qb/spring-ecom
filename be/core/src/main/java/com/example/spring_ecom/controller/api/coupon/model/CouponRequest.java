@@ -1,6 +1,7 @@
 package com.example.spring_ecom.controller.api.coupon.model;
 
 import com.example.spring_ecom.repository.database.coupon.DiscountType;
+import com.example.spring_ecom.service.coupon.CouponUseCase;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -40,7 +41,7 @@ public record CouponRequest(
     
     Boolean isActive,
     
-    NotificationType notificationType,
+    CouponUseCase.NotificationType notificationType,
     
     List<Long> targetUserIds
 ) {
@@ -53,16 +54,7 @@ public record CouponRequest(
             isActive = true;
         }
         if (Objects.isNull(notificationType)) {
-            notificationType = NotificationType.NONE;
+            notificationType = CouponUseCase.NotificationType.NONE;
         }
-    }
-    
-    /**
-     * Notification type for coupon creation
-     */
-    public enum NotificationType {
-        NONE,       // Don't send notification
-        BROADCAST,  // Send to all users
-        TARGETED    // Send to specific users
     }
 }

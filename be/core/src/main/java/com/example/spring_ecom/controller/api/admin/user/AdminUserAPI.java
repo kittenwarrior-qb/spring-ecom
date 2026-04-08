@@ -68,17 +68,17 @@ public interface AdminUserAPI {
             @Parameter(description = "User ID") @PathVariable Long userId,
             @Parameter(description = "Role ID") @PathVariable Long roleId);
 
-    @Operation(summary = "Remove role from user", description = "Remove a role from a user")
-    @DeleteMapping("/{userId}/roles/{roleId}")
-    @PreAuthorize("hasAuthority('USER_UPDATE')")
-    ResponseEntity<ApiResponse<Void>> removeRoleFromUser(
-            @Parameter(description = "User ID") @PathVariable Long userId,
-            @Parameter(description = "Role ID") @PathVariable Long roleId);
-
     @Operation(summary = "Set user roles", description = "Replace all roles for a user")
     @PutMapping("/{userId}/roles")
     @PreAuthorize("hasAuthority('USER_UPDATE')")
     ResponseEntity<ApiResponse<Void>> setUserRoles(
             @Parameter(description = "User ID") @PathVariable Long userId,
             @RequestBody SetUserRolesRequest request);
+
+    @Operation(summary = "Search users by email", description = "Search users by email containing the given string")
+    @GetMapping("/search")
+    @PreAuthorize("hasAuthority('USER_VIEW')")
+    ResponseEntity<ApiResponse<Page<UserResponse>>> searchUsersByEmail(
+            @Parameter(description = "Email search term") @RequestParam String email,
+            Pageable pageable);
 }

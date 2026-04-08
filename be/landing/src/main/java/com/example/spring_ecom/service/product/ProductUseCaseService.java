@@ -2,6 +2,7 @@ package com.example.spring_ecom.service.product;
 
 import com.example.spring_ecom.controller.api.product.model.ProductResponse;
 import com.example.spring_ecom.controller.api.product.model.ProductResponseMapper;
+import com.example.spring_ecom.domain.cart.CartItem;
 import com.example.spring_ecom.domain.product.Product;
 import com.example.spring_ecom.domain.product.ProductWithCategory;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -83,5 +85,11 @@ public class ProductUseCaseService implements ProductUseCase {
     @Transactional
     public void delete(Long id) {
         commandService.delete(id);
+    }
+
+    @Override
+    @Transactional
+    public void validateStockForOrder(List<CartItem> cartItems) {
+        commandService.validateStockForOrder(cartItems);
     }
 }

@@ -25,4 +25,8 @@ public class UserQueryService {
        return repository.findAll(pageRequest).map(mapper::toDomain);
    }
 
+   protected Page<User> searchByEmail(String email, PageRequest pageRequest) {
+       return repository.findByEmailContainingIgnoreCase(email, pageRequest).map(mapper::toDomain);
+   }
+
 }

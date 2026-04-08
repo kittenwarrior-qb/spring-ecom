@@ -43,13 +43,7 @@ public interface CouponRepository extends JpaRepository<CouponEntity, Long> {
     Optional<CouponEntity> findValidCouponByCode(@Param("code") String code, @Param("now") LocalDateTime now);
     
     boolean existsByCodeAndDeletedAtIsNull(String code);
-    
-    // ========== PESSIMISTIC LOCK METHODS (Prevent Race Condition) ==========
-    
-    /**
-     * Find coupon with pessimistic write lock for usage operations
-     * Use this for incrementUsage operations
-     */
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM CouponEntity c WHERE c.id = :id AND c.deletedAt IS NULL")
     Optional<CouponEntity> findByIdWithLock(@Param("id") Long id);

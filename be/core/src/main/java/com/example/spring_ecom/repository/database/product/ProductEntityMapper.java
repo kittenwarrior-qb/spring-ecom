@@ -42,6 +42,7 @@ public interface ProductEntityMapper extends BaseEntityMapper<Product, ProductEn
     @Mapping(target = "description", ignore = true)
     @Mapping(target = "price", ignore = true)
     @Mapping(target = "discountPrice", ignore = true)
+    @Mapping(target = "costPrice", ignore = true)
     @Mapping(target = "stockQuantity", ignore = true)
     @Mapping(target = "coverImageUrl", ignore = true)
     @Mapping(target = "isBestseller", ignore = true)

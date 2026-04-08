@@ -8,14 +8,11 @@ import com.example.spring_ecom.domain.order.OrderCalculation;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentMethod;
 import com.example.spring_ecom.domain.order.PaymentStatus;
-import com.example.spring_ecom.repository.database.coupon.CouponRepository;
 import com.example.spring_ecom.repository.database.order.dao.CreateOrderEntityDao;
 import com.example.spring_ecom.repository.database.order.dao.CreateOrderFromCartDao;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.AfterMapping;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -23,19 +20,8 @@ import java.util.Objects;
 @Mapper(config = MapStructGlobalConfig.class, imports = {Objects.class, BigDecimal.class, OrderStatus.class, PaymentStatus.class})
 public abstract class OrderEntityMapper implements BaseEntityMapper<Order, OrderEntity> {
     
-    @Autowired
-    protected CouponRepository couponRepository;
-    
     @Override
     public abstract Order toDomain(OrderEntity entity);
-    
-    @AfterMapping
-    protected void mapCouponCode(OrderEntity entity, @MappingTarget Order.Builder builder) {
-        if (entity.getCouponId() != null) {
-            couponRepository.findById(entity.getCouponId())
-                .ifPresent(coupon -> builder.couponCode(coupon.getCode()));
-        }
-    }
     
     @Override
     @Mapping(target = "id", ignore = true)

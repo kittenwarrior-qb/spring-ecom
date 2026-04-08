@@ -56,6 +56,7 @@ services:
     volumes:
       - emqx_data:/opt/emqx/data
       - emqx_log:/opt/emqx/log
+      - ./emqx-anon.conf:/opt/emqx/data/configs/emqx.conf:ro
     restart: unless-stopped
 
 volumes:

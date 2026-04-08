@@ -63,15 +63,15 @@ public class ProductCommandService {
 
     // ========================== STOCK VALIDATION COMMAND ================================
 
-    /**
-     * Validate stock availability cho order creation
-     * Throw exception nếu không đủ stock
-     */
     public void validateStockForOrder(List<CartItem> cartItems) {
         List<String> insufficientStockProducts = new java.util.ArrayList<>();
 
-        for (CartItem cartItem : cartItems) {
-            ProductEntity product = productRepository.findById(cartItem.productId())
+        List<CartItem> sortedItems = cartItems.stream()
+                .sorted(java.util.Comparator.comparing(CartItem::productId))
+                .toList();
+
+        for (CartItem cartItem : sortedItems) {
+            ProductEntity product = productRepository.findByIdWithLock(cartItem.productId())
                     .orElse(null);
 
             if (Objects.isNull(product)) {
@@ -96,7 +96,7 @@ public class ProductCommandService {
             throw new BaseException(ResponseCode.BAD_REQUEST, errorMessage);
         }
 
-        log.info("Stock validation passed for {} cart items", cartItems.size());
+        log.info("Stock validation passed for {} cart items (with lock)", cartItems.size());
     }
 
 

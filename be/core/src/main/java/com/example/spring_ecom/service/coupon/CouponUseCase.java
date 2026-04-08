@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 public interface CouponUseCase {
@@ -27,6 +28,8 @@ public interface CouponUseCase {
     // ========== COMMAND OPERATIONS ==========
     
     Optional<Coupon> create(Coupon coupon);
+    
+    Optional<Coupon> createWithNotification(Coupon coupon, NotificationType notificationType, List<Long> targetUserIds);
     
     Optional<Coupon> update(Long id, Coupon coupon);
     
@@ -52,5 +55,11 @@ public interface CouponUseCase {
         public static CouponValidationResult invalid(String message) {
             return new CouponValidationResult(false, message, null, BigDecimal.ZERO);
         }
+    }
+    
+    enum NotificationType {
+        NONE,
+        BROADCAST,
+        TARGETED
     }
 }
