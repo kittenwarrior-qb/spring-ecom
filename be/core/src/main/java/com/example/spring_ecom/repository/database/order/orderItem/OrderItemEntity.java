@@ -43,6 +43,9 @@ public class OrderItemEntity extends BaseAuditEntity {
     @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
     
+    @Column(name = "cost_price", precision = 10, scale = 2)
+    private BigDecimal costPrice;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @Builder.Default

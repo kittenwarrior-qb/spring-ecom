@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +22,8 @@ public class InventoryUseCaseService implements InventoryUseCase {
 
     private final InventoryQueryService queryService;
     private final InventoryCommandService commandService;
+
+    // ========== Purchase Order Queries ==========
 
     @Override
     @Transactional(readOnly = true)
@@ -39,6 +42,8 @@ public class InventoryUseCaseService implements InventoryUseCase {
     public List<PurchaseOrderItem> findPurchaseOrderItems(Long purchaseOrderId) {
         return queryService.findPurchaseOrderItems(purchaseOrderId);
     }
+
+    // ========== Purchase Order Commands ==========
 
     @Override
     @Transactional
@@ -70,10 +75,56 @@ public class InventoryUseCaseService implements InventoryUseCase {
         commandService.cancelPurchaseOrder(id);
     }
 
+    // ========== Inventory Movement Queries ==========
+
     @Override
     @Transactional(readOnly = true)
     public Page<InventoryMovement> findMovements(Long productId, MovementType type, Pageable pageable) {
         return queryService.findMovements(productId, type, pageable);
     }
-}
 
+    // ========== Inventory Movement Recording ==========
+
+    @Override
+    @Transactional
+    public void recordSaleOut(Long productId, int quantity, BigDecimal costPrice,
+                              int stockBefore, int stockAfter, Long orderId, String orderNumber) {
+        commandService.recordSaleOut(productId, quantity, costPrice, stockBefore, stockAfter, orderId, orderNumber);
+    }
+
+    @Override
+    @Transactional
+    public void recordReturnIn(Long productId, int quantity,
+                               int stockBefore, int stockAfter, Long orderId, String orderNumber) {
+        commandService.recordReturnIn(productId, quantity, stockBefore, stockAfter, orderId, orderNumber);
+    }
+
+    @Override
+    @Transactional
+    public void recordAdjustment(Long productId, int quantityDelta,
+                                 int stockBefore, int stockAfter, String note, Long adjustedBy) {
+        commandService.recordAdjustment(productId, quantityDelta, stockBefore, stockAfter, note, adjustedBy);
+    }
+
+    // ========== Cost Batch Tracking ==========
+
+    @Override
+    @Transactional
+    public BigDecimal consumeBatchesFIFO(Long productId, int quantity) {
+        return commandService.consumeBatchesFIFO(productId, quantity);
+    }
+
+    // ========== Inventory Valuation ==========
+
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal getTotalInventoryValuation() {
+        return queryService.getTotalInventoryValuation();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal getProductInventoryValuation(Long productId) {
+        return queryService.getProductInventoryValuation(productId);
+    }
+}

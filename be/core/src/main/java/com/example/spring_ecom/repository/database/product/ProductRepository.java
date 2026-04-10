@@ -59,7 +59,7 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     @Query("""
         SELECT new com.example.spring_ecom.repository.database.product.dao.ProductWithCategoryDao(
                p.id, p.title, p.slug, p.author, p.publisher, p.publicationYear,
-               p.language, p.pages, p.format, p.description, p.price, p.discountPrice,
+               p.language, p.pages, p.format, p.description, p.price, p.discountPrice, p.costPrice,
                p.stockQuantity, p.coverImageUrl, p.isBestseller, p.isActive,
                p.viewCount, p.soldCount, p.ratingAverage, p.ratingCount,
                p.categoryId, c.name, p.createdAt, p.updatedAt, p.deletedAt)
@@ -105,4 +105,15 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM ProductEntity p WHERE p.id = :id AND p.deletedAt IS NULL")
     Optional<ProductEntity> findByIdWithLock(@Param("id") Long id);
+
+    // ========== Dashboard Statistics ==========
+
+    @Query("SELECT COUNT(p) FROM ProductEntity p WHERE p.deletedAt IS NULL AND p.isActive = true")
+    Long countActiveProducts();
+
+    @Query("SELECT COUNT(p) FROM ProductEntity p WHERE p.deletedAt IS NULL AND p.stockQuantity <= 5 AND p.stockQuantity > 0")
+    Long countLowStockProducts();
+
+    @Query("SELECT COUNT(p) FROM ProductEntity p WHERE p.deletedAt IS NULL AND p.stockQuantity = 0")
+    Long countOutOfStockProducts();
 }

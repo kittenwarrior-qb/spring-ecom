@@ -6,6 +6,7 @@ import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,6 +33,15 @@ public class InventoryMovementEntity {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
+    @Column(name = "cost_price", precision = 10, scale = 2)
+    private BigDecimal costPrice;
+
+    @Column(name = "stock_before")
+    private Integer stockBefore;
+
+    @Column(name = "stock_after")
+    private Integer stockAfter;
+
     @Column(name = "reference_type", length = 30)
     private String referenceType;
 
@@ -48,4 +58,3 @@ public class InventoryMovementEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }
-

@@ -21,6 +21,43 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
 
     List<NotificationEntity> findByUserIdIsNullAndIsReadFalseOrderByCreatedAtDesc();
 
+    @Query("""
+        SELECT n FROM NotificationEntity n
+        WHERE n.userId IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM NotificationUserReadEntity r
+            WHERE r.notificationId = n.id
+              AND r.userId = :userId
+          )
+        ORDER BY n.createdAt DESC
+    """)
+    List<NotificationEntity> findUnreadBroadcastForUser(Long userId);
+
+    @Query("""
+        SELECT COUNT(n) FROM NotificationEntity n
+        WHERE n.userId IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM NotificationUserReadEntity r
+            WHERE r.notificationId = n.id
+              AND r.userId = :userId
+          )
+    """)
+    long countUnreadBroadcastForUser(Long userId);
+
+    @Query("SELECT n.id FROM NotificationEntity n WHERE n.userId IS NULL AND n.id IN :ids")
+    List<Long> findBroadcastIdsByIds(List<Long> ids);
+
+    @Query("""
+        SELECT n.id FROM NotificationEntity n
+        WHERE n.userId IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM NotificationUserReadEntity r
+            WHERE r.notificationId = n.id
+              AND r.userId = :userId
+          )
+    """)
+    List<Long> findUnreadBroadcastIdsForUser(Long userId);
+
     @Query("SELECT COUNT(n) FROM NotificationEntity n WHERE n.userId = :userId AND n.isRead = false")
     long countUnreadByUserId(Long userId);
 

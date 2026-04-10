@@ -46,5 +46,8 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrderEnti
         @Param("status") PurchaseOrderStatus status,
         Pageable pageable
     );
+    
+    @Query("SELECT COUNT(po) FROM PurchaseOrderEntity po WHERE po.deletedAt IS NULL AND (po.status = 'DRAFT' OR po.status = 'CONFIRMED')")
+    Long countPendingPurchaseOrders();
 }
 

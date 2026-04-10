@@ -9,16 +9,21 @@ import com.example.spring_ecom.repository.database.inventory.dao.PurchaseOrderWi
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 public interface InventoryUseCase {
+
+    // ========== Queries ==========
 
     Page<PurchaseOrderWithSupplierDao> findAllPurchaseOrders(PurchaseOrderStatus status, Long supplierId, Pageable pageable);
 
     Optional<PurchaseOrder> findPurchaseOrderById(Long id);
 
     List<PurchaseOrderItem> findPurchaseOrderItems(Long purchaseOrderId);
+
+    // ========== Commands ==========
 
     PurchaseOrder createPurchaseOrder(PurchaseOrder po, List<PurchaseOrderItem> items);
 
@@ -30,8 +35,24 @@ public interface InventoryUseCase {
 
     void cancelPurchaseOrder(Long id);
 
-    // ========== Inventory Movements ==========
+    // ========== Inventory Movement Queries ==========
 
     Page<InventoryMovement> findMovements(Long productId, MovementType type, Pageable pageable);
-}
 
+    void recordSaleOut(Long productId, int quantity, BigDecimal costPrice,
+                       int stockBefore, int stockAfter, Long orderId, String orderNumber);
+
+    void recordReturnIn(Long productId, int quantity,
+                        int stockBefore, int stockAfter, Long orderId, String orderNumber);
+
+    void recordAdjustment(Long productId, int quantityDelta,
+                          int stockBefore, int stockAfter, String note, Long adjustedBy);
+
+    BigDecimal consumeBatchesFIFO(Long productId, int quantity);
+
+    // ========== Inventory Valuation ==========
+
+    BigDecimal getTotalInventoryValuation();
+
+    BigDecimal getProductInventoryValuation(Long productId);
+}

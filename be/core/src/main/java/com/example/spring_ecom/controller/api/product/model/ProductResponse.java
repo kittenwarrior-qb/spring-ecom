@@ -16,6 +16,7 @@ public record ProductResponse(
     String description,
     BigDecimal price,
     BigDecimal discountPrice,
+    BigDecimal costPrice,
     Integer stockQuantity,
     String coverImageUrl,
     Boolean isBestseller,

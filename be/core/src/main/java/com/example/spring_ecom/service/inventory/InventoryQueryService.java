@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,7 +26,10 @@ public class InventoryQueryService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderItemRepository purchaseOrderItemRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
+    private final ProductCostBatchRepository batchRepository;
     private final InventoryEntityMapper mapper;
+
+    // ========== Purchase Order Queries ==========
 
     public Page<PurchaseOrderWithSupplierDao> findAllPurchaseOrders(PurchaseOrderStatus status, Long supplierId, Pageable pageable) {
         return purchaseOrderRepository.findAllWithSupplier(status, supplierId, pageable);
@@ -44,9 +48,26 @@ public class InventoryQueryService {
                 .toList();
     }
 
+    // ========== Inventory Movement Queries ==========
+
     public Page<InventoryMovement> findMovements(Long productId, MovementType type, Pageable pageable) {
         return inventoryMovementRepository.findWithFilters(productId, type, pageable)
                 .map(mapper::toDomain);
     }
-}
 
+    // ========== Inventory Valuation Queries ==========
+
+    /**
+     * Get total inventory valuation across all products based on cost batches.
+     */
+    public BigDecimal getTotalInventoryValuation() {
+        return batchRepository.getTotalInventoryValuation();
+    }
+
+    /**
+     * Get inventory valuation for a specific product.
+     */
+    public BigDecimal getProductInventoryValuation(Long productId) {
+        return batchRepository.getProductInventoryValuation(productId);
+    }
+}

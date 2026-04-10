@@ -138,6 +138,7 @@ public class ProductQueryService {
                 response.description(),
                 response.price(),
                 response.discountPrice(),
+                response.costPrice(),
                 response.stockQuantity(),
                 presignedUrl,
                 response.isBestseller(),

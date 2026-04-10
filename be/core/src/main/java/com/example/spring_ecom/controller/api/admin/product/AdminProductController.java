@@ -95,7 +95,7 @@ public class AdminProductController {
                     request.getDescription(),
                     request.getPrice(),
                     request.getDiscountPrice(),
-                    BigDecimal.ZERO, // costPrice
+                    Objects.nonNull(request.getCostPrice()) ? request.getCostPrice() : BigDecimal.ZERO, // costPrice
                     Objects.nonNull(request.getStockQuantity()) ? request.getStockQuantity() : 0,
                     request.getCoverImageUrl(),
                     Objects.nonNull(request.getIsBestseller()) ? request.getIsBestseller() : false,
@@ -145,7 +145,7 @@ public class AdminProductController {
                     Objects.nonNull(request.getDescription()) ? request.getDescription() : existing.description(),
                     Objects.nonNull(request.getPrice()) ? request.getPrice() : existing.price(),
                     Objects.nonNull(request.getDiscountPrice()) ? request.getDiscountPrice() : existing.discountPrice(),
-                    existing.costPrice(),
+                    Objects.nonNull(request.getCostPrice()) ? request.getCostPrice() : existing.costPrice(),
                     Objects.nonNull(request.getStockQuantity()) ? request.getStockQuantity() : existing.stockQuantity(),
                     Objects.nonNull(request.getCoverImageUrl()) ? request.getCoverImageUrl() : existing.coverImageUrl(),
                     Objects.nonNull(request.getIsBestseller()) ? request.getIsBestseller() : existing.isBestseller(),

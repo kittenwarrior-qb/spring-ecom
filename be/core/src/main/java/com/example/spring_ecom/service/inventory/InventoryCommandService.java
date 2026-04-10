@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -26,6 +27,7 @@ public class InventoryCommandService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderItemRepository purchaseOrderItemRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
+    private final ProductCostBatchRepository batchRepository;
     private final ProductRepository productRepository;
     private final SupplierRepository supplierRepository;
     private final InventoryEntityMapper mapper;
@@ -111,29 +113,25 @@ public class InventoryCommandService {
                     .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND,
                             "Product not found: " + item.getProductId()));
 
-            // Update stock
+            int stockBefore = product.getStockQuantity();
+
             product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
 
             // Update cost_price (weighted average)
-            BigDecimal oldTotal = product.getCostPrice().multiply(BigDecimal.valueOf(product.getStockQuantity() - item.getQuantity()));
+            BigDecimal oldTotal = product.getCostPrice().multiply(BigDecimal.valueOf(stockBefore));
             BigDecimal newTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             BigDecimal weightedAvg = oldTotal.add(newTotal)
-                    .divide(BigDecimal.valueOf(product.getStockQuantity()), 2, java.math.RoundingMode.HALF_UP);
+                    .divide(BigDecimal.valueOf(product.getStockQuantity()), 2, RoundingMode.HALF_UP);
             product.setCostPrice(weightedAvg);
 
             productRepository.save(product);
 
-            // Create inventory movement
-            InventoryMovementEntity movement = InventoryMovementEntity.builder()
-                    .productId(item.getProductId())
-                    .movementType(MovementType.IMPORT)
-                    .quantity(item.getQuantity())
-                    .referenceType("PURCHASE_ORDER")
-                    .referenceId(id)
-                    .note("Import from PO: " + entity.getPoNumber())
-                    .createdBy(receivedBy)
-                    .build();
-            inventoryMovementRepository.save(movement);
+            // Record inventory transaction
+            recordPurchaseIn(item.getProductId(), item.getQuantity(), item.getUnitPrice(),
+                    stockBefore, product.getStockQuantity(), id, entity.getPoNumber(), receivedBy);
+
+            // Create cost batch for FIFO tracking
+            createCostBatch(item.getProductId(), item.getId(), item.getQuantity(), item.getUnitPrice());
         }
 
         entity.setStatus(PurchaseOrderStatus.RECEIVED);
@@ -155,6 +153,119 @@ public class InventoryCommandService {
         purchaseOrderRepository.save(entity);
 
         log.info("[INVENTORY] Cancelled PO: {}", entity.getPoNumber());
+    }
+
+    // ========== Inventory Movement Recording ==========
+
+    /**
+     * Record an inventory movement with full audit trail
+     */
+    public void recordMovement(Long productId, MovementType type, int quantity,
+                               BigDecimal costPrice, int stockBefore, int stockAfter,
+                               String referenceType, Long referenceId,
+                               String note, Long createdBy) {
+        InventoryMovementEntity movement = InventoryMovementEntity.builder()
+                .productId(productId)
+                .movementType(type)
+                .quantity(quantity)
+                .costPrice(costPrice)
+                .stockBefore(stockBefore)
+                .stockAfter(stockAfter)
+                .referenceType(referenceType)
+                .referenceId(referenceId)
+                .note(note)
+                .createdBy(createdBy)
+                .build();
+        inventoryMovementRepository.save(movement);
+        log.info("[INVENTORY_TX] {} productId={} qty={} stockBefore={} stockAfter={} ref={}:{}",
+                type, productId, quantity, stockBefore, stockAfter, referenceType, referenceId);
+    }
+
+    public void recordPurchaseIn(Long productId, int quantity, BigDecimal costPrice,
+                                 int stockBefore, int stockAfter, Long poId, String poNumber, Long receivedBy) {
+        recordMovement(productId, MovementType.IMPORT, quantity, costPrice,
+                stockBefore, stockAfter, "PURCHASE_ORDER", poId,
+                "Import from PO: " + poNumber, receivedBy);
+    }
+
+    public void recordSaleOut(Long productId, int quantity, BigDecimal costPrice,
+                              int stockBefore, int stockAfter, Long orderId, String orderNumber) {
+        recordMovement(productId, MovementType.SALE_OUT, -quantity, costPrice,
+                stockBefore, stockAfter, "ORDER", orderId,
+                "Sale from order: " + orderNumber, null);
+    }
+
+    public void recordReturnIn(Long productId, int quantity,
+                               int stockBefore, int stockAfter, Long orderId, String orderNumber) {
+        recordMovement(productId, MovementType.RETURN, quantity, null,
+                stockBefore, stockAfter, "ORDER", orderId,
+                "Return from cancelled order: " + orderNumber, null);
+    }
+
+    public void recordAdjustment(Long productId, int quantityDelta,
+                                 int stockBefore, int stockAfter, String note, Long adjustedBy) {
+        recordMovement(productId, MovementType.ADJUSTMENT, quantityDelta, null,
+                stockBefore, stockAfter, "MANUAL", null,
+                note != null ? note : "Manual stock adjustment", adjustedBy);
+    }
+
+    // ========== Cost Batch Tracking ==========
+
+    /**
+     * Create a cost batch when goods are received from a purchase order.
+     */
+    public void createCostBatch(Long productId, Long purchaseOrderItemId,
+                                int quantity, BigDecimal costPrice) {
+        ProductCostBatchEntity batch = ProductCostBatchEntity.builder()
+                .productId(productId)
+                .purchaseOrderItemId(purchaseOrderItemId)
+                .quantityRemaining(quantity)
+                .costPrice(costPrice)
+                .receivedAt(LocalDateTime.now())
+                .build();
+        batchRepository.save(batch);
+        log.info("[COST_BATCH] Created batch: productId={}, qty={}, costPrice={}, poItemId={}",
+                productId, quantity, costPrice, purchaseOrderItemId);
+    }
+
+    /**
+     * Consume stock from oldest batches first (FIFO) and return the weighted average
+     * cost price for the consumed quantity. Used to set cost_price on order_items.
+     */
+    public BigDecimal consumeBatchesFIFO(Long productId, int quantity) {
+        List<ProductCostBatchEntity> batches = batchRepository.findAvailableBatchesByProductId(productId);
+
+        if (batches.isEmpty()) {
+            log.warn("[COST_BATCH] No available batches for productId={}, returning ZERO cost", productId);
+            return BigDecimal.ZERO;
+        }
+
+        int remaining = quantity;
+        BigDecimal totalCost = BigDecimal.ZERO;
+        int totalConsumed = 0;
+
+        for (ProductCostBatchEntity batch : batches) {
+            if (remaining <= 0) break;
+
+            int consumeFromBatch = Math.min(remaining, batch.getQuantityRemaining());
+            totalCost = totalCost.add(batch.getCostPrice().multiply(BigDecimal.valueOf(consumeFromBatch)));
+            totalConsumed += consumeFromBatch;
+
+            batch.setQuantityRemaining(batch.getQuantityRemaining() - consumeFromBatch);
+            batchRepository.save(batch);
+
+            remaining -= consumeFromBatch;
+
+            log.debug("[COST_BATCH] Consumed {} from batchId={} (remaining={}), costPrice={}",
+                    consumeFromBatch, batch.getId(), batch.getQuantityRemaining(), batch.getCostPrice());
+        }
+
+        if (remaining > 0) {
+            log.warn("[COST_BATCH] Not enough batches for productId={}, shortfall={}", productId, remaining);
+        }
+
+        if (totalConsumed == 0) return BigDecimal.ZERO;
+        return totalCost.divide(BigDecimal.valueOf(totalConsumed), 2, RoundingMode.HALF_UP);
     }
 
     // ========== Support Methods ==========
@@ -199,4 +310,3 @@ public class InventoryCommandService {
         return poNumber;
     }
 }
-

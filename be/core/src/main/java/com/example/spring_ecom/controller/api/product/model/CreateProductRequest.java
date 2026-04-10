@@ -54,6 +54,10 @@ public class CreateProductRequest {
     @Digits(integer = 8, fraction = 2, message = "Discount price must have at most 8 integer digits and 2 decimal places")
     private BigDecimal discountPrice;
     
+    @DecimalMin(value = "0.0", message = "Cost price must be at least 0")
+    @Digits(integer = 8, fraction = 2, message = "Cost price must have at most 8 integer digits and 2 decimal places")
+    private BigDecimal costPrice;
+    
     @Min(value = 0, message = "Stock quantity must be at least 0")
     private Integer stockQuantity = 0;
     

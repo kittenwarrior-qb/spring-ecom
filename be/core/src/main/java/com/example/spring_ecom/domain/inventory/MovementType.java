@@ -4,6 +4,8 @@ public enum MovementType {
     IMPORT,
     EXPORT,
     ADJUSTMENT,
-    RETURN
+    RETURN,
+    SALE_OUT,
+    RESERVATION,
+    RESERVATION_RELEASE
 }
-

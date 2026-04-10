@@ -14,13 +14,15 @@ import com.example.spring_ecom.domain.order.PaymentStatus;
 import com.example.spring_ecom.domain.order.PaymentMethod;
 import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.OrderEntityMapper;
-import com.example.spring_ecom.repository.database.order.dao.CreateOrderFromCartDao;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
 import com.example.spring_ecom.service.notification.NotificationUseCase;
 import com.example.spring_ecom.service.order.orderItem.OrderItemUseCase;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
+import com.example.spring_ecom.repository.database.product.ProductEntity;
+import com.example.spring_ecom.repository.database.product.ProductRepository;
 import com.example.spring_ecom.repository.database.user.UserRepository;
 import com.example.spring_ecom.service.cart.CartUseCase;
+import com.example.spring_ecom.service.inventory.InventoryUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,8 +31,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -44,7 +49,9 @@ public class OrderCommandService {
     private final OrderEntityMapper mapper;
     private final CreateOrderRequestMapper requestMapper;
     private final NotificationUseCase notificationUseCase;
-    
+    private final InventoryUseCase inventoryUseCase;
+    private final ProductRepository productRepository;
+
     // ========== MAIN COMMAND METHODS ==========
     
     public Optional<Order> create(Order order) {
@@ -274,17 +281,93 @@ public class OrderCommandService {
         
         if (status == OrderStatus.CANCELLED) {
             orderItemUseCase.restoreStockForOrder(entity.getId());
+            recordReturnInTransactions(entity);
             if (entity.getPaymentStatus() == PaymentStatus.PAID) {
                 mapper.updatePaymentStatus(entity, PaymentStatus.REFUNDED);
             }
         } else if (status == OrderStatus.DELIVERED) {
             orderItemUseCase.updateSoldCountForOrder(entity.getId());
+            recordSaleOutTransactions(entity);
             if (entity.getPaymentMethod() == PaymentMethod.COD) {
                 mapper.updatePaymentStatus(entity, PaymentStatus.PAID);
             }
         }
     }
     
+    /**
+     * Record SALE_OUT inventory movements when order is delivered.
+     * Also consumes cost batches (FIFO) and sets cost_price on each order item.
+     */
+    private void recordSaleOutTransactions(OrderEntity entity) {
+        try {
+            List<OrderItemEntity> items = orderItemUseCase.findByOrderId(entity.getId());
+            List<Long> productIds = items.stream().map(OrderItemEntity::getProductId).toList();
+            Map<Long, ProductEntity> productMap = productRepository.findAllById(productIds).stream()
+                    .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
+
+            for (OrderItemEntity item : items) {
+                int activeQty = item.getQuantity() - item.getCancelledQuantity();
+                if (activeQty <= 0) continue;
+
+                ProductEntity product = productMap.get(item.getProductId());
+                if (product == null) continue;
+
+                // Consume cost batches FIFO and get weighted average COGS
+                BigDecimal itemCostPrice = inventoryUseCase.consumeBatchesFIFO(item.getProductId(), activeQty);
+                if (itemCostPrice.compareTo(BigDecimal.ZERO) == 0) {
+                    // Fallback to product-level cost price if no batches available
+                    itemCostPrice = product.getCostPrice();
+                }
+
+                // Store cost_price on the order item for profit calculation
+                item.setCostPrice(itemCostPrice);
+
+                int stockAfter = product.getStockQuantity();
+                int stockBefore = stockAfter; // stock already deducted at order creation
+
+                inventoryUseCase.recordSaleOut(
+                        item.getProductId(), activeQty, itemCostPrice,
+                        stockBefore, stockAfter,
+                        entity.getId(), entity.getOrderNumber());
+            }
+            log.info("[INVENTORY] Recorded SALE_OUT for order: {}", entity.getOrderNumber());
+        } catch (Exception e) {
+            log.error("[INVENTORY] Failed to record SALE_OUT for order {}: {}", entity.getOrderNumber(), e.getMessage());
+        }
+    }
+
+    /**
+     * Record RETURN_IN inventory movements when order is cancelled
+     */
+    private void recordReturnInTransactions(OrderEntity entity) {
+        try {
+            List<OrderItemEntity> items = orderItemUseCase.findByOrderId(entity.getId());
+            List<Long> productIds = items.stream().map(OrderItemEntity::getProductId).toList();
+            Map<Long, ProductEntity> productMap = productRepository.findAllById(productIds).stream()
+                    .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
+
+            for (OrderItemEntity item : items) {
+                int activeQty = item.getQuantity() - item.getCancelledQuantity();
+                if (activeQty <= 0) continue;
+
+                ProductEntity product = productMap.get(item.getProductId());
+                if (product == null) continue;
+
+                // Stock has already been restored by restoreStockForOrder above
+                int stockAfter = product.getStockQuantity();
+                int stockBefore = stockAfter - activeQty;
+
+                inventoryUseCase.recordReturnIn(
+                        item.getProductId(), activeQty,
+                        stockBefore, stockAfter,
+                        entity.getId(), entity.getOrderNumber());
+            }
+            log.info("[INVENTORY] Recorded RETURN_IN for cancelled order: {}", entity.getOrderNumber());
+        } catch (Exception e) {
+            log.error("[INVENTORY] Failed to record RETURN_IN for order {}: {}", entity.getOrderNumber(), e.getMessage());
+        }
+    }
+
     private void sendOrderStatusNotification(OrderEntity entity, OrderStatus status) {
         if (Objects.isNull(entity.getUserId())) {
             log.warn("[NOTIFICATION] No userId for orderId={}", entity.getId());

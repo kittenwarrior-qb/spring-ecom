@@ -4,17 +4,19 @@ import com.example.spring_ecom.domain.notification.Notification;
 import com.example.spring_ecom.repository.database.notification.NotificationEntity;
 import com.example.spring_ecom.repository.database.notification.NotificationEntityMapper;
 import com.example.spring_ecom.repository.database.notification.NotificationRepository;
+import com.example.spring_ecom.repository.database.notification.NotificationUserReadRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -22,6 +24,7 @@ import java.util.Optional;
 public class NotificationQueryService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationUserReadRepository notificationUserReadRepository;
     private final NotificationEntityMapper mapper;
 
     public Optional<Notification> findById(Long id) {
@@ -41,12 +44,15 @@ public class NotificationQueryService {
         
         // Get broadcast notifications
         Page<NotificationEntity> broadcastNotifications = notificationRepository.findByUserIdIsNullOrderByCreatedAtDesc(pageable);
-        
+        Set<Long> readBroadcastIds = getReadBroadcastIds(userId, broadcastNotifications.getContent());
+
         // Combine both lists
         List<Notification> combined = new ArrayList<>();
         combined.addAll(userNotifications.getContent().stream().map(mapper::toDomain).toList());
-        combined.addAll(broadcastNotifications.getContent().stream().map(mapper::toDomain).toList());
-        
+        combined.addAll(broadcastNotifications.getContent().stream()
+                .map(entity -> toDomainWithReadState(entity, readBroadcastIds.contains(entity.getId())))
+                .toList());
+
         // Sort by created date descending
         combined.sort((a, b) -> b.createdAt().compareTo(a.createdAt()));
         
@@ -73,8 +79,8 @@ public class NotificationQueryService {
                 .map(mapper::toDomain)
                 .toList();
         
-        // Get unread broadcast notifications
-        List<Notification> broadcastUnread = notificationRepository.findByUserIdIsNullAndIsReadFalseOrderByCreatedAtDesc()
+        // Get unread broadcast notifications scoped to current user
+        List<Notification> broadcastUnread = notificationRepository.findUnreadBroadcastForUser(userId)
                 .stream()
                 .map(mapper::toDomain)
                 .toList();
@@ -94,6 +100,36 @@ public class NotificationQueryService {
 
     // Count both unread user notifications and unread broadcast notifications
     public long countUnreadUserAndBroadcastNotifications(Long userId) {
-        return notificationRepository.countUnreadByUserId(userId) + notificationRepository.countUnreadBroadcast();
+        return notificationRepository.countUnreadByUserId(userId)
+                + notificationRepository.countUnreadBroadcastForUser(userId);
+    }
+
+    private Set<Long> getReadBroadcastIds(Long userId, List<NotificationEntity> broadcastEntities) {
+        List<Long> broadcastIds = broadcastEntities.stream()
+                .map(NotificationEntity::getId)
+                .toList();
+
+        if (broadcastIds.isEmpty()) {
+            return Set.of();
+        }
+
+        return new HashSet<>(notificationUserReadRepository.findReadNotificationIds(userId, broadcastIds));
+    }
+
+    private Notification toDomainWithReadState(NotificationEntity entity, boolean isRead) {
+        Notification domain = mapper.toDomain(entity);
+        return new Notification(
+                domain.id(),
+                domain.userId(),
+                domain.type(),
+                domain.title(),
+                domain.message(),
+                domain.referenceId(),
+                domain.referenceType(),
+                domain.imageUrl(),
+                domain.actionUrl(),
+                isRead,
+                domain.createdAt()
+        );
     }
 }

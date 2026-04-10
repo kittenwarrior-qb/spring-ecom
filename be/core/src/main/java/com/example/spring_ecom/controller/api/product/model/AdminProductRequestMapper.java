@@ -25,6 +25,7 @@ public interface AdminProductRequestMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "slug", ignore = true)
+    @Mapping(target = "costPrice", expression = "java(request.getCostPrice() != null ? request.getCostPrice() : java.math.BigDecimal.ZERO)")
     @Mapping(target = "viewCount", expression = "java(0)")
     @Mapping(target = "soldCount", expression = "java(0)")
     @Mapping(target = "ratingAverage", expression = "java(java.math.BigDecimal.ZERO)")
@@ -53,6 +54,7 @@ public interface AdminProductRequestMapper {
     @Mapping(target = "description", source = "request.description")
     @Mapping(target = "price", source = "request.price")
     @Mapping(target = "discountPrice", source = "request.discountPrice")
+    @Mapping(target = "costPrice", source = "request.costPrice")
     @Mapping(target = "stockQuantity", source = "request.stockQuantity")
     @Mapping(target = "coverImageUrl", source = "request.coverImageUrl")
     @Mapping(target = "isBestseller", source = "request.isBestseller")

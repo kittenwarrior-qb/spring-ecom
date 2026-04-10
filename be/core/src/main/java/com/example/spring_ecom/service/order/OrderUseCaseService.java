@@ -126,7 +126,15 @@ public class OrderUseCaseService implements OrderUseCase {
     @Transactional(readOnly = true)
     public Page<Order> findAllWithFilters(Pageable pageable, String search, String status, 
                                          String paymentStatus, java.time.LocalDate dateFrom, java.time.LocalDate dateTo) {
-        // TODO: Implement filtered search logic
+        // Filter by status if provided
+        if (status != null && !status.isBlank()) {
+            try {
+                OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
+                return queryService.findByStatus(orderStatus, pageable);
+            } catch (IllegalArgumentException e) {
+                // Invalid status, return all
+            }
+        }
         return queryService.findAll(pageable);
     }
     
@@ -139,15 +147,7 @@ public class OrderUseCaseService implements OrderUseCase {
     @Override
     @Transactional(readOnly = true)
     public com.example.spring_ecom.domain.order.OrderStatistics getOrderStatistics(String period, java.time.LocalDate dateFrom, java.time.LocalDate dateTo) {
-        // TODO: Implement statistics calculation logic
-        return com.example.spring_ecom.domain.order.OrderStatistics.builder()
-                .totalOrders(0L)
-                .totalRevenue(0.0)
-                .pendingOrders(0L)
-                .completedOrders(0L)
-                .cancelledOrders(0L)
-                .dailyStats(List.of())
-                .build();
+        return queryService.getStatisticsWithRange(period, dateFrom, dateTo);
     }
     
     private void validateOrderAccess(Long orderId, Long currentUserId, boolean isAdmin) {
