@@ -170,8 +170,10 @@ export function RevenueChart({ orders, dateRange }: RevenueChartProps) {
         return format(orderDate, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
       })
       
-      const revenue = dayOrders.reduce((sum, order) => sum + (order.total || 0), 0)
-      const orderCount = dayOrders.length
+      // Only count DELIVERED orders for revenue (same as backend)
+      const deliveredOrders = dayOrders.filter(o => o.status === 'DELIVERED')
+      const revenue = deliveredOrders.reduce((sum, order) => sum + (order.total || 0), 0)
+      const orderCount = deliveredOrders.length
       
       return {
         date: format(day, 'dd/MM', { locale: vi }),
@@ -194,8 +196,10 @@ export function RevenueChart({ orders, dateRange }: RevenueChartProps) {
         return format(orderDate, 'yyyy-MM') === format(month, 'yyyy-MM')
       })
       
-      const revenue = monthOrders.reduce((sum, order) => sum + (order.total || 0), 0)
-      const orderCount = monthOrders.length
+      // Only count DELIVERED orders for revenue (same as backend)
+      const deliveredOrders = monthOrders.filter(o => o.status === 'DELIVERED')
+      const revenue = deliveredOrders.reduce((sum, order) => sum + (order.total || 0), 0)
+      const orderCount = deliveredOrders.length
       
       return {
         date: format(month, 'MM/yyyy', { locale: vi }),

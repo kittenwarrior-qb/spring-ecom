@@ -4,17 +4,18 @@ import com.example.spring_ecom.controller.api.order.orderItem.model.PartialCance
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.cart.CartItem;
+import com.example.spring_ecom.domain.product.Product;
 import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntityMapper;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemRepository;
-import com.example.spring_ecom.repository.database.product.ProductEntity;
-import com.example.spring_ecom.repository.database.product.ProductRepository;
+import com.example.spring_ecom.service.product.ProductUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,23 +28,22 @@ import java.util.stream.Collectors;
 public class OrderItemCommandService {
     
     private final OrderItemRepository orderItemRepository;
-    private final ProductRepository productRepository;
+    private final ProductUseCase productUseCase;
     private final OrderItemEntityMapper orderItemMapper;
     
     // ========== MAIN COMMAND METHODS ==========
     
     public void createOrderItems(OrderEntity orderEntity, List<CartItem> cartItems) {
         List<Long> productIds = cartItems.stream().map(CartItem::productId).toList();
-        List<ProductEntity> products = validateAndGetProducts(productIds);
-        
-        Map<Long, ProductEntity> productMap = products.stream()
-                .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
-        
+        List<Product> products = validateAndGetProducts(productIds);
+
+        Map<Long, Product> productMap = products.stream()
+                .collect(Collectors.toMap(Product::id, Function.identity()));
+
         List<OrderItemEntity> orderItems = cartItems.stream()
                 .map(cartItem -> createOrderItem(orderEntity, cartItem, productMap))
                 .toList();
         
-        productRepository.saveAll(products);
         orderItemRepository.saveAll(orderItems);
     }
     
@@ -64,24 +64,32 @@ public class OrderItemCommandService {
     
     public void restoreStockForOrder(Long orderId) {
         List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(orderId);
-        updateProductQuantities(orderItems, (product, quantity) -> {
-            product.setStockQuantity(product.getStockQuantity() + quantity);
-            return product;
+        orderItems.forEach(item -> {
+            int activeQuantity = item.getQuantity() - item.getCancelledQuantity();
+            if (activeQuantity > 0) {
+                productUseCase.updateProductStock(item.getProductId(), activeQuantity);
+            }
         });
     }
     
     public void updateSoldCountForOrder(Long orderId) {
         List<OrderItemEntity> orderItems = orderItemRepository.findByOrderId(orderId);
-        updateProductQuantities(orderItems, (product, quantity) -> {
-            product.setSoldCount(product.getSoldCount() + quantity);
-            return product;
+        Map<Long, Integer> soldCountMap = new HashMap<>();
+        orderItems.forEach(item -> {
+            int activeQuantity = item.getQuantity() - item.getCancelledQuantity();
+            if (activeQuantity > 0) {
+                soldCountMap.merge(item.getProductId(), activeQuantity, Integer::sum);
+            }
         });
+        if (!soldCountMap.isEmpty()) {
+            productUseCase.updateProductsSoldCount(soldCountMap);
+        }
     }
     
     // ========== HELPER METHODS ==========
     
-    private List<ProductEntity> validateAndGetProducts(List<Long> productIds) {
-        List<ProductEntity> products = productRepository.findAllById(productIds);
+    private List<Product> validateAndGetProducts(List<Long> productIds) {
+        List<Product> products = productUseCase.findAllByIds(productIds);
         if (products.size() != productIds.size()) {
             throw new BaseException(ResponseCode.NOT_FOUND, "Some products not found");
         }
@@ -97,17 +105,18 @@ public class OrderItemCommandService {
         return orderItem;
     }
     
-    private OrderItemEntity createOrderItem(OrderEntity order, CartItem cartItem, Map<Long, ProductEntity> productMap) {
-        ProductEntity product = productMap.get(cartItem.productId());
-        
-        if (product.getStockQuantity() < cartItem.quantity()) {
-            throw new BaseException(ResponseCode.BAD_REQUEST, 
-                    "Insufficient stock for product: " + product.getTitle());
+    private OrderItemEntity createOrderItem(OrderEntity order, CartItem cartItem, Map<Long, Product> productMap) {
+        Product product = productMap.get(cartItem.productId());
+
+        if (product.stockQuantity() < cartItem.quantity()) {
+            throw new BaseException(ResponseCode.BAD_REQUEST,
+                    "Insufficient stock for product: " + product.title());
         }
         
-        product.setStockQuantity(product.getStockQuantity() - cartItem.quantity());
-        
-        return orderItemMapper.createFromCartItem(order, cartItem, product);
+        // Deduct stock through UseCase
+        productUseCase.updateProductStock(product.id(), -cartItem.quantity());
+
+        return orderItemMapper.createFromCartItemDomain(order, cartItem, product);
     }
     
     private void processCancelItem(OrderItemEntity orderItem, Integer quantityToCancel) {
@@ -138,31 +147,6 @@ public class OrderItemCommandService {
     }
     
     private void restoreStockForQuantity(Long productId, Integer quantity) {
-        ProductEntity product = productRepository.findById(productId).orElse(null);
-        if (Objects.nonNull(product)) {
-            product.setStockQuantity(product.getStockQuantity() + quantity);
-            productRepository.save(product);
-        }
-    }
-    
-    private void updateProductQuantities(List<OrderItemEntity> orderItems, 
-                                       java.util.function.BiFunction<ProductEntity, Integer, ProductEntity> productUpdater) {
-        List<Long> productIds = orderItems.stream().map(OrderItemEntity::getProductId).toList();
-        List<ProductEntity> products = productRepository.findAllById(productIds);
-        Map<Long, ProductEntity> productMap = products.stream()
-                .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
-        
-        List<ProductEntity> productsToUpdate = orderItems.stream()
-                .map(item -> {
-                    ProductEntity product = productMap.get(item.getProductId());
-                    int activeQuantity = item.getQuantity() - item.getCancelledQuantity();
-                    return Objects.nonNull(product) && activeQuantity > 0 
-                        ? productUpdater.apply(product, activeQuantity) 
-                        : null;
-                })
-                .filter(Objects::nonNull)
-                .toList();
-        
-        productRepository.saveAll(productsToUpdate);
+        productUseCase.updateProductStock(productId, quantity);
     }
 }

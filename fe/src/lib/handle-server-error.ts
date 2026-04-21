@@ -3,7 +3,11 @@ import { toast } from 'sonner'
 import type { ApiResponse } from '@/types/api'
 import { isNetworkError, getNetworkErrorMessage } from './request-utils'
 
-export function handleServerError(error: unknown) {
+export interface ServerValidationErrors {
+  [key: string]: string
+}
+
+export function handleServerError(error: unknown, onValidationErrors?: (errors: ServerValidationErrors) => void) {
   // eslint-disable-next-line no-console
   console.log(error)
 
@@ -39,6 +43,15 @@ export function handleServerError(error: unknown) {
       errMsg = 'Resource not found.'
     } else if (error.response?.status === 500) {
       errMsg = 'Server error. Please try again later.'
+    }
+
+    // Handle validation errors from backend
+    if (apiResponse?.data && typeof apiResponse.data === 'object') {
+      const validationErrors = apiResponse.data as ServerValidationErrors
+      if (onValidationErrors && Object.keys(validationErrors).length > 0) {
+        onValidationErrors(validationErrors)
+        return // Don't show toast, form will show field errors
+      }
     }
   }
 

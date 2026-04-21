@@ -3,17 +3,21 @@ package com.example.spring_ecom.service.product;
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.core.util.SlugUtil;
+import com.example.spring_ecom.domain.category.Category;
 import com.example.spring_ecom.domain.product.Product;
 import com.example.spring_ecom.domain.product.ProductFormat;
-import com.example.spring_ecom.repository.database.category.CategoryEntity;
-import com.example.spring_ecom.repository.database.category.CategoryRepository;
+import com.example.spring_ecom.domain.product.StockReceiveResult;
 import com.example.spring_ecom.repository.database.product.ProductEntity;
 import com.example.spring_ecom.repository.database.product.ProductEntityMapper;
 import com.example.spring_ecom.repository.database.product.ProductRepository;
+import com.example.spring_ecom.service.category.CategoryUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,7 +28,7 @@ import java.util.Optional;
 public class ProductCommandService {
     
     private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
+    private final CategoryUseCase categoryUseCase;
     private final ProductEntityMapper mapper;
     
     // ========================== MAIN METHODS ================================
@@ -86,6 +90,83 @@ public class ProductCommandService {
         productRepository.saveAll(products);
     }
 
+    /**
+     * Nhập hàng: lock row pessimistic, cộng stock, tính giá vốn bình quân gia quyền.
+     * Trả về StockReceiveResult gồm stockBefore, stockAfter, costPrice mới.
+     */
+    public StockReceiveResult receiveStock(Long productId, int quantityAdded, BigDecimal unitCost) {
+        ProductEntity product = productRepository.findByIdWithLock(productId)
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found: " + productId));
+
+        int stockBefore = product.getStockQuantity();
+        product.setStockQuantity(stockBefore + quantityAdded);
+
+        // Weighted average cost price
+        BigDecimal oldTotal = product.getCostPrice().multiply(BigDecimal.valueOf(stockBefore));
+        BigDecimal newTotal = unitCost.multiply(BigDecimal.valueOf(quantityAdded));
+        BigDecimal weightedAvg = oldTotal.add(newTotal)
+                .divide(BigDecimal.valueOf(product.getStockQuantity()), 2, RoundingMode.HALF_UP);
+        product.setCostPrice(weightedAvg);
+
+        productRepository.save(product);
+
+        return new StockReceiveResult(stockBefore, product.getStockQuantity(), weightedAvg);
+    }
+
+    /**
+     * Tìm nhiều sản phẩm theo danh sách ID (chỉ trả domain, không lock).
+     */
+    public List<Product> findAllByIds(Collection<Long> ids) {
+        return productRepository.findAllById(ids).stream()
+                .filter(e -> Objects.isNull(e.getDeletedAt()))
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    // ========== Statistics ==========
+
+    public Long countActiveProducts() {
+        return productRepository.countActiveProducts();
+    }
+
+    public Long countLowStockProducts() {
+        return productRepository.countLowStockProducts();
+    }
+
+    public Long countOutOfStockProducts() {
+        return productRepository.countOutOfStockProducts();
+    }
+
+    // ========== Stock Reservation ==========
+
+    public int reserveStock(Long productId, int quantity) {
+        ProductEntity product = productRepository.findByIdWithLock(productId)
+                .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Product not found: " + productId));
+        int available = product.getStockQuantity() - product.getReservedQuantity();
+        if (available < quantity) {
+            return available; // caller checks and handles failure
+        }
+        product.setReservedQuantity(product.getReservedQuantity() + quantity);
+        productRepository.save(product);
+        return available;
+    }
+
+    public void releaseReservedStock(Long productId, int quantity) {
+        ProductEntity product = findActiveProductById(productId);
+        if (product.getReservedQuantity() >= quantity) {
+            product.setReservedQuantity(product.getReservedQuantity() - quantity);
+            productRepository.save(product);
+        }
+    }
+
+    public void deductReservedStock(Long productId, int quantity) {
+        ProductEntity product = findActiveProductById(productId);
+        product.setStockQuantity(product.getStockQuantity() - quantity);
+        product.setReservedQuantity(product.getReservedQuantity() - quantity);
+        product.setSoldCount(product.getSoldCount() + quantity);
+        productRepository.save(product);
+    }
+
 
 
 
@@ -107,11 +188,10 @@ public class ProductCommandService {
     private void validateCategory(Long categoryId) {
         if (Objects.isNull(categoryId)) return;
         
-        CategoryEntity category = categoryRepository.findById(categoryId)
-                .filter(c -> Objects.isNull(c.getDeletedAt()))
+        Category category = categoryUseCase.findById(categoryId)
                 .orElseThrow(() -> new BaseException(ResponseCode.BAD_REQUEST, "Category not found"));
         
-        if (!category.getIsActive()) {
+        if (!category.isActive()) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Category is not active");
         }
     }

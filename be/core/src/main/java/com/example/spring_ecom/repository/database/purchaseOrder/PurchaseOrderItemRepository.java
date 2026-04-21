@@ -1,4 +1,4 @@
-package com.example.spring_ecom.repository.database.inventory;
+package com.example.spring_ecom.repository.database.purchaseOrder;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

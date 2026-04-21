@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Slf4j
@@ -86,5 +87,61 @@ public class UserUseCaseService implements UserUseCase {
     @Transactional
     public Page<User> searchByEmail(String email, PageRequest pageRequest) {
         return queryService.searchByEmail(email, pageRequest);
+    }
+
+    // ========== Auth-related methods ==========
+
+    @Override
+    @Transactional
+    public Optional<User> findByEmail(String email) {
+        return queryService.findByEmail(email);
+    }
+
+    @Override
+    @Transactional
+    public boolean existsByEmail(String email) {
+        return queryService.existsByEmail(email);
+    }
+
+    @Override
+    @Transactional
+    public boolean existsByUsername(String username) {
+        return queryService.existsByUsername(username);
+    }
+
+    @Override
+    @Transactional
+    public void updateLastLogin(Long userId) {
+        commandService.updateLastLogin(userId);
+    }
+
+    @Override
+    @Transactional
+    public Optional<User> findByEmailVerificationToken(String token) {
+        return queryService.findByEmailVerificationToken(token);
+    }
+
+    @Override
+    @Transactional
+    public Optional<User> findByPasswordResetToken(String token) {
+        return queryService.findByPasswordResetToken(token);
+    }
+
+    @Override
+    @Transactional
+    public void setEmailVerificationToken(Long userId, String token, LocalDateTime expiry) {
+        commandService.setEmailVerificationToken(userId, token, expiry);
+    }
+
+    @Override
+    @Transactional
+    public void markEmailVerified(Long userId) {
+        commandService.markEmailVerified(userId);
+    }
+
+    @Override
+    @Transactional
+    public User createUserForRegistration(String username, String email, String encodedPassword) {
+        return commandService.createUserForRegistration(username, email, encodedPassword);
     }
 }

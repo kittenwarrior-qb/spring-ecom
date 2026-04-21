@@ -2,21 +2,7 @@ import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notificationApiClient } from '@/lib/api-client'
 import { useMqttStore } from '@/lib/mqtt-client'
-import type { ApiResponse, PageResponse } from '@/types/api'
-
-interface NotificationResponse {
-  id: number
-  userId: number
-  type: string
-  title: string
-  message: string
-  referenceId: number | null
-  referenceType: string | null
-  imageUrl: string | null
-  actionUrl: string | null
-  isRead: boolean
-  createdAt: string
-}
+import type { ApiResponse, PageResponse, NotificationResponse } from '@/types/api'
 
 const NOTIFICATION_BASE_URL = '/api/notifications'
 
@@ -102,36 +88,77 @@ export function useMarkNotificationAsRead() {
 
 export function useMarkAllNotificationsAsRead() {
   const queryClient = useQueryClient()
-  const { markAllAsRead } = useMqttStore()
+  const { markAllAsRead: markMqttAsRead } = useMqttStore()
 
   return useMutation({
     mutationFn: notificationApi.markAllAsRead,
-    onSuccess: () => {
-      // Update local store
-      markAllAsRead()
-      // Invalidate queries
+    onMutate: async () => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: notificationKeys.all })
+
+      // Snapshot previous value
+      const previousNotifications = queryClient.getQueryData<PageResponse<NotificationResponse>>(
+        notificationKeys.list({ page: 0, size: 20 })
+      )
+
+      // Optimistically update cache
+      if (previousNotifications) {
+        queryClient.setQueryData<PageResponse<NotificationResponse>>(
+          notificationKeys.list({ page: 0, size: 20 }),
+          {
+            ...previousNotifications,
+            content: previousNotifications.content.map((n) => ({ ...n, isRead: true })),
+          }
+        )
+      }
+
+      // Update MQTT store immediately
+      markMqttAsRead()
+
+      return { previousNotifications }
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(
+          notificationKeys.list({ page: 0, size: 20 }),
+          context.previousNotifications
+        )
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all })
     },
   })
 }
 
-// MQTT connection hook
 export function useNotificationMqtt(userId: number | null, token: string | null) {
   const { connect, disconnect, isConnected } = useMqttStore()
 
   // Connect when user is logged in - use useEffect to avoid multiple connections
   useEffect(() => {
-    if (userId && token && !isConnected) {
+    if (userId && token) {
+      // Always try to connect if we have credentials
+      // The connect function handles reconnection logic internally
+      // eslint-disable-next-line no-console
+      console.log('[MQTT Hook] Calling connect with userId:', userId)
       connect(userId, token)
+    } else {
+      // eslint-disable-next-line no-console
+      console.log('[MQTT Hook] Missing userId or token, skipping connection')
     }
 
-    // Disconnect on unmount or logout
+    // Only disconnect on unmount (cleanup function)
     return () => {
-      if (isConnected) {
-        disconnect()
-      }
+      disconnect()
     }
-  }, [userId, token, isConnected, connect, disconnect])
+  }, [userId, token, connect, disconnect])
+
+  // Debug log after state changes - use separate useEffect
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log('[MQTT Hook] userId:', userId, 'token:', token ? 'present' : 'null', 'isConnected:', isConnected)
+  }, [userId, token, isConnected])
 
   return {
     isConnected,

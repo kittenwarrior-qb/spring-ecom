@@ -1,6 +1,6 @@
 import apiClient from '@/lib/api-client'
 import adminApiClient from '@/lib/admin-api-client'
-import type { ApiResponse, CategoryRequest, CategoryResponse } from '@/types/api'
+import type { ApiResponse, PageResponse, CategoryRequest, CategoryResponse } from '@/types/api'
 
 const CATEGORY_BASE_URL = '/api/categories'
 const ADMIN_CATEGORY_URL = '/api/admin/categories'
@@ -41,5 +41,28 @@ export const categoryApi = {
   // Admin: Delete category (calls Server port 8081)
   delete: async (id: number): Promise<void> => {
     await adminApiClient.delete<ApiResponse<void>>(`${ADMIN_CATEGORY_URL}/${id}`)
+  },
+
+  // Admin: Get categories with pagination and filters
+  getCategoriesPaged: async (
+    page = 0,
+    size = 10,
+    filters?: {
+      search?: string
+      isActive?: boolean
+    }
+  ): Promise<PageResponse<CategoryResponse>> => {
+    const response = await adminApiClient.get<ApiResponse<PageResponse<CategoryResponse>>>(
+      `${ADMIN_CATEGORY_URL}/paged`,
+      {
+        params: {
+          page,
+          size,
+          ...(filters?.search && { search: filters.search }),
+          ...(filters?.isActive !== undefined && { isActive: filters.isActive }),
+        }
+      }
+    )
+    return response.data.data
   },
 }

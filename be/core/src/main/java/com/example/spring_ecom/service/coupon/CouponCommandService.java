@@ -11,6 +11,10 @@ import com.example.spring_ecom.repository.database.coupon.DiscountType;
 import com.example.spring_ecom.service.notification.NotificationCommandService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,8 +84,13 @@ public class CouponCommandService {
     }
     
     @Transactional
+    @Retryable(
+            retryFor = OptimisticLockingFailureException.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 50, multiplier = 2)
+    )
     public void incrementUsage(Long couponId) {
-        CouponEntity entity = couponRepository.findByIdWithLock(couponId)
+        CouponEntity entity = couponRepository.findByIdAndDeletedAtIsNull(couponId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "Coupon not found"));
         
         // Check usage limit
@@ -94,7 +103,13 @@ public class CouponCommandService {
         
         log.info("[COUPON] Usage incremented: couponId={}, newCount={}", couponId, entity.getUsedCount());
     }
-    
+
+    @Recover
+    public void recoverIncrementUsage(OptimisticLockingFailureException ex, Long couponId) {
+        throw new BaseException(ResponseCode.CONFLICT,
+                "Coupon is being used concurrently, please retry. couponId=" + couponId);
+    }
+
     // ========== HELPER METHODS ==========
     
     private CouponEntity findActiveCouponById(Long id) {

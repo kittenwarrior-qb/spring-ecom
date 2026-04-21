@@ -5,6 +5,7 @@ import com.example.spring_ecom.domain.inventory.MovementType;
 import com.example.spring_ecom.domain.inventory.PurchaseOrder;
 import com.example.spring_ecom.domain.inventory.PurchaseOrderItem;
 import com.example.spring_ecom.domain.inventory.PurchaseOrderStatus;
+import com.example.spring_ecom.repository.database.inventory.dao.InventoryMovementWithProductDao;
 import com.example.spring_ecom.repository.database.inventory.dao.PurchaseOrderWithSupplierDao;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -83,6 +84,12 @@ public class InventoryUseCaseService implements InventoryUseCase {
         return queryService.findMovements(productId, type, pageable);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<InventoryMovementWithProductDao> findMovementsWithProduct(Long productId, MovementType type, Pageable pageable) {
+        return queryService.findMovementsWithProduct(productId, type, pageable);
+    }
+
     // ========== Inventory Movement Recording ==========
 
     @Override
@@ -126,5 +133,11 @@ public class InventoryUseCaseService implements InventoryUseCase {
     @Transactional(readOnly = true)
     public BigDecimal getProductInventoryValuation(Long productId) {
         return queryService.getProductInventoryValuation(productId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Long countPendingPurchaseOrders() {
+        return queryService.countPendingPurchaseOrders();
     }
 }

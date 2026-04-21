@@ -3,10 +3,14 @@ package com.example.spring_ecom.service.inventory;
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.inventory.*;
+import com.example.spring_ecom.domain.product.StockReceiveResult;
 import com.example.spring_ecom.repository.database.inventory.*;
-import com.example.spring_ecom.repository.database.product.ProductEntity;
-import com.example.spring_ecom.repository.database.product.ProductRepository;
-import com.example.spring_ecom.repository.database.supplier.SupplierRepository;
+import com.example.spring_ecom.repository.database.purchaseOrder.PurchaseOrderEntity;
+import com.example.spring_ecom.repository.database.purchaseOrder.PurchaseOrderItemEntity;
+import com.example.spring_ecom.repository.database.purchaseOrder.PurchaseOrderItemRepository;
+import com.example.spring_ecom.repository.database.purchaseOrder.PurchaseOrderRepository;
+import com.example.spring_ecom.service.product.ProductUseCase;
+import com.example.spring_ecom.service.supplier.SupplierUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,8 +32,8 @@ public class InventoryCommandService {
     private final PurchaseOrderItemRepository purchaseOrderItemRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
     private final ProductCostBatchRepository batchRepository;
-    private final ProductRepository productRepository;
-    private final SupplierRepository supplierRepository;
+    private final ProductUseCase productUseCase;
+    private final SupplierUseCase supplierUseCase;
     private final InventoryEntityMapper mapper;
 
     private static final AtomicLong PO_COUNTER = new AtomicLong(0);
@@ -109,26 +113,13 @@ public class InventoryCommandService {
 
         // Update product stock + cost_price + create inventory movements
         for (PurchaseOrderItemEntity item : items) {
-            ProductEntity product = productRepository.findByIdWithLock(item.getProductId())
-                    .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND,
-                            "Product not found: " + item.getProductId()));
-
-            int stockBefore = product.getStockQuantity();
-
-            product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
-
-            // Update cost_price (weighted average)
-            BigDecimal oldTotal = product.getCostPrice().multiply(BigDecimal.valueOf(stockBefore));
-            BigDecimal newTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-            BigDecimal weightedAvg = oldTotal.add(newTotal)
-                    .divide(BigDecimal.valueOf(product.getStockQuantity()), 2, RoundingMode.HALF_UP);
-            product.setCostPrice(weightedAvg);
-
-            productRepository.save(product);
+            // Delegate stock + cost update to ProductUseCase (handles pessimistic lock internally)
+            StockReceiveResult result = productUseCase.receiveStock(
+                    item.getProductId(), item.getQuantity(), item.getUnitPrice());
 
             // Record inventory transaction
             recordPurchaseIn(item.getProductId(), item.getQuantity(), item.getUnitPrice(),
-                    stockBefore, product.getStockQuantity(), id, entity.getPoNumber(), receivedBy);
+                    result.stockBefore(), result.stockAfter(), id, entity.getPoNumber(), receivedBy);
 
             // Create cost batch for FIFO tracking
             createCostBatch(item.getProductId(), item.getId(), item.getQuantity(), item.getUnitPrice());
@@ -185,28 +176,28 @@ public class InventoryCommandService {
                                  int stockBefore, int stockAfter, Long poId, String poNumber, Long receivedBy) {
         recordMovement(productId, MovementType.IMPORT, quantity, costPrice,
                 stockBefore, stockAfter, "PURCHASE_ORDER", poId,
-                "Import from PO: " + poNumber, receivedBy);
+                "Nh\u1EADp t\u1EEB \u0111\u01A1n nh\u1EADp: " + poNumber, receivedBy);
     }
 
     public void recordSaleOut(Long productId, int quantity, BigDecimal costPrice,
                               int stockBefore, int stockAfter, Long orderId, String orderNumber) {
         recordMovement(productId, MovementType.SALE_OUT, -quantity, costPrice,
                 stockBefore, stockAfter, "ORDER", orderId,
-                "Sale from order: " + orderNumber, null);
+                "Xu\u1EA5t b\u00E1n t\u1EEB \u0111\u01A1n: " + orderNumber, null);
     }
 
     public void recordReturnIn(Long productId, int quantity,
                                int stockBefore, int stockAfter, Long orderId, String orderNumber) {
         recordMovement(productId, MovementType.RETURN, quantity, null,
                 stockBefore, stockAfter, "ORDER", orderId,
-                "Return from cancelled order: " + orderNumber, null);
+                "Nh\u1EADp tr\u1EA3 t\u1EEB \u0111\u01A1n \u0111\u00E3 h\u1EE7y: " + orderNumber, null);
     }
 
     public void recordAdjustment(Long productId, int quantityDelta,
                                  int stockBefore, int stockAfter, String note, Long adjustedBy) {
         recordMovement(productId, MovementType.ADJUSTMENT, quantityDelta, null,
                 stockBefore, stockAfter, "MANUAL", null,
-                note != null ? note : "Manual stock adjustment", adjustedBy);
+                note != null ? note : "\u0110i\u1EC1u ch\u1EC9nh t\u1ED3n kho th\u1EE7 c\u00F4ng", adjustedBy);
     }
 
     // ========== Cost Batch Tracking ==========
@@ -277,7 +268,7 @@ public class InventoryCommandService {
     }
 
     private void validateSupplier(Long supplierId) {
-        supplierRepository.findByIdAndDeletedAtIsNull(supplierId)
+        supplierUseCase.findById(supplierId)
                 .orElseThrow(() -> new BaseException(ResponseCode.BAD_REQUEST, "Supplier not found"));
     }
 

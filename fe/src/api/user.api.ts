@@ -1,6 +1,6 @@
 import apiClient from '@/lib/api-client'
 import adminApiClient from '@/lib/admin-api-client'
-import type { ApiResponse, PageResponse, UserRequest, UserResponse, UserProfileResponse, UpdateProfileRequest, UpdateAvatarRequest, ChangePasswordRequest } from '@/types/api'
+import type { ApiResponse, PageResponse, UserRequest, UserResponse, UserProfileResponse, UpdateProfileRequest, UpdateAvatarRequest, ChangePasswordRequest, RoleResponse } from '@/types/api'
 
 const USER_BASE_URL = '/api/users'
 const PROFILE_BASE_URL = '/api/users'
@@ -60,6 +60,38 @@ export const userApi = {
 
   // Admin APIs
   assignRole: async (userId: number, roleId: number): Promise<void> => {
-    await adminApiClient.put<ApiResponse<void>>(`/admin/users/${userId}/role`, { roleId })
+    await adminApiClient.post<ApiResponse<void>>(`/api/admin/users/${userId}/roles/${roleId}`)
+  },
+
+  // Admin: Update user status (activate/deactivate)
+  updateUserStatus: async (userId: number, isActive: boolean, reason?: string): Promise<void> => {
+    await adminApiClient.put<ApiResponse<void>>(`/api/admin/users/${userId}/status`, null, {
+      params: { isActive, ...(reason && { reason }) }
+    })
+  },
+
+  // Admin: Reset user password
+  resetUserPassword: async (userId: number): Promise<void> => {
+    await adminApiClient.post<ApiResponse<void>>(`/api/admin/users/${userId}/reset-password`)
+  },
+
+  // Admin: Get user's roles
+  getUserRoles: async (userId: number): Promise<RoleResponse[]> => {
+    const response = await adminApiClient.get<ApiResponse<RoleResponse[]>>(`/api/admin/users/${userId}/roles`)
+    return response.data.data
+  },
+
+  // Admin: Set user roles (replace all)
+  setUserRoles: async (userId: number, roleIds: number[]): Promise<void> => {
+    await adminApiClient.put<ApiResponse<void>>(`/api/admin/users/${userId}/roles`, { roleIds })
+  },
+
+  // Admin: Search users by email
+  searchUsersByEmail: async (email: string, page = 0, size = 10): Promise<PageResponse<UserResponse>> => {
+    const response = await adminApiClient.get<ApiResponse<PageResponse<UserResponse>>>(
+      '/api/admin/users/search',
+      { params: { email, page, size } }
+    )
+    return response.data.data
   },
 }

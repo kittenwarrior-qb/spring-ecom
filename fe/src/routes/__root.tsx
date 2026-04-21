@@ -9,6 +9,9 @@ import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
 import { SiteHeader } from '@/components/layout/site-header'
 import { SiteFooter } from '@/components/layout/site-footer'
+import { useAuth, useUser } from '@/stores/auth-store'
+import { useNotificationMqtt } from '@/hooks/use-notification'
+import { useNotificationToast } from '@/hooks/use-notification-toast'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -21,6 +24,14 @@ export const Route = createRootRouteWithContext<{
 function RootLayout() {
   const location = useLocation()
   const isAdminRoute = location.pathname.startsWith('/admin')
+  const auth = useAuth()
+  const user = useUser()
+
+  // Connect to MQTT for notifications
+  const userId = user?.id ? Number(user.id) : null
+  const token = auth.accessToken || null
+  useNotificationMqtt(userId, token)
+  useNotificationToast()
 
   // Scroll to top on route change
   useEffect(() => {

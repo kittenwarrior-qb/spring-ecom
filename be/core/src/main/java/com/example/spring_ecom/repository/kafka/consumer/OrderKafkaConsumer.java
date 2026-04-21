@@ -19,18 +19,6 @@ public class OrderKafkaConsumer {
 
     @KafkaListener(topics = OrderKafkaProducer.TOPIC, groupId = "spring-ecom-server-group")
     public void consumeOrderEvent(OrderEvent event) {
-        log.info("============ 📥 KAFKA EVENT RECEIVED ============");
-        log.info("Topic: {}", OrderKafkaProducer.TOPIC);
-        log.info("Event Type: {}", event.getEventType());
-        log.info("Event ID: {}", event.getEventId());
-        log.info("Order ID: {}", event.getOrderId());
-        log.info("Order Number: {}", event.getOrderNumber());
-        log.info("User ID: {}", event.getUserId());
-        log.info("Total: {}", event.getTotal());
-        log.info("Items count: {}", Objects.nonNull(event.getItems()) ? event.getItems().size() : 0);
-        log.info("Source: {}", event.getSource());
-        log.info("================================================");
-
         try {
             switch (event.getEventType()) {
                 case OrderEvent.CREATED -> {
@@ -63,8 +51,12 @@ public class OrderKafkaConsumer {
                 }
             }
             log.info("Event processed successfully: {}", event.getEventId());
+        } catch (RuntimeException e) {
+            log.error("Failed to process event: {}, error: {}", event.getEventId(), e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
             log.error("Failed to process event: {}, error: {}", event.getEventId(), e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 }

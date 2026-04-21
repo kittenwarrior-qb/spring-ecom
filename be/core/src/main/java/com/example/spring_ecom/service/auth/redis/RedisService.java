@@ -16,18 +16,19 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class RedisService {
-    
+
     private final RedisRepository redisRepository;
-    
-    private static final long ACCESS_TOKEN_TTL_SECONDS = 900; // 15 minutes
-    
+
+    private static final long ACCESS_TOKEN_TTL_SECONDS = 900; // 15min
+
     public String createSession(Long userId, String email, String role, String deviceInfo, String ipAddress) {
         return createSession(userId, email, role, deviceInfo, ipAddress, null);
     }
-    
-    public String createSession(Long userId, String email, String role, String deviceInfo, String ipAddress, String authorities) {
+
+    public String createSession(Long userId, String email, String role, String deviceInfo, String ipAddress,
+            String authorities) {
         String sessionId = UUID.randomUUID().toString();
-        
+
         RedisEntity session = RedisEntity.builder()
                 .sessionId(sessionId)
                 .userId(userId)
@@ -40,27 +41,30 @@ public class RedisService {
                 .lastAccessedAt(LocalDateTime.now())
                 .ttl(ACCESS_TOKEN_TTL_SECONDS)
                 .build();
-        
+
         log.info("Creating Redis session with key pattern: redis:{}", sessionId);
         redisRepository.save(session);
         log.info("Created session {} for user {}", sessionId, userId);
-        
+
         return sessionId;
     }
-    
+
     // Overloaded method for backward compatibility with extended user info
-    public String createSession(Long userId, String username, String email, String role, String firstName, String lastName, 
-                               String phoneNumber, String address, String city, String district, String ward,
-                               String deviceInfo, String ipAddress) {
-        return createSession(userId, username, email, role, firstName, lastName, phoneNumber, address, city, district, ward,
+    public String createSession(Long userId, String username, String email, String role, String firstName,
+            String lastName,
+            String phoneNumber, String address, String city, String district, String ward,
+            String deviceInfo, String ipAddress) {
+        return createSession(userId, username, email, role, firstName, lastName, phoneNumber, address, city, district,
+                ward,
                 deviceInfo, ipAddress, null);
     }
-    
-    public String createSession(Long userId, String username, String email, String role, String firstName, String lastName, 
-                               String phoneNumber, String address, String city, String district, String ward,
-                               String deviceInfo, String ipAddress, String authorities) {
+
+    public String createSession(Long userId, String username, String email, String role, String firstName,
+            String lastName,
+            String phoneNumber, String address, String city, String district, String ward,
+            String deviceInfo, String ipAddress, String authorities) {
         String sessionId = UUID.randomUUID().toString();
-        
+
         RedisEntity session = RedisEntity.builder()
                 .sessionId(sessionId)
                 .userId(userId)
@@ -81,61 +85,55 @@ public class RedisService {
                 .lastAccessedAt(LocalDateTime.now())
                 .ttl(ACCESS_TOKEN_TTL_SECONDS)
                 .build();
-        
-        log.info("Creating Redis session with key pattern: redis:{}", sessionId);
+
         redisRepository.save(session);
-        log.info("Created session {} for user {}", sessionId, userId);
-        
+
         return sessionId;
     }
-    
+
     public Optional<RedisEntity> getSession(String sessionId) {
         Optional<RedisEntity> session = redisRepository.findById(sessionId);
-        
+
         if (session.isPresent()) {
             RedisEntity sessionEntity = session.get();
             sessionEntity.setLastAccessedAt(LocalDateTime.now());
             redisRepository.save(sessionEntity);
         }
-        
+
         return session;
     }
-    
+
     public RedisEntity validateSession(String sessionId) {
         return getSession(sessionId)
                 .orElseThrow(() -> new BaseException(ResponseCode.UNAUTHORIZED, "Session not found or expired"));
     }
-    
+
     public void revokeSession(String sessionId) {
         log.info("Revoking Redis session with key: redis:{}", sessionId);
         redisRepository.deleteById(sessionId);
         log.info("Revoked session {}", sessionId);
     }
-    
+
     public void revokeAllUserSessions(Long userId) {
         redisRepository.deleteByUserId(userId);
         log.info("Revoked all sessions for user {}", userId);
     }
-    
+
     public boolean isSessionValid(String sessionId) {
         boolean exists = redisRepository.existsById(sessionId);
         log.debug("Checking session validity for {}: {}", sessionId, exists);
         return exists;
     }
-    
-    // Debug method to log all Redis keys
+
     public void debugRedisKeys() {
         try {
             log.info("=== DEBUG: Current Redis Keys ===");
-            // This would require RedisTemplate to list all keys
-            // For now, just log when operations happen
             log.info("Session operations are being logged above");
         } catch (Exception e) {
             log.error("Error debugging Redis keys: {}", e.getMessage());
         }
     }
-    
-    // Clean up any orphaned refresh token keys (if they exist)
+
     public void cleanupOrphanedKeys() {
         try {
             log.info("Cleanup completed - only session keys should exist in Redis");

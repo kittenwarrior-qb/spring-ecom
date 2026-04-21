@@ -12,7 +12,9 @@ import com.example.spring_ecom.repository.database.order.dao.OrderStatisticsDao;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,4 +60,22 @@ public interface OrderUseCase {
     Optional<Order> updateStatus(Long orderId, OrderStatus status);
     
     OrderStatistics getOrderStatistics(String period, LocalDate dateFrom, LocalDate dateTo);
+
+    // ========== Statistics Queries (used by StatisticsQueryService) ==========
+
+    OrderStatisticsDao getOrderStatisticsInRange(LocalDateTime from, LocalDateTime to);
+
+    BigDecimal getTodayRevenue(LocalDateTime from, LocalDateTime to);
+
+    Object[] getRevenueCostProfit(LocalDateTime from, LocalDateTime to);
+
+    BigDecimal getAverageOrderValue(LocalDateTime from, LocalDateTime to);
+
+    List<Object[]> getProfitBreakdown(LocalDateTime from, LocalDateTime to, String granularity);
+
+    List<Object[]> getTopSellingProducts(LocalDateTime from, LocalDateTime to, int limit);
+
+    List<Object[]> getRevenueByCategoryInRange(LocalDateTime from, LocalDateTime to);
+
+    void updateOrderStatusDirect(Long orderId, OrderStatus status);
 }

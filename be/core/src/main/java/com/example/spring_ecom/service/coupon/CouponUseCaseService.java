@@ -74,7 +74,6 @@ public class CouponUseCaseService implements CouponUseCase {
     }
     
     @Override
-    @Transactional
     public void incrementUsage(Long couponId) {
         commandService.incrementUsage(couponId);
     }

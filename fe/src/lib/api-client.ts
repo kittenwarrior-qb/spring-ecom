@@ -131,19 +131,18 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest)
       } catch (refreshError) {
         processQueue(refreshError as AxiosError, null)
-        // Clear token and redirect to login
+        // Clear token - let React Query global error handler handle redirect
         document.cookie = 'accessToken=; path=/; max-age=0'
-        window.location.href = '/sign-in'
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false
       }
     }
 
-    // For 401 on auth endpoints or refresh failure, redirect to login
+    // For 401 on auth endpoints or refresh failure, clear token
+    // Let React Query global error handler handle the redirect to avoid conflicts
     if (error.response?.status === 401 && !isAuthEndpoint) {
       document.cookie = 'accessToken=; path=/; max-age=0'
-      window.location.href = '/sign-in'
     }
 
     return Promise.reject(error)

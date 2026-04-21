@@ -17,13 +17,6 @@ public class UserKafkaConsumer {
 
     @KafkaListener(topics = UserKafkaProducer.TOPIC)
     public void consumeUserEvent(UserEvent event) {
-        log.info("============ USER EVENT RECEIVED ============");
-        log.info("Topic: {}", UserKafkaProducer.TOPIC);
-        log.info("Event Type: {}", event.getEventType());
-        log.info("User ID: {}", event.getUserId());
-        log.info("Email: {}", event.getEmail());
-        log.info("==============================================");
-
         try {
             if (UserEvent.REGISTERED.equals(event.getEventType())) {
                 log.info("Processing REGISTERED event: Sending verification email to {}", event.getEmail());

@@ -169,6 +169,9 @@ public class OrderQueryService {
 
         // 3) Revenue / cost / profit
         Object[] rcp = orderRepository.getRevenueCostProfit(from, to);
+        if (rcp != null && rcp.length == 1 && rcp[0] instanceof Object[]) {
+            rcp = (Object[]) rcp[0];
+        }
         BigDecimal revenue = toBigDecimal(rcp, 0);
         BigDecimal cost = toBigDecimal(rcp, 1);
         BigDecimal profit = toBigDecimal(rcp, 2);
@@ -235,5 +238,46 @@ public class OrderQueryService {
             current = arr[0];
         }
         return current;
+    }
+
+    // ========== Statistics Query Wrappers (for StatisticsQueryService via OrderUseCase) ==========
+
+    public OrderStatisticsDao getOrderStatisticsInRange(LocalDateTime from, LocalDateTime to) {
+        return orderRepository.getOrderStatisticsInRange(from, to);
+    }
+
+    public BigDecimal getTodayRevenue(LocalDateTime from, LocalDateTime to) {
+        return orderRepository.getTodayRevenue(from, to);
+    }
+
+    public Object[] getRevenueCostProfit(LocalDateTime from, LocalDateTime to) {
+        return orderRepository.getRevenueCostProfit(from, to);
+    }
+
+    public BigDecimal getAverageOrderValue(LocalDateTime from, LocalDateTime to) {
+        return orderRepository.getAverageOrderValue(from, to);
+    }
+
+    public List<Object[]> getProfitBreakdown(LocalDateTime from, LocalDateTime to, String granularity) {
+        return switch (granularity != null ? granularity.toLowerCase() : "daily") {
+            case "weekly" -> orderRepository.getWeeklyProfitBreakdown(from, to);
+            case "monthly" -> orderRepository.getMonthlyProfitBreakdown(from, to);
+            default -> orderRepository.getDailyProfitBreakdown(from, to);
+        };
+    }
+
+    public List<Object[]> getTopSellingProducts(LocalDateTime from, LocalDateTime to, int limit) {
+        return orderRepository.getTopSellingProducts(from, to, limit);
+    }
+
+    public List<Object[]> getRevenueByCategoryInRange(LocalDateTime from, LocalDateTime to) {
+        return orderRepository.getRevenueByCategoryInRange(from, to);
+    }
+
+    public void updateOrderStatusDirect(Long orderId, OrderStatus status) {
+        orderRepository.findById(orderId).ifPresent(order -> {
+            order.setStatus(status);
+            orderRepository.save(order);
+        });
     }
 }

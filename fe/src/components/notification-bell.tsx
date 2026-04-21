@@ -1,4 +1,4 @@
-import { Bell, Package, Truck, CheckCircle, XCircle, Gift, Megaphone, BellRing } from 'lucide-react'
+import { Bell, Package, Truck, CheckCircle, XCircle, Gift, Megaphone, BellRing, Radio } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -8,105 +8,204 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useMqttStore } from '@/lib/mqtt-client'
-import { useNotifications, useMarkAllNotificationsAsRead } from '@/hooks/use-notification'
+import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead } from '@/hooks/use-notification'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useAuth, useUser } from '@/stores/auth-store'
+import { memo, useMemo } from 'react'
 
 interface NotificationBellProps {
   className?: string
 }
 
-// Status color mapping
-const getStatusColor = (type: string) => {
-  switch (type) {
-    case 'ORDER_CONFIRMED':
-      return 'text-blue-600 bg-blue-50'
-    case 'ORDER_STATUS':
-      return 'text-orange-600 bg-orange-50'
-    case 'ORDER_SHIPPED':
-      return 'text-purple-600 bg-purple-50'
-    case 'ORDER_DELIVERED':
-      return 'text-green-600 bg-green-50'
-    case 'ORDER_CANCELLED':
-      return 'text-red-600 bg-red-50'
-    case 'NEW_COUPON':
-    case 'PROMOTION':
-      return 'text-pink-600 bg-pink-50'
-    case 'SYSTEM_ANNOUNCEMENT':
-      return 'text-indigo-600 bg-indigo-50'
-    default:
-      return 'text-gray-600 bg-gray-50'
-  }
+// Status color mapping - static object for performance
+const STATUS_COLORS: Record<string, string> = {
+  ORDER_CONFIRMED: 'text-blue-600 bg-blue-50',
+  ORDER_STATUS: 'text-orange-600 bg-orange-50',
+  ORDER_SHIPPED: 'text-purple-600 bg-purple-50',
+  ORDER_DELIVERED: 'text-green-600 bg-green-50',
+  ORDER_CANCELLED: 'text-red-600 bg-red-50',
+  NEW_COUPON: 'text-pink-600 bg-pink-50',
+  PROMOTION: 'text-pink-600 bg-pink-50',
+  SYSTEM_ANNOUNCEMENT: 'text-indigo-600 bg-indigo-50',
 }
 
-// Status icon mapping with Lucide icons
-const getStatusIcon = (type: string) => {
-  switch (type) {
-    case 'ORDER_CONFIRMED':
-      return <Package className="h-5 w-5" />
-    case 'ORDER_STATUS':
-      return <Package className="h-5 w-5" />
-    case 'ORDER_SHIPPED':
-      return <Truck className="h-5 w-5" />
-    case 'ORDER_DELIVERED':
-      return <CheckCircle className="h-5 w-5" />
-    case 'ORDER_CANCELLED':
-      return <XCircle className="h-5 w-5" />
-    case 'NEW_COUPON':
-    case 'PROMOTION':
-      return <Gift className="h-5 w-5" />
-    case 'SYSTEM_ANNOUNCEMENT':
-      return <Megaphone className="h-5 w-5" />
-    default:
-      return <BellRing className="h-5 w-5" />
-  }
+const getStatusColor = (type: string) => STATUS_COLORS[type] || 'text-gray-600 bg-gray-50'
+
+// Status icon mapping - static object for performance
+const STATUS_ICONS: Record<string, React.ReactNode> = {
+  ORDER_CONFIRMED: <Package className="h-5 w-5" />,
+  ORDER_STATUS: <Package className="h-5 w-5" />,
+  ORDER_SHIPPED: <Truck className="h-5 w-5" />,
+  ORDER_DELIVERED: <CheckCircle className="h-5 w-5" />,
+  ORDER_CANCELLED: <XCircle className="h-5 w-5" />,
+  NEW_COUPON: <Gift className="h-5 w-5" />,
+  PROMOTION: <Gift className="h-5 w-5" />,
+  SYSTEM_ANNOUNCEMENT: <Megaphone className="h-5 w-5" />,
 }
 
-// Status badge text
-const getStatusBadge = (type: string) => {
-  switch (type) {
-    case 'ORDER_CONFIRMED':
-      return { text: 'Đã xác nhận', variant: 'default' as const }
-    case 'ORDER_STATUS':
-      return { text: 'Đang xử lý', variant: 'secondary' as const }
-    case 'ORDER_SHIPPED':
-      return { text: 'Đang giao', variant: 'default' as const }
-    case 'ORDER_DELIVERED':
-      return { text: 'Hoàn thành', variant: 'success' as const }
-    case 'ORDER_CANCELLED':
-      return { text: 'Đã hủy', variant: 'destructive' as const }
-    case 'NEW_COUPON':
-      return { text: 'Coupon mới', variant: 'default' as const }
-    case 'PROMOTION':
-      return { text: 'Khuyến mãi', variant: 'default' as const }
-    default:
-      return null
-  }
+const getStatusIcon = (type: string) => STATUS_ICONS[type] || <BellRing className="h-5 w-5" />
+
+// Status badge text - static object for performance
+const STATUS_BADGES: Record<string, { text: string; variant: 'default' | 'secondary' | 'destructive' }> = {
+  ORDER_CONFIRMED: { text: 'Đã xác nhận', variant: 'default' },
+  ORDER_STATUS: { text: 'Đang xử lý', variant: 'secondary' },
+  ORDER_SHIPPED: { text: 'Đang giao', variant: 'default' },
+  ORDER_DELIVERED: { text: 'Hoàn thành', variant: 'default' },
+  ORDER_CANCELLED: { text: 'Đã hủy', variant: 'destructive' },
+  NEW_COUPON: { text: 'Coupon mới', variant: 'default' },
+  PROMOTION: { text: 'Khuyến mãi', variant: 'default' },
 }
+
+const getStatusBadge = (type: string) => STATUS_BADGES[type] || null
+
+// Memoized notification item component for performance
+interface NotificationItemProps {
+  notification: {
+    id?: number
+    notificationId?: number
+    eventId?: string
+    type: string
+    title: string
+    message: string
+    actionUrl?: string | null
+    isRead: boolean
+    isBroadcast?: boolean
+    createdAt: string
+  }
+  onRead?: (id: number) => void
+}
+
+const NotificationItem = memo(function NotificationItem({ notification, onRead }: NotificationItemProps) {
+  const statusBadge = getStatusBadge(notification.type)
+  const statusColor = notification.isBroadcast ? 'text-red-600 bg-red-50' : getStatusColor(notification.type)
+  const statusIcon = notification.isBroadcast ? <Radio className="h-5 w-5" /> : getStatusIcon(notification.type)
+
+  const handleClick = () => {
+    // Mark as read when clicked
+    const notificationId = notification.id || notification.notificationId
+    if (!notification.isRead && notificationId && onRead) {
+      onRead(notificationId)
+    }
+  }
+
+  const notificationId = notification.id || notification.notificationId
+
+  return (
+    <Link
+      to="/notifications"
+      search={{ id: notificationId }}
+      onClick={handleClick}
+      className={cn(
+        'flex gap-3 border-b p-4 hover:bg-muted/50 transition-colors',
+        !notification.isRead && 'bg-primary/5'
+      )}
+    >
+      {/* Icon with background */}
+      <div className={cn(
+        'flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full',
+        statusColor
+      )}>
+        {statusIcon}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0 space-y-1.5">
+        {/* Title with badge */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-semibold leading-none truncate flex-1">
+            {notification.title}
+          </p>
+          {notification.isBroadcast && (
+            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-auto">
+              Broadcast
+            </Badge>
+          )}
+          {statusBadge && (
+            <Badge
+              variant={statusBadge.variant}
+              className="text-[10px] px-2 py-0.5 h-auto"
+            >
+              {statusBadge.text}
+            </Badge>
+          )}
+        </div>
+
+        {/* Message */}
+        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+          {notification.message}
+        </p>
+
+        {/* Time */}
+        <div className="flex items-center gap-2">
+          <p className="text-[10px] text-muted-foreground">
+            {formatDistanceToNow(new Date(notification.createdAt), {
+              addSuffix: true,
+              locale: vi,
+            })}
+          </p>
+          {!notification.isRead && (
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+          )}
+        </div>
+      </div>
+    </Link>
+  )
+})
 
 export function NotificationBell({ className }: NotificationBellProps) {
   const user = useUser()
   const auth = useAuth()
   const navigate = useNavigate()
-  const { unreadCount, notifications: realtimeNotifications } = useMqttStore()
+  const { notifications: realtimeNotifications } = useMqttStore()
   const { data: notificationsData } = useNotifications(0, 10)
+  const markAsRead = useMarkNotificationAsRead()
   const markAllAsRead = useMarkAllNotificationsAsRead()
 
   const isAuthenticated = auth.accessToken && user
 
-  // Merge realtime notifications with API notifications
-  const notifications = realtimeNotifications.length > 0
-    ? realtimeNotifications
-    : notificationsData?.content || []
+  // Merge realtime MQTT notifications with API notifications
+  // Dedup by eventId (MQTT) or id (API)
+  const notifications = useMemo(() => {
+    const mergedMap = new Map<string, typeof realtimeNotifications[0]>()
+    
+    // Add API notifications first
+    const apiNotifications = notificationsData?.content || []
+    apiNotifications.forEach((n) => {
+      mergedMap.set(`api-${n.id}`, {
+        ...n,
+        eventId: n.id.toString(),
+        eventType: n.type,
+        timestamp: n.createdAt,
+        source: 'api',
+        notificationId: n.id,
+      })
+    })
+    
+    // Override/add MQTT notifications (more recent)
+    realtimeNotifications.forEach((n) => {
+      const key = n.notificationId 
+        ? `api-${n.notificationId}` 
+        : `mqtt-${n.eventId}`
+      mergedMap.set(key, n)
+    })
+    
+    return Array.from(mergedMap.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 50)
+  }, [realtimeNotifications, notificationsData?.content])
 
   const unread = notifications.filter((n) => !n.isRead).length
-  const displayCount = unreadCount || unread
+  const displayCount = unread
 
   const handleMarkAllRead = () => {
     markAllAsRead.mutate()
+  }
+
+  const handleMarkAsRead = (id: number) => {
+    markAsRead.mutate([id])
   }
 
   // If not authenticated, show simple button that redirects to login
@@ -163,67 +262,13 @@ export function NotificationBell({ className }: NotificationBellProps) {
             </div>
           ) : (
             <div className="flex flex-col">
-              {notifications.map((notification) => {
-                const key = 'eventId' in notification ? notification.eventId : notification.id
-                const statusBadge = getStatusBadge(notification.type)
-                const statusColor = getStatusColor(notification.type)
-                const statusIcon = getStatusIcon(notification.type)
-
-                return (
-                  <Link
-                    key={key}
-                    to={notification.actionUrl || '/notifications'}
-                    className={cn(
-                      'flex gap-3 border-b p-4 hover:bg-muted/50 transition-colors',
-                      !notification.isRead && 'bg-primary/5'
-                    )}
-                  >
-                    {/* Icon with background */}
-                    <div className={cn(
-                      'flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full',
-                      statusColor
-                    )}>
-                      {statusIcon}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 space-y-1.5">
-                      {/* Title with badge */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold leading-none truncate flex-1">
-                          {notification.title}
-                        </p>
-                        {statusBadge && (
-                          <Badge 
-                            variant={statusBadge.variant} 
-                            className="text-[10px] px-2 py-0.5 h-auto"
-                          >
-                            {statusBadge.text}
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* Message */}
-                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                        {notification.message}
-                      </p>
-
-                      {/* Time */}
-                      <div className="flex items-center gap-2">
-                        <p className="text-[10px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(notification.createdAt), {
-                            addSuffix: true,
-                            locale: vi,
-                          })}
-                        </p>
-                        {!notification.isRead && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                )
-              })}
+              {notifications.map((notification) => (
+                <NotificationItem
+                  key={notification.eventId || notification.notificationId}
+                  notification={notification}
+                  onRead={handleMarkAsRead}
+                />
+              ))}
             </div>
           )}
         </ScrollArea>

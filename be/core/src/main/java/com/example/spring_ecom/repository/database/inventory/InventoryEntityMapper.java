@@ -5,6 +5,8 @@ import com.example.spring_ecom.core.mapper.BaseEntityMapper;
 import com.example.spring_ecom.domain.inventory.PurchaseOrder;
 import com.example.spring_ecom.domain.inventory.PurchaseOrderItem;
 import com.example.spring_ecom.domain.inventory.InventoryMovement;
+import com.example.spring_ecom.repository.database.purchaseOrder.PurchaseOrderEntity;
+import com.example.spring_ecom.repository.database.purchaseOrder.PurchaseOrderItemEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

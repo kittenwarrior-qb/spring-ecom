@@ -163,13 +163,14 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     
     /**
      * Revenue with cost (profit) for delivered orders in a date range
+     * Uses (quantity - cancelled_quantity) * price for accurate revenue after partial cancellations
      * Uses order_items.cost_price (FIFO-based) when available, falls back to products.cost_price
      */
     @Query(value = """
         SELECT 
-            COALESCE(SUM(oi.subtotal), 0) as totalRevenue,
-            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price)), 0) as totalCost,
-            COALESCE(SUM(oi.subtotal - (oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price)), 0) as totalProfit
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * oi.price), 0) as totalRevenue,
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price, 0)), 0) as totalCost,
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * oi.price - (oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price, 0)), 0) as totalProfit
         FROM orders o
         JOIN order_items oi ON o.id = oi.order_id
         JOIN products p ON oi.product_id = p.id
@@ -189,7 +190,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             p.id as productId,
             p.title as productTitle,
             SUM(oi.quantity - oi.cancelled_quantity) as totalSold,
-            SUM(oi.subtotal) as totalRevenue
+            SUM((oi.quantity - oi.cancelled_quantity) * oi.price) as totalRevenue
         FROM orders o
         JOIN order_items oi ON o.id = oi.order_id
         JOIN products p ON oi.product_id = p.id
@@ -215,9 +216,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             c.id as categoryId,
             c.name as categoryName,
             COUNT(DISTINCT o.id) as orderCount,
-            SUM(oi.subtotal) as totalRevenue,
-            SUM((oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price)) as totalCost,
-            SUM(oi.subtotal - (oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price)) as totalProfit
+            SUM((oi.quantity - oi.cancelled_quantity) * oi.price) as totalRevenue,
+            SUM((oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price, 0)) as totalCost,
+            SUM((oi.quantity - oi.cancelled_quantity) * oi.price - (oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price, 0)) as totalProfit
         FROM orders o
         JOIN order_items oi ON o.id = oi.order_id
         JOIN products p ON oi.product_id = p.id
@@ -241,9 +242,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
         SELECT 
             DATE(o.created_at) as statDate,
             COUNT(DISTINCT o.id) as orderCount,
-            COALESCE(SUM(oi.subtotal), 0) as revenue,
-            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price)), 0) as cost,
-            COALESCE(SUM(oi.subtotal - (oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price)), 0) as profit
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * oi.price), 0) as revenue,
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price, 0)), 0) as cost,
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * oi.price - (oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price, 0)), 0) as profit
         FROM orders o
         JOIN order_items oi ON o.id = oi.order_id
         JOIN products p ON oi.product_id = p.id
@@ -264,9 +265,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
         SELECT 
             DATE_TRUNC('week', o.created_at)::date as statDate,
             COUNT(DISTINCT o.id) as orderCount,
-            COALESCE(SUM(oi.subtotal), 0) as revenue,
-            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price)), 0) as cost,
-            COALESCE(SUM(oi.subtotal - (oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price)), 0) as profit
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * oi.price), 0) as revenue,
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price, 0)), 0) as cost,
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * oi.price - (oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price, 0)), 0) as profit
         FROM orders o
         JOIN order_items oi ON o.id = oi.order_id
         JOIN products p ON oi.product_id = p.id
@@ -287,9 +288,9 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
         SELECT 
             DATE_TRUNC('month', o.created_at)::date as statDate,
             COUNT(DISTINCT o.id) as orderCount,
-            COALESCE(SUM(oi.subtotal), 0) as revenue,
-            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price)), 0) as cost,
-            COALESCE(SUM(oi.subtotal - (oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price)), 0) as profit
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * oi.price), 0) as revenue,
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price, 0)), 0) as cost,
+            COALESCE(SUM((oi.quantity - oi.cancelled_quantity) * oi.price - (oi.quantity - oi.cancelled_quantity) * COALESCE(oi.cost_price, p.cost_price, 0)), 0) as profit
         FROM orders o
         JOIN order_items oi ON o.id = oi.order_id
         JOIN products p ON oi.product_id = p.id

@@ -37,31 +37,25 @@ class RedisSessionServiceTest {
 
     @Test
     void shouldCreateSession() {
-        // Given
         Long userId = 1L;
         String email = "test@example.com";
         String role = "USER";
         String deviceInfo = "Chrome";
         String ipAddress = "127.0.0.1";
 
-        // When
         String sessionId = redisSessionService.createSession(userId, email, role, deviceInfo, ipAddress);
 
-        // Then
         assertNotNull(sessionId);
         verify(valueOperations, times(2)).set(anyString(), anyString(), anyLong(), any());
     }
 
     @Test
     void shouldValidateSession() {
-        // Given
         String sessionId = "test-session-id";
         when(redisTemplate.hasKey("session:" + sessionId)).thenReturn(true);
 
-        // When
         boolean isValid = redisSessionService.isSessionValid(sessionId);
 
-        // Then
         assertTrue(isValid);
         verify(redisTemplate).hasKey("session:" + sessionId);
     }

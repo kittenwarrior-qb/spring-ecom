@@ -2,9 +2,9 @@ package com.example.spring_ecom.service.auth.email;
 
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
-import com.example.spring_ecom.repository.database.user.UserEntity;
-import com.example.spring_ecom.repository.database.user.UserRepository;
+import com.example.spring_ecom.domain.user.User;
 import com.example.spring_ecom.service.auth.AuthUseCase;
+import com.example.spring_ecom.service.user.UserUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EmailCommandService {
     
-    private final UserRepository userRepository;
+    private final UserUseCase userUseCase;
     private final AuthUseCase authUseCase;
     private final RestTemplate restTemplate = new RestTemplate();
     
@@ -39,10 +39,10 @@ public class EmailCommandService {
     
     @Transactional
     public void sendVerificationEmail(Long userId) {
-        UserEntity user = userRepository.findById(userId)
+        User user = userUseCase.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
         
-        if (user.getIsEmailVerified()) {
+        if (user.isEmailVerified()) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Email is already verified");
         }
         
@@ -50,49 +50,44 @@ public class EmailCommandService {
         String verificationToken = UUID.randomUUID().toString();
         LocalDateTime expiryTime = LocalDateTime.now().plusHours(24);
         
-        // Update user with verification token
-        user.setEmailVerificationToken(verificationToken);
-        user.setEmailVerificationTokenExpiry(expiryTime);
-        userRepository.save(user);
-        
+        // Update user with verification token via UseCase
+        userUseCase.setEmailVerificationToken(userId, verificationToken, expiryTime);
+
         // Send email
-        sendEmail(user.getEmail(), "Xác thực email của bạn", buildEmailVerificationTemplate(user.getUsername(), verificationToken));
-        
-        log.info("Verification email sent to user: {}", user.getEmail());
+        sendEmail(user.email(), "Xác thực email của bạn", buildEmailVerificationTemplate(user.username(), verificationToken));
+
+        log.info("Verification email sent to user: {}", user.email());
     }
     
     @Transactional
     public void verifyEmail(String token) {
-        UserEntity user = userRepository.findByEmailVerificationToken(token)
+        User user = userUseCase.findByEmailVerificationToken(token)
                 .orElseThrow(() -> new BaseException(ResponseCode.BAD_REQUEST, "Invalid verification token"));
         
-        if (user.getEmailVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
+        if (user.emailVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Verification token has expired");
         }
         
-        if (user.getIsEmailVerified()) {
+        if (user.isEmailVerified()) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Email is already verified");
         }
         
-        // Mark email as verified
-        user.setIsEmailVerified(true);
-        user.setEmailVerificationToken(null);
-        user.setEmailVerificationTokenExpiry(null);
-        userRepository.save(user);
-        
-        log.info("Email verified successfully for user: {}", user.getEmail());
+        // Mark email as verified via UseCase
+        userUseCase.markEmailVerified(user.id());
+
+        log.info("Email verified successfully for user: {}", user.email());
     }
     
     @Transactional
     public void resendVerificationEmail(String email) {
-        UserEntity user = userRepository.findByEmail(email)
+        User user = userUseCase.findByEmail(email)
                 .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
         
         if (authUseCase.isEmailVerified(email)) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Email is already verified");
         }
         
-        sendVerificationEmail(user.getId());
+        sendVerificationEmail(user.id());
     }
     
     private void sendEmail(String toEmail, String subject, String htmlContent) {
@@ -176,3 +171,4 @@ public class EmailCommandService {
             """.formatted(username, verificationUrl, verificationUrl);
     }
 }
+

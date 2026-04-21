@@ -30,9 +30,11 @@ import { type OrderResponse } from '@/types/api'
 interface OrdersTableProps {
     search: Record<string, unknown>
     navigate: NavigateFn
+    dateFrom?: string
+    dateTo?: string
 }
 
-export function OrdersTable({ search, navigate }: OrdersTableProps) {
+export function OrdersTable({ search, navigate, dateFrom, dateTo }: OrdersTableProps) {
     const [rowSelection, setRowSelection] = useState({})
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [sorting, setSorting] = useState<SortingState>([
@@ -59,6 +61,8 @@ export function OrdersTable({ search, navigate }: OrdersTableProps) {
     const { data: pageData, isLoading, error } = useAdminOrders({
         page: pagination.pageIndex,
         size: pagination.pageSize,
+        dateFrom,
+        dateTo,
     })
 
     const data: OrderResponse[] = pageData?.content ?? []

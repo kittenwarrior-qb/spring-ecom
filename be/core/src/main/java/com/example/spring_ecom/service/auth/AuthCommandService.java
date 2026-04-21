@@ -7,21 +7,16 @@ import com.example.spring_ecom.domain.auth.RegisterDto;
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.core.util.JwtUtil;
-import com.example.spring_ecom.repository.database.auth.AuthEntityMapper;
-import com.example.spring_ecom.repository.database.role.RoleRepository;
-import com.example.spring_ecom.repository.database.permission.PermissionEntity;
-import com.example.spring_ecom.repository.database.permission.PermissionRepository;
-import com.example.spring_ecom.repository.database.role.RolePermissionRepository;
-import com.example.spring_ecom.repository.database.user.UserEntity;
-import com.example.spring_ecom.repository.database.user.UserRepository;
-import com.example.spring_ecom.repository.database.user.UserRoleEntity;
-import com.example.spring_ecom.repository.database.user.UserRoleRepository;
+import com.example.spring_ecom.domain.role.RoleDto;
+import com.example.spring_ecom.domain.user.User;
 import com.example.spring_ecom.kafka.service.UserKafkaProducer;
 import com.example.spring_ecom.kafka.domain.UserEvent;
 
 import com.example.spring_ecom.service.auth.redis.RedisService;
 import com.example.spring_ecom.service.auth.token.TokenInfo;
 import com.example.spring_ecom.service.auth.token.TokenService;
+import com.example.spring_ecom.service.role.RoleUseCase;
+import com.example.spring_ecom.service.user.UserUseCase;
 import com.example.spring_ecom.service.userInfo.UserInfoUseCase;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,20 +25,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @AllArgsConstructor
 public class AuthCommandService {
-    private final UserRepository userRepository;
-    private final AuthEntityMapper authEntityMapper;
+    private final UserUseCase userUseCase;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RedisService redisService;
@@ -51,25 +42,22 @@ public class AuthCommandService {
     private final CookieUtil cookieUtil;
     private final UserKafkaProducer userKafkaProducer;
     private final UserInfoUseCase userInfoUseCase;
-    private final RoleRepository roleRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final RolePermissionRepository rolePermissionRepository;
-    private final PermissionRepository permissionRepository;
+    private final RoleUseCase roleUseCase;
 
     protected LoginResponse login(LoginDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
-        UserEntity userEntity = validateAndGetUser(command);
-        updateLastLogin(userEntity);
-        
-        String sessionId = createUserSession(userEntity, deviceInfo, ipAddress);
-        return generateLoginResponse(sessionId, userEntity, response);
+        User user = validateAndGetUser(command);
+        userUseCase.updateLastLogin(user.id());
+
+        String sessionId = createUserSession(user, deviceInfo, ipAddress);
+        return generateLoginResponse(sessionId, user, response);
     }
 
     protected LoginResponse register(RegisterDto command, String deviceInfo, String ipAddress, HttpServletResponse response) {
         validateUserRegistration(command);
         
-        UserEntity userEntity = createUser(command);
-        sendVerificationEmail(userEntity);
-        
+        User user = createUser(command);
+        sendVerificationEmail(user);
+
         return new LoginResponse(null, null, null, null);
     }
     
@@ -77,14 +65,14 @@ public class AuthCommandService {
         validateRefreshToken(oldRefreshToken);
         
         TokenInfo tokenInfo = tokenService.validateRefreshToken(oldRefreshToken);
-        UserEntity userEntity = userRepository.findById(tokenInfo.getUserId())
+        User user = userUseCase.findByUserId(tokenInfo.getUserId())
                 .orElseThrow(() -> new BaseException(ResponseCode.UNAUTHORIZED, "User not found"));
         
         String newSessionId = createTokenSession(tokenInfo, deviceInfo, ipAddress);
         
         redisService.revokeSession(tokenInfo.getSessionId());
         
-        return generateLoginResponse(newSessionId, userEntity, response);
+        return generateLoginResponse(newSessionId, user, response);
     }
     
     protected void logout(String refreshToken) {
@@ -108,45 +96,39 @@ public class AuthCommandService {
                 .ifPresent(redisService::revokeSession);
     }
     
-    private UserEntity validateAndGetUser(LoginDto command) {
-        UserEntity userEntity = userRepository.findByEmail(command.email())
+    private User validateAndGetUser(LoginDto command) {
+        User user = userUseCase.findByEmail(command.email())
                 .orElseThrow(() -> new BaseException(ResponseCode.UNAUTHORIZED, "Wrong email"));
         
-        if (!userEntity.getIsActive()) {
+        if (!user.isActive()) {
             throw new BaseException(ResponseCode.FORBIDDEN, "Account is not activated");
         }
 
-        if (!userEntity.getIsEmailVerified()) {
+        if (!user.isEmailVerified()) {
             throw new BaseException(ResponseCode.FORBIDDEN, "Email is not verified. Please check your email and verify your account.");
         }
 
-        if (!passwordEncoder.matches(command.password(), userEntity.getPassword())) {
+        if (!passwordEncoder.matches(command.password(), user.password())) {
             throw new BaseException(ResponseCode.UNAUTHORIZED, "Wrong password");
         }
         
-        return userEntity;
+        return user;
     }
     
-    private void updateLastLogin(UserEntity userEntity) {
-        userEntity.setLastLoginAt(LocalDateTime.now());
-        userRepository.save(userEntity);
-    }
-    
-    private String createUserSession(UserEntity userEntity, String deviceInfo, String ipAddress) {
-        var userInfo = userInfoUseCase.findByUserId(userEntity.getId()).orElse(null);
-        
-        // Get roles from user_roles table instead of role_id column
-        List<Long> roleIds = userRoleRepository.findRoleIdsByUserId(userEntity.getId());
-        String roleName = roleIds.isEmpty() ? "USER" : 
-                roleRepository.findById(roleIds.get(0)).map(r -> r.getName()).orElse("USER");
-        
-        // Load authorities (roles + permissions)
-        String authorities = buildAuthoritiesString(userEntity.getId(), roleIds);
-        
+    private String createUserSession(User user, String deviceInfo, String ipAddress) {
+        var userInfo = userInfoUseCase.findByUserId(user.id()).orElse(null);
+
+        // Get roles via RoleUseCase
+        List<RoleDto> roles = roleUseCase.getUserRoles(user.id());
+        String roleName = roles.isEmpty() ? "USER" : roles.get(0).name();
+
+        // Load authorities (roles + permissions) via RoleUseCase
+        String authorities = roleUseCase.buildAuthoritiesString(user.id());
+
         return redisService.createSession(
-                userEntity.getId(),
-                userEntity.getUsername(),
-                userEntity.getEmail(),
+                user.id(),
+                user.username(),
+                user.email(),
                 roleName,
                 Objects.nonNull(userInfo) ? userInfo.firstName() : null,
                 Objects.nonNull(userInfo) ? userInfo.lastName() : null,
@@ -176,82 +158,52 @@ public class AuthCommandService {
         );
     }
     
-    /**
-     * Build comma-separated authorities string: "ROLE_ADMIN,PRODUCT_CREATE,ORDER_VIEW,..."
-     */
-    private String buildAuthoritiesString(Long userId, List<Long> roleIds) {
-        List<String> authorities = new ArrayList<>();
-        
-        for (Long roleId : roleIds) {
-            roleRepository.findById(roleId).ifPresent(role -> {
-                // Add role authority (ROLE_xxx)
-                authorities.add("ROLE_" + role.getName());
-                
-                // Add all permissions for this role
-                List<Long> permissionIds = rolePermissionRepository.findPermissionIdsByRoleId(roleId);
-                List<PermissionEntity> permissions = permissionRepository.findAllById(permissionIds);
-                permissions.forEach(p -> authorities.add(p.getName()));
-            });
-        }
-        
-        log.debug("Built {} authorities for userId={}", authorities.size(), userId);
-        return String.join(",", authorities);
-    }
-    
-    private LoginResponse generateLoginResponse(String sessionId, UserEntity userEntity, HttpServletResponse response) {
+    private LoginResponse generateLoginResponse(String sessionId, User user, HttpServletResponse response) {
         String accessToken = jwtUtil.generateAccessToken(sessionId);
         String refreshToken = jwtUtil.generateRefreshToken(sessionId);
         
         cookieUtil.addRefreshTokenCookie(response, refreshToken);
         
-        return new LoginResponse(accessToken, refreshToken, userEntity.getUsername(), userEntity.getEmail());
+        return new LoginResponse(accessToken, refreshToken, user.username(), user.email());
     }
     
     private void validateUserRegistration(RegisterDto command) {
-        if (userRepository.existsByEmail(command.email())) {
+        if (userUseCase.existsByEmail(command.email())) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Email is existed");
         }
 
-        if (userRepository.existsByUsername(command.username())) {
+        if (userUseCase.existsByUsername(command.username())) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Username is existed");
         }
     }
     
-    private UserEntity createUser(RegisterDto command) {
-        UserEntity userEntity = authEntityMapper.toEntity(command);
-        userEntity.setPassword(passwordEncoder.encode(command.password()));
-        
-        Long userRoleId = roleRepository.findByName("USER")
-                .map(r -> r.getId())
+    private User createUser(RegisterDto command) {
+        String encodedPassword = passwordEncoder.encode(command.password());
+        User user = userUseCase.createUserForRegistration(command.username(), command.email(), encodedPassword);
+
+        Long userRoleId = roleUseCase.findRoleIdByName("USER")
                 .orElseThrow(() -> new BaseException(ResponseCode.INTERNAL_SERVER_ERROR, "Default role not found"));
         
-        userEntity = userRepository.save(userEntity);
-        
-        // Insert into user_roles table for many-to-many relationship
-        UserRoleEntity userRoleEntity = UserRoleEntity.builder()
-                .userId(userEntity.getId())
-                .roleId(userRoleId)
-                .build();
-        userRoleRepository.save(userRoleEntity);
-        
-        return userEntity;
+        roleUseCase.addRoleToUser(user.id(), userRoleId);
+
+        return user;
     }
     
-    private void sendVerificationEmail(UserEntity userEntity) {
+    private void sendVerificationEmail(User user) {
         try {
             UserEvent event = UserEvent.builder()
                     .eventId(UUID.randomUUID().toString())
                     .eventType(UserEvent.REGISTERED)
                     .timestamp(java.time.Instant.now())
                     .source("server")
-                    .userId(userEntity.getId())
-                    .username(userEntity.getUsername())
-                    .email(userEntity.getEmail())
+                    .userId(user.id())
+                    .username(user.username())
+                    .email(user.email())
                     .build();
             userKafkaProducer.send(event);
-            log.info("Published UserRegisteredEvent to Kafka for userId: {}", userEntity.getId());
+            log.info("Published UserRegisteredEvent to Kafka for userId: {}", user.id());
         } catch (Exception e) {
-            log.error("Failed to publish UserRegisteredEvent to Kafka for email {}: {}", userEntity.getEmail(), e.getMessage());
+            log.error("Failed to publish UserRegisteredEvent to Kafka for email {}: {}", user.email(), e.getMessage());
             // Continue with registration even if event pushing fails
         }
     }
@@ -262,3 +214,4 @@ public class AuthCommandService {
         }
     }
 }
+

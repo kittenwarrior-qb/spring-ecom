@@ -1,4 +1,4 @@
-package com.example.spring_ecom.repository.database.inventory;
+package com.example.spring_ecom.repository.database.purchaseOrder;
 
 import com.example.spring_ecom.domain.inventory.PurchaseOrderStatus;
 import com.example.spring_ecom.repository.database.common.BaseAuditEntity;

@@ -4,7 +4,7 @@ import com.example.spring_ecom.controller.api.admin.dashboard.model.DashboardRes
 import com.example.spring_ecom.core.response.ApiResponse;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.domain.order.OrderStatistics;
-import com.example.spring_ecom.repository.database.inventory.PurchaseOrderRepository;
+import com.example.spring_ecom.repository.database.purchaseOrder.PurchaseOrderRepository;
 import com.example.spring_ecom.repository.database.product.ProductRepository;
 import com.example.spring_ecom.repository.database.supplier.SupplierRepository;
 import com.example.spring_ecom.service.inventory.InventoryUseCase;

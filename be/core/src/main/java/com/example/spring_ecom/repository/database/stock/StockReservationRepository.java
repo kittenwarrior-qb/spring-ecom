@@ -14,7 +14,9 @@ import java.util.Optional;
 public interface StockReservationRepository extends JpaRepository<StockReservationEntity, Long> {
     
     List<StockReservationEntity> findByOrderId(Long orderId);
-    
+
+    Optional<StockReservationEntity> findByOrderIdAndProductId(Long orderId, Long productId);
+
     List<StockReservationEntity> findByOrderIdAndStatus(Long orderId, StockReservationEntity.ReservationStatus status);
     
     List<StockReservationEntity> findByStatusAndExpireAtBefore(

@@ -1,14 +1,12 @@
 package com.example.spring_ecom.repository.kafka.service;
 
 import com.example.spring_ecom.kafka.domain.OrderEvent;
-import com.example.spring_ecom.repository.database.product.ProductEntity;
-import com.example.spring_ecom.repository.database.order.OrderRepository;
-
 import com.example.spring_ecom.domain.order.OrderStatus;
-import com.example.spring_ecom.repository.database.product.ProductRepository;
 import com.example.spring_ecom.repository.database.stock.StockReservationEntity;
 import com.example.spring_ecom.repository.database.stock.StockReservationRepository;
 import com.example.spring_ecom.service.notification.NotificationUseCase;
+import com.example.spring_ecom.service.order.OrderUseCase;
+import com.example.spring_ecom.service.product.ProductUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,9 +33,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class OrderEventService {
 
-    private final ProductRepository productRepository;
+    private final ProductUseCase productUseCase;
     private final StockReservationRepository reservationRepository;
-    private final OrderRepository orderRepository;
+    private final OrderUseCase orderUseCase;
     private final NotificationUseCase notificationUseCase;
 
     /**
@@ -81,7 +79,7 @@ public class OrderEventService {
                 event.getOrderId(), event.getItems().size());
         
         // Update order status
-        updateOrderStatus(event.getOrderId(), OrderStatus.STOCK_RESERVED);
+        orderUseCase.updateOrderStatusDirect(event.getOrderId(), OrderStatus.STOCK_RESERVED);
         log.info("Order status updated to STOCK_RESERVED: orderId={}", event.getOrderId());
         
         // Send notification to user — guarded by idempotency check
@@ -108,8 +106,8 @@ public class OrderEventService {
 
         // Deduct stock (convert reserved → sold)
         event.getItems().forEach(item -> 
-                deductStock(item.getProductId(), item.getQuantity(), item.getProductTitle()));
-        
+                productUseCase.deductReservedStock(item.getProductId(), item.getQuantity()));
+
         // Update reservation status to CONFIRMED
         reservationRepository.updateStatusByOrderId(
                 event.getOrderId(), 
@@ -133,8 +131,8 @@ public class OrderEventService {
 
         // RELEASE reserved stock (reserved → available)
         event.getItems().forEach(item -> 
-                releaseReservedStock(item.getProductId(), item.getQuantity()));
-        
+                productUseCase.releaseReservedStock(item.getProductId(), item.getQuantity()));
+
         // Update reservation status to CANCELLED
         reservationRepository.updateStatusByOrderId(
                 event.getOrderId(), 
@@ -158,8 +156,8 @@ public class OrderEventService {
         event.getItems().forEach(item -> 
                 soldCountMap.merge(item.getProductId(), item.getQuantity(), Integer::sum));
         
-        soldCountMap.forEach(this::updateSoldCount);
-        
+        productUseCase.updateProductsSoldCount(soldCountMap);
+
         log.info("[KAFKA] ORDER_DELIVERED processed - OrderId: {}, Sold count updated for {} products", 
                 event.getOrderId(), soldCountMap.size());
     }
@@ -254,8 +252,8 @@ public class OrderEventService {
 
         // RELEASE partial reserved stock
         event.getItems().forEach(item -> 
-                releaseReservedStock(item.getProductId(), item.getQuantity()));
-        
+                productUseCase.releaseReservedStock(item.getProductId(), item.getQuantity()));
+
         // Update reservation quantities (partial)
         List<StockReservationEntity> reservations = reservationRepository.findByOrderId(event.getOrderId());
         for (StockReservationEntity reservation : reservations) {
@@ -289,39 +287,6 @@ public class OrderEventService {
         return Objects.isNull(event.getItems()) || event.getItems().isEmpty();
     }
 
-    /**
-     * Check stock availability for ALL items
-     * @return List of failed items (empty if all OK)
-     */
-    private List<OrderEvent.StockFailureItem> checkStockAvailability(OrderEvent event) {
-        List<OrderEvent.StockFailureItem> failedItems = new ArrayList<>();
-        
-        for (OrderEvent.OrderItemPayload item : event.getItems()) {
-            ProductEntity product = productRepository.findById(item.getProductId()).orElse(null);
-            
-            if (Objects.isNull(product)) {
-                failedItems.add(OrderEvent.StockFailureItem.builder()
-                        .productId(item.getProductId())
-                        .productTitle(item.getProductTitle())
-                        .requestedQuantity(item.getQuantity())
-                        .availableQuantity(0)
-                        .build());
-                continue;
-            }
-            
-            int availableQuantity = product.getStockQuantity() - product.getReservedQuantity();
-            if (availableQuantity < item.getQuantity()) {
-                failedItems.add(OrderEvent.StockFailureItem.builder()
-                        .productId(item.getProductId())
-                        .productTitle(product.getTitle())
-                        .requestedQuantity(item.getQuantity())
-                        .availableQuantity(availableQuantity)
-                        .build());
-            }
-        }
-        
-        return failedItems;
-    }
 
     private List<OrderEvent.StockFailureItem> reserveStockForOrderAtomic(OrderEvent event) {
         Instant now = Instant.now();
@@ -329,38 +294,27 @@ public class OrderEventService {
         List<OrderEvent.StockFailureItem> failedItems = new ArrayList<>();
 
         for (OrderEvent.OrderItemPayload item : event.getItems()) {
-            ProductEntity product = productRepository.findByIdWithLock(item.getProductId())
-                    .orElse(null);
-            
-            if (Objects.isNull(product)) {
+            // Idempotency guard for Kafka redelivery.
+            if (reservationRepository.findByOrderIdAndProductId(event.getOrderId(), item.getProductId()).isPresent()) {
+                log.info("[STOCK] Reservation already exists, skip duplicate: orderId={}, productId={}",
+                        event.getOrderId(), item.getProductId());
+                continue;
+            }
+
+            int availableQty = productUseCase.reserveStock(item.getProductId(), item.getQuantity());
+
+            if (availableQty < item.getQuantity()) {
                 failedItems.add(OrderEvent.StockFailureItem.builder()
                         .productId(item.getProductId())
                         .productTitle(item.getProductTitle())
                         .requestedQuantity(item.getQuantity())
-                        .availableQuantity(0)
-                        .build());
-                log.warn("[STOCK] Product not found: productId={}", item.getProductId());
-                continue;
-            }
-            
-            int availableQuantity = product.getStockQuantity() - product.getReservedQuantity();
-            
-            if (availableQuantity < item.getQuantity()) {
-                failedItems.add(OrderEvent.StockFailureItem.builder()
-                        .productId(item.getProductId())
-                        .productTitle(product.getTitle())
-                        .requestedQuantity(item.getQuantity())
-                        .availableQuantity(availableQuantity)
+                        .availableQuantity(availableQty)
                         .build());
                 log.warn("[STOCK] Reserve failed: productId={}, requested={}, available={}", 
-                        item.getProductId(), item.getQuantity(), availableQuantity);
+                        item.getProductId(), item.getQuantity(), availableQty);
                 continue;
             }
-            
-            // Reserve stock - lock prevents race condition
-            product.setReservedQuantity(product.getReservedQuantity() + item.getQuantity());
-            productRepository.save(product);
-            
+
             // Create reservation record
             StockReservationEntity reservation = StockReservationEntity.builder()
                     .orderId(event.getOrderId())
@@ -379,87 +333,6 @@ public class OrderEventService {
         return failedItems;
     }
 
-    private void releaseReservedStock(Long productId, Integer quantity) {
-        ProductEntity product = productRepository.findByIdWithLock(productId).orElse(null);
-        
-        if (Objects.isNull(product)) {
-            log.warn("[STOCK] Release failed - product not found: productId={}", productId);
-            return;
-        }
-        
-        if (product.getReservedQuantity() < quantity) {
-            log.warn("[STOCK] Release failed - insufficient reserved: productId={}, reserved={}, requested={}", 
-                    productId, product.getReservedQuantity(), quantity);
-            return;
-        }
-        
-        product.setReservedQuantity(product.getReservedQuantity() - quantity);
-        productRepository.save(product);
-        
-        log.info("[STOCK] Released: productId={}, qty={}", productId, quantity);
-    }
-
-    private void deductStock(Long productId, Integer quantity, String productTitle) {
-        ProductEntity product = productRepository.findByIdWithLock(productId).orElse(null);
-        
-        if (Objects.isNull(product)) {
-            log.error("[STOCK] Deduct failed - product not found: productId={}", productId);
-            throw new IllegalStateException("Product not found: productId=" + productId);
-        }
-        
-        if (product.getStockQuantity() < quantity || product.getReservedQuantity() < quantity) {
-            log.error("[STOCK] Deduct failed - insufficient stock or reservation: productId={}, stock={}, reserved={}, requested={}", 
-                    productId, product.getStockQuantity(), product.getReservedQuantity(), quantity);
-            throw new IllegalStateException("Insufficient stock or reservation: productId=" + productId);
-        }
-        
-        product.setStockQuantity(product.getStockQuantity() - quantity);
-        product.setReservedQuantity(product.getReservedQuantity() - quantity);
-        product.setSoldCount(product.getSoldCount() + quantity);
-        productRepository.save(product);
-        
-        log.info("[STOCK] Deducted: productId={}, qty={}, productTitle={}", productId, quantity, productTitle);
-    }
-    
-    private void restoreStock(Long productId, Integer quantity, String productTitle) {
-        productRepository.findById(productId).ifPresentOrElse(
-                product -> {
-                    product.setStockQuantity(product.getStockQuantity() + quantity);
-                    productRepository.save(product);
-                    log.info("Stock restored: productId={}, title={}, quantity={}, newStock={}",
-                            productId, productTitle, quantity, product.getStockQuantity());
-                },
-                () -> log.error("Product not found for stock restore: productId={}", productId)
-        );
-    }
-
-    private void updateSoldCount(Long productId, Integer quantity) {
-        productRepository.findById(productId).ifPresentOrElse(
-                product -> {
-                    product.setSoldCount(product.getSoldCount() + quantity);
-                    productRepository.save(product);
-                    log.info("Sold count updated: productId={}, quantity={}, newSoldCount={}",
-                            productId, quantity, product.getSoldCount());
-                },
-                () -> log.error("Product not found for sold count update: productId={}", productId)
-        );
-    }
-
-    /**
-     * Update order status directly in DB (ONE-WAY KAFKA pattern)
-     * Server và Client dùng cùng DB, nên update trực tiếp thay vì gửi Kafka event
-     */
-    private void updateOrderStatus(Long orderId, OrderStatus status) {
-        orderRepository.findById(orderId).ifPresentOrElse(
-                order -> {
-                    order.setStatus(status);
-                    orderRepository.save(order);
-                    log.info("Order status updated directly in DB: orderId={}, newStatus={}", orderId, status);
-                },
-                () -> log.error("Order not found for status update: orderId={}", orderId)
-        );
-    }
-    
     /**
      * Send notification to user when order is created successfully
      */

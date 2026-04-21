@@ -1,10 +1,8 @@
 package com.example.spring_ecom.repository.database.product;
 
-import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -102,8 +100,4 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
     }
     
     boolean existsBySlugAndDeletedAtIsNull(String slug);
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT p FROM ProductEntity p WHERE p.id = :id AND p.deletedAt IS NULL")
-    Optional<ProductEntity> findByIdWithLock(@Param("id") Long id);
 }

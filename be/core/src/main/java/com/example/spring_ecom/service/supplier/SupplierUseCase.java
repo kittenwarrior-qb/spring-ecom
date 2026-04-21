@@ -17,5 +17,7 @@ public interface SupplierUseCase {
     Optional<Supplier> update(Long id, Supplier supplier);
 
     void delete(Long id);
+
+    Long countActiveSuppliers();
 }
 

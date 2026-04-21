@@ -7,5 +7,6 @@ export const Route = createFileRoute('/admin/products/')({
     page: Number(search.page) || 0,
     size: Number(search.size) || 10,
     sort: (search.sort as string) || 'id,desc',
+    categoryId: search.categoryId ? Number(search.categoryId) : undefined,
   }),
 })

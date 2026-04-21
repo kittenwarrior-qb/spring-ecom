@@ -24,8 +24,7 @@ public class GrpcDemoController {
 
     @GetMapping("/user/{id}")
     public ResponseEntity<Map<String, Object>> getUser(@PathVariable Long id) {
-        log.info("gRPC: Getting user {} via gRPC", id);
-        
+
         return userGrpcClient.getUser(id)
                 .map(user -> {
                     log.info("gRPC: User found - ID: {}, Username: {}, Email: {}", 

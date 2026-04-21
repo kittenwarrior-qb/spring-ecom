@@ -1,6 +1,6 @@
 import apiClient from '@/lib/api-client'
 import adminApiClient from '@/lib/admin-api-client'
-import type { ApiResponse, PageResponse, OrderResponse, OrderDetailResponse, OrderStatus } from '@/types/api'
+import type { ApiResponse, PageResponse, OrderResponse, OrderDetailResponse, OrderStatus, OrderStatistics } from '@/types/api'
 
 const ORDER_BASE_URL = '/api/orders'
 const ADMIN_ORDER_URL = '/api/admin/orders'
@@ -95,11 +95,35 @@ export const orderApi = {
     return response.data.data
   },
 
-  // Admin: Get all orders (calls Server port 8081)
-  getAllOrders: async (page = 0, size = 10): Promise<PageResponse<OrderResponse>> => {
+  // Admin: Get all orders with filters (calls Server port 8081)
+  getAllOrders: async (
+    page = 0,
+    size = 10,
+    filters?: {
+      status?: string
+      paymentStatus?: string
+      search?: string
+      dateFrom?: string
+      dateTo?: string
+    }
+  ): Promise<PageResponse<OrderResponse>> => {
     const response = await adminApiClient.get<ApiResponse<PageResponse<OrderResponse>>>(ADMIN_ORDER_URL, {
-      params: { page, size }
+      params: {
+        page,
+        size,
+        ...(filters?.status && { status: filters.status }),
+        ...(filters?.paymentStatus && { paymentStatus: filters.paymentStatus }),
+        ...(filters?.search && { search: filters.search }),
+        ...(filters?.dateFrom && { dateFrom: filters.dateFrom }),
+        ...(filters?.dateTo && { dateTo: filters.dateTo }),
+      }
     })
+    return response.data.data
+  },
+
+  // Admin: Get order by ID
+  getAdminOrderById: async (id: number): Promise<OrderResponse> => {
+    const response = await adminApiClient.get<ApiResponse<OrderResponse>>(`${ADMIN_ORDER_URL}/${id}`)
     return response.data.data
   },
 
@@ -108,6 +132,44 @@ export const orderApi = {
     const response = await adminApiClient.put<ApiResponse<OrderResponse>>(`${ADMIN_ORDER_URL}/${id}/status`, {
       status
     })
+    return response.data.data
+  },
+
+  // Admin: Update payment status
+  updatePaymentStatus: async (id: number, paymentStatus: string): Promise<OrderResponse> => {
+    const response = await adminApiClient.put<ApiResponse<OrderResponse>>(
+      `${ADMIN_ORDER_URL}/${id}/payment-status`,
+      null,
+      { params: { paymentStatus } }
+    )
+    return response.data.data
+  },
+
+  // Admin: Cancel order
+  cancelAdminOrder: async (id: number, reason?: string): Promise<void> => {
+    await adminApiClient.post<ApiResponse<void>>(
+      `${ADMIN_ORDER_URL}/${id}/cancel`,
+      null,
+      { params: { ...(reason && { reason }) } }
+    )
+ },
+
+  // Admin: Get order statistics
+  getOrderStatistics: async (
+    period: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'monthly',
+    startDate?: string,
+    endDate?: string
+  ): Promise<OrderStatistics> => {
+    const response = await adminApiClient.get<ApiResponse<OrderStatistics>>(
+      `${ADMIN_ORDER_URL}/statistics`,
+      {
+        params: {
+          period,
+          ...(startDate && { startDate }),
+          ...(endDate && { endDate }),
+        }
+      }
+    )
     return response.data.data
   },
 }

@@ -17,6 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -159,5 +161,55 @@ public class OrderUseCaseService implements OrderUseCase {
                 throw new BaseException(ResponseCode.FORBIDDEN, "You can only cancel your own orders");
             }
         }
+    }
+
+    // ========== Statistics Query Wrappers ==========
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderStatisticsDao getOrderStatisticsInRange(LocalDateTime from, LocalDateTime to) {
+        return queryService.getOrderStatisticsInRange(from, to);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal getTodayRevenue(LocalDateTime from, LocalDateTime to) {
+        return queryService.getTodayRevenue(from, to);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Object[] getRevenueCostProfit(LocalDateTime from, LocalDateTime to) {
+        return queryService.getRevenueCostProfit(from, to);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal getAverageOrderValue(LocalDateTime from, LocalDateTime to) {
+        return queryService.getAverageOrderValue(from, to);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Object[]> getProfitBreakdown(LocalDateTime from, LocalDateTime to, String granularity) {
+        return queryService.getProfitBreakdown(from, to, granularity);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Object[]> getTopSellingProducts(LocalDateTime from, LocalDateTime to, int limit) {
+        return queryService.getTopSellingProducts(from, to, limit);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Object[]> getRevenueByCategoryInRange(LocalDateTime from, LocalDateTime to) {
+        return queryService.getRevenueByCategoryInRange(from, to);
+    }
+
+    @Override
+    @Transactional
+    public void updateOrderStatusDirect(Long orderId, OrderStatus status) {
+        queryService.updateOrderStatusDirect(orderId, status);
     }
 }

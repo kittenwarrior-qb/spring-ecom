@@ -111,20 +111,3 @@ export function useAddRoleToUser() {
     },
   })
 }
-
-export function useRemoveRoleFromUser() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: ({ userId, roleId }: { userId: number; roleId: number }) =>
-      roleApi.removeRoleFromUser(userId, roleId),
-    onSuccess: (_, { userId }) => {
-      queryClient.invalidateQueries({ queryKey: roleKeys.userRoles(userId) })
-      queryClient.invalidateQueries({ queryKey: ['users'] })
-      toast.success('Đã xóa vai trò thành công')
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Không thể xóa vai trò')
-    },
-  })
-}

@@ -7,6 +7,9 @@ import {
   Users,
   Shield,
   Ticket,
+  Truck,
+  ClipboardList,
+  History,
 } from 'lucide-react'
 
 export const getStaticSidebarData = () => ({
@@ -59,7 +62,28 @@ export const getStaticSidebarData = () => ({
         },
       ],
     },
+    {
+      title: 'Kho Hàng',
+      items: [
+        {
+          title: 'Nhà Cung Cấp',
+          url: '/admin/suppliers/',
+          icon: Truck,
+          permission: 'SUPPLIER_VIEW',
+        },
+        {
+          title: 'Đơn Nhập Hàng',
+          url: '/admin/purchase-orders/',
+          icon: ClipboardList,
+          permission: 'PURCHASE_ORDER_VIEW',
+        },
+        {
+          title: 'Lịch Sử Kho',
+          url: '/admin/inventory/',
+          icon: History,
+          permission: 'INVENTORY_VIEW',
+        },
+      ],
+    },
   ],
 })
-
-

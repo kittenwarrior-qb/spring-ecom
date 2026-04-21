@@ -19,7 +19,11 @@ public class ProductEntity extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
+    @Version
+    @Builder.Default
+    private Long version = 0L;
+
     @Column(name = "title", nullable = false)
     private String title;
     

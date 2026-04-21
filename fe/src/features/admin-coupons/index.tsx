@@ -3,7 +3,6 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { CouponsTable } from './components/coupons-table'
 import { CouponDialog } from './components/coupon-dialog'
 import { CouponsProvider } from './components/coupons-provider'
@@ -20,7 +19,6 @@ export function AdminCoupons() {
       <Header>
         <div className='ms-auto flex items-center space-x-4 px-4'>
           <Search />
-          <ThemeSwitch />
           <ProfileDropdown />
         </div>
       </Header>

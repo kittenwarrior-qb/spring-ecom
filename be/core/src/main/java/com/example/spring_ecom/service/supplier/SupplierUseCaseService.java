@@ -45,5 +45,11 @@ public class SupplierUseCaseService implements SupplierUseCase {
     public void delete(Long id) {
         commandService.delete(id);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Long countActiveSuppliers() {
+        return queryService.countActiveSuppliers();
+    }
 }
 

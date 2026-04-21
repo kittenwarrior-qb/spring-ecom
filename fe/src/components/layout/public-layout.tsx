@@ -28,9 +28,17 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   const [searchValue, setSearchValue] = useState('')
   useDebounce(searchValue, 1000) // Keep debounced value for future use
 
+  // Debug log
+  // eslint-disable-next-line no-console
+  console.log('[PublicLayout] user:', user, 'accessToken:', auth.accessToken ? 'present' : 'null')
+
   // Connect to MQTT for notifications
   const userId = user?.id ? Number(user.id) : null
   const token = auth.accessToken || null
+  
+  // eslint-disable-next-line no-console
+  console.log('[PublicLayout] userId:', userId, 'token:', token ? 'present' : 'null')
+  
   useNotificationMqtt(userId, token)
   useNotificationToast()
 

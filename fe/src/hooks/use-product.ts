@@ -6,7 +6,7 @@ import type { ProductRequest, ProductResponse } from '@/types/api'
 export const productKeys = {
   all: ['products'] as const,
   lists: () => [...productKeys.all, 'list'] as const,
-  list: (params: { page?: number; size?: number; sort?: string }) =>
+  list: (params: { page?: number; size?: number; sort?: string; categoryId?: number }) =>
     [...productKeys.lists(), params] as const,
   details: () => [...productKeys.all, 'detail'] as const,
   detail: (id: number) => [...productKeys.details(), id] as const,
@@ -20,10 +20,10 @@ export const productKeys = {
 }
 
 // Get all products with pagination
-export function useProducts(page = 0, size = 10, sort = 'id,desc') {
+export function useProducts(page = 0, size = 10, sort = 'id,desc', categoryId?: number) {
   return useQuery({
-    queryKey: productKeys.list({ page, size, sort }),
-    queryFn: () => productApi.getAll(page, size, sort),
+    queryKey: productKeys.list({ page, size, sort, categoryId }),
+    queryFn: () => productApi.getAll(page, size, sort, { categoryId: categoryId ?? undefined }),
   })
 }
 

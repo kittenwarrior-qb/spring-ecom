@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Slf4j
@@ -106,5 +107,39 @@ public class UserCommandService {
         if (!passwordUtil.matches(currentPassword, storedPassword)) {
             throw new BaseException(ResponseCode.INVALID_CREDENTIALS, "Current password is incorrect");
         }
+    }
+
+    // ========== Auth-related commands ==========
+
+    protected void updateLastLogin(Long userId) {
+        UserEntity entity = findUserById(userId);
+        entity.setLastLoginAt(LocalDateTime.now());
+        repository.save(entity);
+    }
+
+    protected void setEmailVerificationToken(Long userId, String token, LocalDateTime expiry) {
+        UserEntity entity = findUserById(userId);
+        entity.setEmailVerificationToken(token);
+        entity.setEmailVerificationTokenExpiry(expiry);
+        repository.save(entity);
+    }
+
+    protected void markEmailVerified(Long userId) {
+        UserEntity entity = findUserById(userId);
+        entity.setIsEmailVerified(true);
+        entity.setEmailVerificationToken(null);
+        entity.setEmailVerificationTokenExpiry(null);
+        repository.save(entity);
+    }
+
+    protected User createUserForRegistration(String username, String email, String encodedPassword) {
+        UserEntity entity = new UserEntity();
+        entity.setUsername(username);
+        entity.setEmail(email);
+        entity.setPassword(encodedPassword);
+        entity.setIsActive(true);
+        entity.setIsEmailVerified(false);
+        entity = repository.save(entity);
+        return mapper.toDomain(entity);
     }
 }

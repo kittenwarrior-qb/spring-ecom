@@ -12,7 +12,7 @@ import com.example.spring_ecom.repository.database.role.RolePermissionRepository
 import com.example.spring_ecom.repository.database.role.RoleRepository;
 import com.example.spring_ecom.repository.database.user.UserRoleEntity;
 import com.example.spring_ecom.repository.database.user.UserRoleRepository;
-import com.example.spring_ecom.repository.database.user.UserRepository;
+import com.example.spring_ecom.service.user.UserUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,7 +34,7 @@ public class RoleCommandService {
     private final RolePermissionRepository rolePermissionRepository;
     private final PermissionRepository permissionRepository;
     private final UserRoleRepository userRoleRepository;
-    private final UserRepository userRepository;
+    private final UserUseCase userUseCase;
 
     @Transactional
     public RoleDto assignPermissionsToRole(Long roleId, List<Long> permissionIds) {
@@ -98,7 +98,7 @@ public class RoleCommandService {
     @Transactional
     public void addRoleToUser(Long userId, Long roleId) {
         // Validate user exists
-        userRepository.findById(userId)
+        userUseCase.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "User not found"));
         
         // Validate role exists
@@ -136,7 +136,7 @@ public class RoleCommandService {
     @Transactional
     public void setUserRoles(Long userId, List<Long> roleIds) {
         // Validate user exists
-        userRepository.findById(userId)
+        userUseCase.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "User not found"));
         
         // Validate all roles exist and check for restricted roles

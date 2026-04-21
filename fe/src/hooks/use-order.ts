@@ -102,10 +102,25 @@ export function usePartialCancelOrder() {
 }
 
 // Admin hooks
-export function useAdminOrders(params: { page: number; size: number }, options?: { enabled?: boolean }) {
+export function useAdminOrders(
+  params: { 
+    page: number
+    size: number
+    dateFrom?: string
+    dateTo?: string
+    status?: string
+    search?: string
+  }, 
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: [...orderKeys.all, 'admin', params],
-    queryFn: () => orderApi.getAllOrders(params.page, params.size),
+    queryFn: () => orderApi.getAllOrders(params.page, params.size, {
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo,
+      status: params.status,
+      search: params.search,
+    }),
     enabled: options?.enabled ?? true,
   })
 }

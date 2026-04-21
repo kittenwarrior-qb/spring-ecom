@@ -41,5 +41,8 @@ public class SupplierQueryService {
         return supplierRepository.findByIdAndDeletedAtIsNull(id)
                 .map(mapper::toDomain);
     }
-}
 
+    public Long countActiveSuppliers() {
+        return supplierRepository.countActiveSuppliers();
+    }
+}

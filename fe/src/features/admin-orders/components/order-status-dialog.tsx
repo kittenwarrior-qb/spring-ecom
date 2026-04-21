@@ -1,3 +1,4 @@
+import React from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -26,7 +27,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { OrderStatus } from '@/types/api'
+import type { OrderStatus } from '@/types/api'
 import { useUpdateOrderStatus } from '@/hooks/use-order'
 import { useOrders } from './orders-provider'
 
@@ -121,12 +122,17 @@ export function OrderStatusDialog() {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
+                                            {currentStatus && (
+                                                <SelectItem value={currentStatus} disabled>
+                                                    {STATUS_LABELS[currentStatus]} (hiện tại)
+                                                </SelectItem>
+                                            )}
                                             {allowedNextStatuses.map((status) => (
                                                 <SelectItem key={status} value={status}>
                                                     {STATUS_LABELS[status]}
                                                 </SelectItem>
                                             ))}
-                                            {allowedNextStatuses.length === 0 && (
+                                            {allowedNextStatuses.length === 0 && !currentStatus && (
                                                 <SelectItem value='_none' disabled>
                                                     Không có trạng thái hợp lệ
                                                 </SelectItem>

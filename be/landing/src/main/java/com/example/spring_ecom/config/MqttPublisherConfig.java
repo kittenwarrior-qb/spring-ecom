@@ -46,8 +46,6 @@ public class MqttPublisherConfig {
         return factory;
     }
 
-    // ========== Outbound (Publisher) Configuration ==========
-
     @Bean
     public MqttPahoMessageHandler mqttOutbound() {
         MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(

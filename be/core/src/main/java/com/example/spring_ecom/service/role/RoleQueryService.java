@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -98,5 +99,21 @@ public class RoleQueryService {
                         rolePermissions.getOrDefault(e.getKey(), List.of())
                 ))
                 .toList();
+    }
+
+    // ========== Auth-related queries ==========
+
+    public Optional<Long> findRoleIdByName(String name) {
+        return roleRepository.findByName(name).map(r -> r.getId());
+    }
+
+    public String buildAuthoritiesString(Long userId) {
+        List<RoleDto> roles = getUserRoles(userId);
+        List<String> authorities = new ArrayList<>();
+        for (RoleDto role : roles) {
+            authorities.add("ROLE_" + role.name());
+            authorities.addAll(role.permissions());
+        }
+        return String.join(",", authorities);
     }
 }

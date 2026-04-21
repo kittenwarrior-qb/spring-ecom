@@ -33,8 +33,6 @@ public class UserGrpcService extends UserServiceGrpc.UserServiceImplBase {
     @Override
     public void getUserById(GetUserByIdRequest request, StreamObserver<GetUserByIdResponse> responseObserver) {
         try {
-            log.info("gRPC GetUserById called for userId: {}", request.getUserId());
-            
             User user = userUseCase.findByUserId(request.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
             

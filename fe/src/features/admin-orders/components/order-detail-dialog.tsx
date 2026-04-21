@@ -132,11 +132,13 @@ export function OrderDetailDialog() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="min-w-[200px]">Sản phẩm</TableHead>
-                                        <TableHead className='text-right min-w-[100px]'>Giá</TableHead>
+                                        <TableHead className='text-right min-w-[100px]'>Giá bán</TableHead>
+                                        <TableHead className='text-right min-w-[100px]'>Giá vốn</TableHead>
                                         <TableHead className='text-right min-w-[80px]'>SL đặt</TableHead>
                                         <TableHead className='text-right min-w-[80px]'>SL hủy</TableHead>
                                         <TableHead className='text-right min-w-[80px]'>SL còn lại</TableHead>
                                         <TableHead className='text-right min-w-[120px]'>Thành tiền</TableHead>
+                                        <TableHead className='text-right min-w-[100px]'>Lợi nhuận</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -164,6 +166,12 @@ export function OrderDetailDialog() {
                                             <TableCell className='text-right'>
                                                 {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
                                             </TableCell>
+                                            <TableCell className='text-right text-muted-foreground'>
+                                                {item.costPrice != null
+                                                    ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.costPrice)
+                                                    : '-'
+                                                }
+                                            </TableCell>
                                             <TableCell className='text-right'>{item.quantity}</TableCell>
                                             <TableCell className='text-right'>
                                                 {item.cancelledQuantity > 0 ? (
@@ -180,32 +188,56 @@ export function OrderDetailDialog() {
                                             <TableCell className='text-right font-medium'>
                                                 {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.subtotal)}
                                             </TableCell>
+                                            <TableCell className='text-right font-medium text-green-600'>
+                                                {item.profit != null
+                                                    ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.profit)
+                                                    : '-'
+                                                }
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                     <TableRow>
-                                        <TableCell colSpan={5} className='text-right font-medium'>Tạm tính</TableCell>
+                                        <TableCell colSpan={6} className='text-right font-medium'>Tạm tính</TableCell>
                                         <TableCell className='text-right'>
                                             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.subtotal)}
                                         </TableCell>
+                                        <TableCell className='text-right text-green-600 font-medium'>
+                                            {order.items.reduce((sum, item) => sum + (item.profit || 0), 0) > 0
+                                                ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+                                                    order.items.reduce((sum, item) => sum + (item.profit || 0), 0)
+                                                  )
+                                                : '-'
+                                            }
+                                        </TableCell>
                                     </TableRow>
                                     <TableRow>
-                                        <TableCell colSpan={5} className='text-right font-medium'>Phí vận chuyển</TableCell>
+                                        <TableCell colSpan={6} className='text-right font-medium'>Phí vận chuyển</TableCell>
                                         <TableCell className='text-right'>
                                             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.shippingFee)}
                                         </TableCell>
+                                        <TableCell></TableCell>
                                     </TableRow>
                                     {order.discount > 0 && (
                                         <TableRow>
-                                            <TableCell colSpan={5} className='text-right font-medium'>Giảm giá</TableCell>
+                                            <TableCell colSpan={6} className='text-right font-medium'>Giảm giá</TableCell>
                                             <TableCell className='text-right'>
                                                 -{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.discount)}
                                             </TableCell>
+                                            <TableCell></TableCell>
                                         </TableRow>
                                     )}
                                     <TableRow className='bg-muted/50'>
-                                        <TableCell colSpan={5} className='text-right text-lg font-bold'>Tổng cộng</TableCell>
+                                        <TableCell colSpan={6} className='text-right text-lg font-bold'>Tổng cộng</TableCell>
                                         <TableCell className='text-right text-lg font-bold text-primary'>
                                             {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.total)}
+                                        </TableCell>
+                                        <TableCell className='text-right text-lg font-bold text-green-600'>
+                                            {order.items.reduce((sum, item) => sum + (item.profit || 0), 0) > 0
+                                                ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+                                                    order.items.reduce((sum, item) => sum + (item.profit || 0), 0)
+                                                  )
+                                                : '-'
+                                            }
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>

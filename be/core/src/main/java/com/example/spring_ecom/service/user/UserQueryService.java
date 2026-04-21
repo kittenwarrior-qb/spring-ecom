@@ -29,4 +29,25 @@ public class UserQueryService {
        return repository.findByEmailContainingIgnoreCase(email, pageRequest).map(mapper::toDomain);
    }
 
+   // ========== Auth-related queries ==========
+
+   protected Optional<User> findByEmail(String email) {
+       return repository.findByEmail(email).map(mapper::toDomain);
+   }
+
+   protected boolean existsByEmail(String email) {
+       return repository.existsByEmail(email);
+   }
+
+   protected boolean existsByUsername(String username) {
+       return repository.existsByUsername(username);
+   }
+
+   protected Optional<User> findByEmailVerificationToken(String token) {
+       return repository.findByEmailVerificationToken(token).map(mapper::toDomain);
+   }
+
+   protected Optional<User> findByPasswordResetToken(String token) {
+       return repository.findByPasswordResetToken(token).map(mapper::toDomain);
+   }
 }

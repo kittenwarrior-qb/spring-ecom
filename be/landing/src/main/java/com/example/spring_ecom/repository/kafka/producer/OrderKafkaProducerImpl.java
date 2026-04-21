@@ -16,11 +16,10 @@ public class OrderKafkaProducerImpl implements OrderKafkaProducer {
 
     @Override
     public void send(OrderEvent event) {
-        log.info("Sending OrderEvent to Kafka topic [{}]: OrderId={}, Type={}", 
+        log.info("Sending OrderEvent to Kafka topic [{}]: OrderId={}, Type={}",
                  TOPIC, event.getOrderId(), event.getEventType());
-        
+
         try {
-            // Send the event to the topic defined in the interface
             kafkaTemplate.send(TOPIC, String.valueOf(event.getOrderId()), event);
             log.info("Successfully sent OrderEvent to Kafka");
         } catch (Exception e) {

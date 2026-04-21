@@ -12,15 +12,15 @@ import com.example.spring_ecom.domain.order.OrderCalculation;
 import com.example.spring_ecom.domain.order.OrderStatus;
 import com.example.spring_ecom.domain.order.PaymentStatus;
 import com.example.spring_ecom.domain.order.PaymentMethod;
+import com.example.spring_ecom.domain.product.Product;
 import com.example.spring_ecom.repository.database.order.OrderEntity;
 import com.example.spring_ecom.repository.database.order.OrderEntityMapper;
 import com.example.spring_ecom.repository.database.order.orderItem.OrderItemEntity;
 import com.example.spring_ecom.service.notification.NotificationUseCase;
 import com.example.spring_ecom.service.order.orderItem.OrderItemUseCase;
 import com.example.spring_ecom.repository.database.order.OrderRepository;
-import com.example.spring_ecom.repository.database.product.ProductEntity;
-import com.example.spring_ecom.repository.database.product.ProductRepository;
-import com.example.spring_ecom.repository.database.user.UserRepository;
+import com.example.spring_ecom.service.product.ProductUseCase;
+import com.example.spring_ecom.service.user.UserUseCase;
 import com.example.spring_ecom.service.cart.CartUseCase;
 import com.example.spring_ecom.service.inventory.InventoryUseCase;
 import lombok.RequiredArgsConstructor;
@@ -43,14 +43,14 @@ import java.util.stream.Collectors;
 public class OrderCommandService {
     
     private final OrderRepository orderRepository;
-    private final UserRepository userRepository;
+    private final UserUseCase userUseCase;
     private final OrderItemUseCase orderItemUseCase;
     private final CartUseCase cartUseCase;
     private final OrderEntityMapper mapper;
     private final CreateOrderRequestMapper requestMapper;
     private final NotificationUseCase notificationUseCase;
     private final InventoryUseCase inventoryUseCase;
-    private final ProductRepository productRepository;
+    private final ProductUseCase productUseCase;
 
     // ========== MAIN COMMAND METHODS ==========
     
@@ -193,7 +193,7 @@ public class OrderCommandService {
             throw new BaseException(ResponseCode.BAD_REQUEST, "User ID is required");
         }
         
-        userRepository.findById(userId)
+        userUseCase.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "User not found"));
     }
     
@@ -302,27 +302,27 @@ public class OrderCommandService {
         try {
             List<OrderItemEntity> items = orderItemUseCase.findByOrderId(entity.getId());
             List<Long> productIds = items.stream().map(OrderItemEntity::getProductId).toList();
-            Map<Long, ProductEntity> productMap = productRepository.findAllById(productIds).stream()
-                    .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
+            Map<Long, Product> productMap = productUseCase.findAllByIds(productIds).stream()
+                    .collect(Collectors.toMap(Product::id, Function.identity()));
 
             for (OrderItemEntity item : items) {
                 int activeQty = item.getQuantity() - item.getCancelledQuantity();
                 if (activeQty <= 0) continue;
 
-                ProductEntity product = productMap.get(item.getProductId());
+                Product product = productMap.get(item.getProductId());
                 if (product == null) continue;
 
                 // Consume cost batches FIFO and get weighted average COGS
                 BigDecimal itemCostPrice = inventoryUseCase.consumeBatchesFIFO(item.getProductId(), activeQty);
                 if (itemCostPrice.compareTo(BigDecimal.ZERO) == 0) {
                     // Fallback to product-level cost price if no batches available
-                    itemCostPrice = product.getCostPrice();
+                    itemCostPrice = product.costPrice();
                 }
 
                 // Store cost_price on the order item for profit calculation
                 item.setCostPrice(itemCostPrice);
 
-                int stockAfter = product.getStockQuantity();
+                int stockAfter = product.stockQuantity();
                 int stockBefore = stockAfter; // stock already deducted at order creation
 
                 inventoryUseCase.recordSaleOut(
@@ -343,18 +343,18 @@ public class OrderCommandService {
         try {
             List<OrderItemEntity> items = orderItemUseCase.findByOrderId(entity.getId());
             List<Long> productIds = items.stream().map(OrderItemEntity::getProductId).toList();
-            Map<Long, ProductEntity> productMap = productRepository.findAllById(productIds).stream()
-                    .collect(Collectors.toMap(ProductEntity::getId, Function.identity()));
+            Map<Long, Product> productMap = productUseCase.findAllByIds(productIds).stream()
+                    .collect(Collectors.toMap(Product::id, Function.identity()));
 
             for (OrderItemEntity item : items) {
                 int activeQty = item.getQuantity() - item.getCancelledQuantity();
                 if (activeQty <= 0) continue;
 
-                ProductEntity product = productMap.get(item.getProductId());
+                Product product = productMap.get(item.getProductId());
                 if (product == null) continue;
 
                 // Stock has already been restored by restoreStockForOrder above
-                int stockAfter = product.getStockQuantity();
+                int stockAfter = product.stockQuantity();
                 int stockBefore = stockAfter - activeQty;
 
                 inventoryUseCase.recordReturnIn(

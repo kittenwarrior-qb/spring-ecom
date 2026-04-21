@@ -4,12 +4,11 @@ import com.example.spring_ecom.domain.statistics.DashboardSummary;
 import com.example.spring_ecom.domain.statistics.RevenueByCategoryItem;
 import com.example.spring_ecom.domain.statistics.RevenueByPeriod;
 import com.example.spring_ecom.domain.statistics.TopSellingProduct;
-import com.example.spring_ecom.repository.database.inventory.ProductCostBatchRepository;
-import com.example.spring_ecom.repository.database.inventory.PurchaseOrderRepository;
-import com.example.spring_ecom.repository.database.order.OrderRepository;
 import com.example.spring_ecom.repository.database.order.dao.OrderStatisticsDao;
-import com.example.spring_ecom.repository.database.product.ProductRepository;
-import com.example.spring_ecom.repository.database.supplier.SupplierRepository;
+import com.example.spring_ecom.service.inventory.InventoryUseCase;
+import com.example.spring_ecom.service.order.OrderUseCase;
+import com.example.spring_ecom.service.product.ProductUseCase;
+import com.example.spring_ecom.service.supplier.SupplierUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,11 +25,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StatisticsQueryService {
 
-    private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
-    private final SupplierRepository supplierRepository;
-    private final PurchaseOrderRepository purchaseOrderRepository;
-    private final ProductCostBatchRepository batchRepository;
+    private final OrderUseCase orderUseCase;
+    private final ProductUseCase productUseCase;
+    private final SupplierUseCase supplierUseCase;
+    private final InventoryUseCase inventoryUseCase;
 
     // ========== Dashboard Summary ==========
 
@@ -40,13 +38,18 @@ public class StatisticsQueryService {
         LocalDateTime from = range[0].atStartOfDay();
         LocalDateTime to = range[1].atTime(LocalTime.MAX);
 
-        OrderStatisticsDao stats = orderRepository.getOrderStatisticsInRange(from, to);
+        OrderStatisticsDao stats = orderUseCase.getOrderStatisticsInRange(from, to);
 
         LocalDateTime startOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
         LocalDateTime endOfDay = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
-        BigDecimal todayRevenue = orderRepository.getTodayRevenue(startOfDay, endOfDay);
+        BigDecimal todayRevenue = orderUseCase.getTodayRevenue(startOfDay, endOfDay);
 
-        Object[] rcp = orderRepository.getRevenueCostProfit(from, to);
+        Object[] rcp = orderUseCase.getRevenueCostProfit(from, to);
+        // JPA native query có thể wrap kết quả: Object[1] chứa Object[3]
+        // Cần unwrap để lấy đúng [revenue, cost, profit]
+        if (rcp != null && rcp.length == 1 && rcp[0] instanceof Object[]) {
+            rcp = (Object[]) rcp[0];
+        }
         BigDecimal revenue = toBigDecimal(rcp, 0);
         BigDecimal cost = toBigDecimal(rcp, 1);
         BigDecimal profit = toBigDecimal(rcp, 2);
@@ -54,15 +57,15 @@ public class StatisticsQueryService {
                 ? profit.doubleValue() / revenue.doubleValue() * 100.0
                 : 0.0;
 
-        BigDecimal avgOrderValue = orderRepository.getAverageOrderValue(from, to);
+        BigDecimal avgOrderValue = orderUseCase.getAverageOrderValue(from, to);
 
-        Long totalProducts = productRepository.countActiveProducts();
-        Long lowStockProducts = productRepository.countLowStockProducts();
-        Long outOfStockProducts = productRepository.countOutOfStockProducts();
-        Long totalSuppliers = supplierRepository.countActiveSuppliers();
-        Long pendingPOs = purchaseOrderRepository.countPendingPurchaseOrders();
+        Long totalProducts = productUseCase.countActiveProducts();
+        Long lowStockProducts = productUseCase.countLowStockProducts();
+        Long outOfStockProducts = productUseCase.countOutOfStockProducts();
+        Long totalSuppliers = supplierUseCase.countActiveSuppliers();
+        Long pendingPOs = inventoryUseCase.countPendingPurchaseOrders();
 
-        BigDecimal inventoryValuation = batchRepository.getTotalInventoryValuation();
+        BigDecimal inventoryValuation = inventoryUseCase.getTotalInventoryValuation();
 
         return new DashboardSummary(
                 stats.getTotalOrders(),
@@ -94,11 +97,7 @@ public class StatisticsQueryService {
         LocalDateTime from = dateFrom.atStartOfDay();
         LocalDateTime to = dateTo.atTime(LocalTime.MAX);
 
-        List<Object[]> rows = switch (granularity != null ? granularity.toLowerCase() : "daily") {
-            case "weekly" -> orderRepository.getWeeklyProfitBreakdown(from, to);
-            case "monthly" -> orderRepository.getMonthlyProfitBreakdown(from, to);
-            default -> orderRepository.getDailyProfitBreakdown(from, to);
-        };
+        List<Object[]> rows = orderUseCase.getProfitBreakdown(from, to, granularity);
 
         return rows.stream()
                 .map(row -> new RevenueByPeriod(
@@ -126,7 +125,7 @@ public class StatisticsQueryService {
         LocalDateTime from = range[0].atStartOfDay();
         LocalDateTime to = range[1].atTime(LocalTime.MAX);
 
-        List<Object[]> rows = orderRepository.getTopSellingProducts(from, to, limit);
+        List<Object[]> rows = orderUseCase.getTopSellingProducts(from, to, limit);
         return rows.stream()
                 .map(row -> new TopSellingProduct(
                         ((Number) row[0]).longValue(),
@@ -146,7 +145,7 @@ public class StatisticsQueryService {
         LocalDateTime from = range[0].atStartOfDay();
         LocalDateTime to = range[1].atTime(LocalTime.MAX);
 
-        List<Object[]> rows = orderRepository.getRevenueByCategoryInRange(from, to);
+        List<Object[]> rows = orderUseCase.getRevenueByCategoryInRange(from, to);
         return rows.stream()
                 .map(row -> new RevenueByCategoryItem(
                         row[0] != null ? ((Number) row[0]).longValue() : null,
@@ -163,7 +162,7 @@ public class StatisticsQueryService {
 
     @Transactional(readOnly = true)
     public BigDecimal getInventoryValuation() {
-        BigDecimal val = batchRepository.getTotalInventoryValuation();
+        BigDecimal val = inventoryUseCase.getTotalInventoryValuation();
         return val != null ? val : BigDecimal.ZERO;
     }
 

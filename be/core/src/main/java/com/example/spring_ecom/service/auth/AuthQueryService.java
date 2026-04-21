@@ -2,8 +2,8 @@ package com.example.spring_ecom.service.auth;
 
 import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
-import com.example.spring_ecom.repository.database.user.UserEntity;
-import com.example.spring_ecom.repository.database.user.UserRepository;
+import com.example.spring_ecom.domain.user.User;
+import com.example.spring_ecom.service.user.UserUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,19 +13,19 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthQueryService {
     
-    private final UserRepository userRepository;
-    
+    private final UserUseCase userUseCase;
+
     protected boolean isEmailVerified(String email) {
-        UserEntity user = userRepository.findByEmail(email)
+        User user = userUseCase.findByEmail(email)
                 .orElseThrow(() -> new BaseException(ResponseCode.USER_NOT_FOUND, "User not found"));
-        return user.getIsEmailVerified();
+        return user.isEmailVerified();
     }
     
     protected boolean isValidVerificationToken(String token) {
-        return userRepository.findByEmailVerificationToken(token).isPresent();
+        return userUseCase.findByEmailVerificationToken(token).isPresent();
     }
     
     protected boolean isValidPasswordResetToken(String token) {
-        return userRepository.findByPasswordResetToken(token).isPresent();
+        return userUseCase.findByPasswordResetToken(token).isPresent();
     }
 }

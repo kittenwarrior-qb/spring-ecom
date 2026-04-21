@@ -90,6 +90,11 @@ public class ProductQueryService {
                 .map(mapper::toDomain);
     }
     
+    public Page<ProductWithCategory> findAllWithCategory(Long categoryId, Boolean isActive, Pageable pageable) {
+        return productRepository.findProductsWithCategoryInfo(null, categoryId, isActive, pageable)
+                .map(mapper::toDomain);
+    }
+    
     // ========== Response Mapping with Presigned URL ==========
     
     public ProductResponse toProductResponse(Product product) {

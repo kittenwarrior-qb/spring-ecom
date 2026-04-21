@@ -51,7 +51,7 @@ import { ImageUpload } from '@/components/image-upload'
 const productFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255, 'Title must be at most 255 characters'),
   slug: z.string().max(255, 'Slug must be at most 255 characters').optional(),
-  author: z.string().max(100, 'Author must be at most 100 characters').optional(),
+  author: z.string().min(1, 'Author is required').max(100, 'Author must be at most 100 characters'),
   publisher: z.string().max(100, 'Publisher must be at most 100 characters').optional(),
   publicationYear: z.number().int().min(1000).max(2100).optional(),
   language: z.string().max(50, 'Language must be at most 50 characters').optional(),
@@ -60,11 +60,12 @@ const productFormSchema = z.object({
   description: z.string().max(2000, 'Description must be at most 2000 characters').optional(),
   price: z.number().min(0, 'Price must be non-negative'),
   discountPrice: z.number().min(0, 'Discount price must be non-negative').optional(),
+  costPrice: z.number().min(0, 'Cost price must be non-negative').optional(),
   stockQuantity: z.number().int().min(0, 'Stock quantity must be non-negative').optional(),
   coverImageUrl: z.string().max(500).optional().or(z.literal('')),
   isBestseller: z.boolean(),
   isActive: z.boolean(),
-  categoryId: z.number().optional(),
+  categoryId: z.number({ message: 'Category is required' }).min(1, 'Category is required'),
 })
 
 type ProductFormValues = z.input<typeof productFormSchema>
@@ -104,6 +105,7 @@ function ProductFormDialog({
       description: '',
       price: 0,
       discountPrice: undefined,
+      costPrice: undefined,
       stockQuantity: 0,
       coverImageUrl: '',
       isBestseller: false,
@@ -128,6 +130,7 @@ function ProductFormDialog({
         description: '',
         price: 0,
         discountPrice: undefined,
+        costPrice: undefined,
         stockQuantity: 0,
         coverImageUrl: '',
         isBestseller: false,
@@ -156,7 +159,12 @@ function ProductFormDialog({
       onOpenChange(false)
       form.reset()
     } catch (error) {
-      handleServerError(error)
+      handleServerError(error, (errors) => {
+        // Set server validation errors on form fields
+        Object.entries(errors).forEach(([field, message]) => {
+          form.setError(field as keyof ProductFormValues, { message: String(message) })
+        })
+      })
     }
   }
 
@@ -204,7 +212,7 @@ function ProductFormDialog({
                 name='author'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Author</FormLabel>
+                    <FormLabel>Author *</FormLabel>
                     <FormControl>
                       <Input placeholder='Author name' {...field} />
                     </FormControl>
@@ -311,7 +319,7 @@ function ProductFormDialog({
                 name='categoryId'
                 render={({ field }) => (
                   <FormItem className='col-span-2'>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>Category *</FormLabel>
                     <Select 
                       onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : undefined)} 
                       value={field.value?.toString() || undefined}
@@ -337,7 +345,7 @@ function ProductFormDialog({
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Select a category for this product (optional)
+                      Select a category for this product
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -354,9 +362,10 @@ function ProductFormDialog({
                         type='number'
                         placeholder='100000'
                         {...field}
+                        value={field.value ?? ''}
                         onChange={(e) => {
                           const value = e.target.value
-                          field.onChange(value ? parseFloat(value) : 0)
+                          field.onChange(value ? parseFloat(value) : undefined)
                         }}
                       />
                     </FormControl>
@@ -388,6 +397,31 @@ function ProductFormDialog({
               />
               <FormField
                 control={form.control}
+                name='costPrice'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cost Price (VNĐ)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        placeholder='50000'
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          field.onChange(value ? parseFloat(value) : undefined)
+                        }}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Gia von san pham (chi admin thay)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name='stockQuantity'
                 render={({ field }) => (
                   <FormItem>
@@ -397,9 +431,10 @@ function ProductFormDialog({
                         type='number'
                         placeholder='100'
                         {...field}
+                        value={field.value ?? ''}
                         onChange={(e) => {
                           const value = e.target.value
-                          field.onChange(value ? parseInt(value, 10) : 0)
+                          field.onChange(value ? parseInt(value, 10) : undefined)
                         }}
                       />
                     </FormControl>

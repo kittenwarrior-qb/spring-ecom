@@ -34,14 +34,14 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
         @Param("isBestseller") Boolean isBestseller,
         Pageable pageable
     );
-    
+
     // Keep simple ones for backward compatibility if needed
     Page<ProductEntity> findByDeletedAtIsNull(Pageable pageable);
     
     // Enhanced search with category filtering
     @Query("""
         SELECT p FROM ProductEntity p 
-        LEFT JOIN CategoryEntity c ON p.categoryId = c.id
+        LEFT JOIN CategoryEntity c ON p.categoryId = c.id AND c.deletedAt IS NULL
         WHERE p.deletedAt IS NULL 
         AND (LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR 
              LOWER(p.author) LIKE LOWER(CONCAT('%', :keyword, '%')))
@@ -64,7 +64,7 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long> {
                p.viewCount, p.soldCount, p.ratingAverage, p.ratingCount,
                p.categoryId, c.name, p.createdAt, p.updatedAt, p.deletedAt)
         FROM ProductEntity p
-        LEFT JOIN CategoryEntity c ON p.categoryId = c.id
+        LEFT JOIN CategoryEntity c ON p.categoryId = c.id AND c.deletedAt IS NULL
         WHERE p.deletedAt IS NULL
         AND (:id IS NULL OR p.id = :id)
         AND (:categoryId IS NULL OR p.categoryId = :categoryId)

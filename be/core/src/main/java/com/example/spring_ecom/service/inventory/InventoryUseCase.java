@@ -5,6 +5,7 @@ import com.example.spring_ecom.domain.inventory.MovementType;
 import com.example.spring_ecom.domain.inventory.PurchaseOrder;
 import com.example.spring_ecom.domain.inventory.PurchaseOrderItem;
 import com.example.spring_ecom.domain.inventory.PurchaseOrderStatus;
+import com.example.spring_ecom.repository.database.inventory.dao.InventoryMovementWithProductDao;
 import com.example.spring_ecom.repository.database.inventory.dao.PurchaseOrderWithSupplierDao;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,6 +40,8 @@ public interface InventoryUseCase {
 
     Page<InventoryMovement> findMovements(Long productId, MovementType type, Pageable pageable);
 
+    Page<InventoryMovementWithProductDao> findMovementsWithProduct(Long productId, MovementType type, Pageable pageable);
+
     void recordSaleOut(Long productId, int quantity, BigDecimal costPrice,
                        int stockBefore, int stockAfter, Long orderId, String orderNumber);
 
@@ -55,4 +58,6 @@ public interface InventoryUseCase {
     BigDecimal getTotalInventoryValuation();
 
     BigDecimal getProductInventoryValuation(Long productId);
+
+    Long countPendingPurchaseOrders();
 }

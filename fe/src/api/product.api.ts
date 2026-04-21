@@ -6,11 +6,29 @@ const PRODUCT_BASE_URL = 'http://localhost:8081/v1/api/products'
 const ADMIN_PRODUCT_URL = 'http://localhost:8081/v1/api/admin/products'
 
 export const productApi = {
-  // Get all products with pagination
-  getAll: async (page = 0, size = 10, sort = 'id,desc'): Promise<PageResponse<ProductResponse>> => {
+  // Get all products with pagination and filters (Admin API for filtering support)
+  getAll: async (
+    page = 0,
+    size = 10,
+    sort = 'id,desc',
+    filters?: {
+      search?: string
+      categoryId?: number
+      isActive?: boolean
+    }
+  ): Promise<PageResponse<ProductResponse>> => {
     const response = await apiClient.get<ApiResponse<PageResponse<ProductResponse>>>(
-      PRODUCT_BASE_URL,
-      { params: { page, size, sort } }
+      ADMIN_PRODUCT_URL,
+      {
+        params: {
+          page,
+          size,
+          sort,
+          ...(filters?.search && { search: filters.search }),
+          ...(filters?.categoryId && { categoryId: filters.categoryId }),
+          ...(filters?.isActive !== undefined && { isActive: filters.isActive }),
+        }
+      }
     )
     return response.data.data
   },
@@ -69,5 +87,15 @@ export const productApi = {
   // Admin: Delete product (calls Landing 8080 -> gRPC -> Core)
   delete: async (id: number): Promise<void> => {
     await apiClient.delete<ApiResponse<void>>(`${ADMIN_PRODUCT_URL}/${id}`)
+  },
+
+  // Admin: Update product stock
+  updateStock: async (id: number, stockQuantity: number): Promise<ProductResponse> => {
+    const response = await apiClient.put<ApiResponse<ProductResponse>>(
+      `${ADMIN_PRODUCT_URL}/${id}/stock`,
+      null,
+      { params: { stockQuantity } }
+    )
+    return response.data.data
   },
 }

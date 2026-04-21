@@ -3,6 +3,7 @@ import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from '@tan
 import { ArrowUpDown, Edit, Trash2, MoreHorizontal, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { useProducts } from '@/hooks/use-product'
+import { useCategories } from '@/hooks/use-category'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -23,8 +24,9 @@ type ProductsTableProps = {
     page: number
     size: number
     sort: string
+    categoryId?: number
   }
-  navigate: (options: { search: { page?: number; size?: number; sort?: string } }) => void
+  navigate: (options: { search: { page?: number; size?: number; sort?: string; categoryId?: number } }) => void
 }
 
 /* react-compiler-ignore */
@@ -152,6 +154,30 @@ const columns: ColumnDef<ProductResponse>[] = [
     },
   },
   {
+    accessorKey: 'costPrice',
+    header: ({ column }) => (
+      <Button
+        variant='ghost'
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      >
+        Giá vốn
+        <ArrowUpDown className='ml-2 h-4 w-4' />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const costPrice = row.getValue('costPrice') as number | null
+      return (
+        <div className='whitespace-nowrap'>
+          {costPrice != null ? (
+            <span className='font-semibold text-blue-600'>{costPrice.toLocaleString('vi-VN')}đ</span>
+          ) : (
+            <span className='text-muted-foreground'>—</span>
+          )}
+        </div>
+      )
+    },
+  },
+  {
     accessorKey: 'stockQuantity',
     header: 'Tồn kho',
     cell: ({ row }) => {
@@ -247,7 +273,8 @@ function ProductActions({ product }: { product: ProductResponse }) {
 
 export function ProductsTable({ search, navigate }: ProductsTableProps) {
   const [rowSelection, setRowSelection] = useState({})
-  const { data, isLoading, error } = useProducts(search.page, search.size, search.sort)
+  const { data, isLoading, error } = useProducts(search.page, search.size, search.sort, search.categoryId)
+  const { data: categoriesData } = useCategories()
 
   const products = data?.content ?? []
   const totalPages = data?.totalPages ?? 0
@@ -277,6 +304,37 @@ export function ProductsTable({ search, navigate }: ProductsTableProps) {
 
   return (
     <div className='space-y-4'>
+      {/* Category Filter */}
+      <div className='flex items-center gap-4'>
+        <div className='flex items-center gap-2'>
+          <span className='text-sm font-medium'>Lọc theo danh mục:</span>
+          <Select
+            value={search.categoryId?.toString() || 'all'}
+            onValueChange={(value) => {
+              navigate({
+                search: {
+                  ...search,
+                  page: 0,
+                  categoryId: value === 'all' ? undefined : Number(value),
+                },
+              })
+            }}
+          >
+            <SelectTrigger className='w-[200px]'>
+              <SelectValue placeholder='Tất cả danh mục' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='all'>Tất cả danh mục</SelectItem>
+              {categoriesData?.map((category) => (
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className='rounded-md border'>
         <Table>
           <TableHeader>

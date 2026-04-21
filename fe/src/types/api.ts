@@ -118,6 +118,7 @@ export interface ProductRequest {
   description?: string
   price: number
   discountPrice?: number
+  costPrice?: number
   stockQuantity?: number
   coverImageUrl?: string
   isBestseller?: boolean
@@ -138,6 +139,7 @@ export interface ProductResponse {
   description: string | null
   price: number
   discountPrice: number | null
+  costPrice: number | null  // Gia von - admin only
   stockQuantity: number
   coverImageUrl: string | null
   isBestseller: boolean
@@ -311,7 +313,9 @@ export interface OrderItemResponse {
   quantity: number
   cancelledQuantity: number
   price: number
+  costPrice: number | null  // Gia von - admin only
   subtotal: number
+  profit: number | null  // Loi nhuan - admin only
   status: string
   createdAt: string
   cancelledAt: string | null
@@ -319,6 +323,14 @@ export interface OrderItemResponse {
 
 export interface OrderDetailResponse extends OrderResponse {
   items: OrderItemResponse[]
+}
+
+// Order Statistics
+export interface OrderStatistics {
+  totalOrders: number
+  totalRevenue: number
+  ordersByStatus: Record<string, number>
+  revenueByPeriod: Record<string, number>
 }
 
 // Role & Permission types
@@ -410,4 +422,157 @@ export interface FileItem {
 export interface FileListResponse {
   files: FileItem[]
   count: number
+}
+
+// Supplier types
+export interface SupplierResponse {
+  id: number
+  name: string
+  contactName: string | null
+  email: string | null
+  phone: string | null
+  address: string | null
+  note: string | null
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SupplierRequest {
+  name: string
+  contactName?: string
+  email?: string
+  phone?: string
+  address?: string
+  note?: string
+  isActive?: boolean
+}
+
+// Purchase Order types
+export type PurchaseOrderStatus = 'DRAFT' | 'CONFIRMED' | 'RECEIVED' | 'PARTIALLY_RECEIVED' | 'CANCELLED'
+
+export interface PurchaseOrderItemResponse {
+  id: number
+  productId: number
+  productTitle: string | null
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+}
+
+export interface PurchaseOrderResponse {
+  id: number
+  poNumber: string
+  supplierId: number
+  supplierName: string | null
+  status: PurchaseOrderStatus
+  totalAmount: number
+  note: string | null
+  expectedDate: string | null
+  receivedDate: string | null
+  createdBy: number | null
+  createdAt: string
+  updatedAt: string
+  items: PurchaseOrderItemResponse[]
+}
+
+export interface CreatePurchaseOrderRequest {
+  supplierId: number
+  note?: string
+  expectedDate?: string
+  items: PurchaseOrderItemRequest[]
+}
+
+export interface PurchaseOrderItemRequest {
+  productId: number
+  quantity: number
+  unitPrice: number
+}
+
+// Inventory Transaction types
+export type MovementType = 'IMPORT' | 'EXPORT' | 'SALE_OUT' | 'RETURN' | 'ADJUSTMENT' | 'RESERVATION' | 'RESERVATION_RELEASE'
+
+export interface InventoryTransactionResponse {
+  id: number
+  productId: number
+  productName: string | null
+  productImage: string | null
+  movementType: MovementType
+  quantity: number
+  costPrice: number | null
+  stockBefore: number | null
+  stockAfter: number | null
+  referenceType: string | null
+  referenceId: number | null
+  note: string | null
+  createdBy: number | null
+  createdAt: string
+}
+
+// Statistics types
+export interface DashboardSummary {
+  totalOrders: number
+  totalRevenue: number
+  totalCost: number
+  totalProfit: number
+  profitMargin: number
+  todayRevenue: number
+  averageOrderValue: number
+  pendingOrders: number
+  confirmedOrders: number
+  shippedOrders: number
+  deliveredOrders: number
+  cancelledOrders: number
+  partiallyCancelledOrders: number
+  totalProducts: number
+  lowStockProducts: number
+  outOfStockProducts: number
+  totalSuppliers: number
+  pendingPurchaseOrders: number
+  inventoryValuation: number
+}
+
+export interface TopProduct {
+  productId: number
+  productTitle: string
+  quantitySold: number
+  revenue: number
+  profit: number
+}
+
+export interface RevenueByCategory {
+  categoryId: number
+  categoryName: string
+  revenue: number
+  percentage: number
+}
+
+export interface PeriodStatistics {
+  date: string
+  revenue: number
+  cogs: number
+  profit: number
+  orderCount: number
+}
+
+export interface InventoryValuation {
+  totalValue: number
+  productCount: number
+  lowStockCount: number
+}
+
+// Notification types
+export interface NotificationResponse {
+  id: number
+  userId: number | null  // null for broadcast notifications
+  type: string
+  title: string
+  message: string
+  referenceId: number | null
+  referenceType: string | null
+  imageUrl: string | null
+  actionUrl: string | null
+  isRead: boolean
+  isBroadcast: boolean  // true if this is a broadcast notification
+  createdAt: string
 }

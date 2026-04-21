@@ -43,10 +43,6 @@ export const roleApi = {
     await adminApiClient.post<ApiResponse<void>>(`/api/admin/users/${userId}/roles/${roleId}`)
   },
 
-  removeRoleFromUser: async (userId: number, roleId: number) => {
-    await adminApiClient.delete<ApiResponse<void>>(`/api/admin/users/${userId}/roles/${roleId}`)
-  },
-
   setUserRoles: async (userId: number, roleIds: number[]) => {
     await adminApiClient.put<ApiResponse<void>>(`/api/admin/users/${userId}/roles`, { roleIds })
   },

@@ -50,7 +50,7 @@ dependencies {
 	implementation 'com.bucket4j:bucket4j-core:8.7.0'
 	implementation 'com.bucket4j:bucket4j-redis:8.7.0'
 
-	// gRPC dependencies - Landingpage needs both (client for calling Core, server for receiving notifications)
+	// gRPC dependencies
 	implementation 'net.devh:grpc-server-spring-boot-starter:3.1.0.RELEASE'
 	implementation 'net.devh:grpc-client-spring-boot-starter:3.1.0.RELEASE'
 	implementation project(':grpc-proto')

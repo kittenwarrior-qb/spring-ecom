@@ -1,4 +1,4 @@
-package com.example.spring_ecom.repository.database.inventory;
+package com.example.spring_ecom.repository.database.purchaseOrder;
 
 import jakarta.persistence.*;
 import lombok.*;

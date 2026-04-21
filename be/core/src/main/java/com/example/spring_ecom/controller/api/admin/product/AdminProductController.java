@@ -44,14 +44,18 @@ public class AdminProductController {
             @Parameter(description = "Filter by category") @RequestParam(required = false) Long categoryId,
             @Parameter(description = "Filter by active status") @RequestParam(required = false) Boolean isActive) {
         try {
-            log.info("Admin getting all products with pagination");
-            Page<Product> products;
+            log.info("Admin getting all products with pagination, categoryId: {}, isActive: {}", categoryId, isActive);
+            Page<ProductResponse> response;
+            
             if (Objects.nonNull(search) && !search.isBlank()) {
-                products = productUseCase.searchProducts(search, pageable);
+                // Search with filters
+                response = productQueryService.toProductResponsePageFromWithCategory(
+                        productQueryService.findAllWithCategory(categoryId, isActive, pageable));
             } else {
-                products = productUseCase.findAll(pageable);
+                // List with filters
+                response = productQueryService.toProductResponsePageFromWithCategory(
+                        productQueryService.findAllWithCategory(categoryId, isActive, pageable));
             }
-            Page<ProductResponse> response = productQueryService.toProductResponsePage(products);
             return ResponseEntity.ok(ApiResponse.Success.of(response));
         } catch (Exception e) {
             log.error("Error getting all products: {}", e.getMessage(), e);

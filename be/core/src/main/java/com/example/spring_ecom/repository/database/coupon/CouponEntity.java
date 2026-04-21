@@ -19,7 +19,11 @@ public class CouponEntity extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
+    @Version
+    @Builder.Default
+    private Long version = 0L;
+
     @Column(name = "code", nullable = false, unique = true, length = 50)
     private String code;
     

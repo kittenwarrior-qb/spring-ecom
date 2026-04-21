@@ -6,7 +6,11 @@ import com.example.spring_ecom.domain.inventory.PurchaseOrder;
 import com.example.spring_ecom.domain.inventory.PurchaseOrderItem;
 import com.example.spring_ecom.domain.inventory.PurchaseOrderStatus;
 import com.example.spring_ecom.repository.database.inventory.*;
+import com.example.spring_ecom.repository.database.inventory.dao.InventoryMovementWithProductDao;
 import com.example.spring_ecom.repository.database.inventory.dao.PurchaseOrderWithSupplierDao;
+import com.example.spring_ecom.repository.database.purchaseOrder.PurchaseOrderItemRepository;
+import com.example.spring_ecom.repository.database.purchaseOrder.PurchaseOrderRepository;
+import com.example.spring_ecom.service.file.FileUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,6 +32,7 @@ public class InventoryQueryService {
     private final InventoryMovementRepository inventoryMovementRepository;
     private final ProductCostBatchRepository batchRepository;
     private final InventoryEntityMapper mapper;
+    private final FileUseCase fileUseCase;
 
     // ========== Purchase Order Queries ==========
 
@@ -55,6 +60,51 @@ public class InventoryQueryService {
                 .map(mapper::toDomain);
     }
 
+    public Page<InventoryMovementWithProductDao> findMovementsWithProduct(Long productId, MovementType type, Pageable pageable) {
+        return inventoryMovementRepository.findWithProduct(productId, type, pageable)
+                .map(this::convertProductImageToPresigned);
+    }
+
+    private InventoryMovementWithProductDao convertProductImageToPresigned(InventoryMovementWithProductDao dao) {
+        if (dao.productImage() == null || dao.productImage().isBlank()) {
+            return dao;
+        }
+
+        String freshPresignedUrl = toFreshPresignedUrl(dao.productImage());
+        return new InventoryMovementWithProductDao(
+                dao.id(),
+                dao.productId(),
+                dao.productName(),
+                freshPresignedUrl,
+                dao.movementType(),
+                dao.quantity(),
+                dao.costPrice(),
+                dao.stockBefore(),
+                dao.stockAfter(),
+                dao.referenceType(),
+                dao.referenceId(),
+                dao.note(),
+                dao.createdBy(),
+                dao.createdAt()
+        );
+    }
+
+    private String toFreshPresignedUrl(String imageUrl) {
+        String filename = imageUrl;
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+            String path = imageUrl.split("\\?")[0];
+            String[] parts = path.split("/");
+            filename = parts[parts.length - 1];
+        }
+
+        try {
+            return fileUseCase.getPresignedUrl(filename);
+        } catch (Exception e) {
+            log.warn("[INVENTORY-QUERY] Failed to generate presigned URL for {}: {}", filename, e.getMessage());
+            return imageUrl;
+        }
+    }
+
     // ========== Inventory Valuation Queries ==========
 
     /**
@@ -69,5 +119,9 @@ public class InventoryQueryService {
      */
     public BigDecimal getProductInventoryValuation(Long productId) {
         return batchRepository.getProductInventoryValuation(productId);
+    }
+
+    public Long countPendingPurchaseOrders() {
+        return purchaseOrderRepository.countPendingPurchaseOrders();
     }
 }

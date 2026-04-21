@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -58,5 +59,15 @@ public class RoleUseCaseService implements RoleUseCase {
     @Override
     public void setUserRoles(Long userId, List<Long> roleIds) {
         roleCommandService.setUserRoles(userId, roleIds);
+    }
+
+    @Override
+    public Optional<Long> findRoleIdByName(String name) {
+        return roleQueryService.findRoleIdByName(name);
+    }
+
+    @Override
+    public String buildAuthoritiesString(Long userId) {
+        return roleQueryService.buildAuthoritiesString(userId);
     }
 }

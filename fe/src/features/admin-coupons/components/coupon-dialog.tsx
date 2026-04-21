@@ -40,6 +40,8 @@ import { Calendar } from '@/components/ui/calendar'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { useCreateCoupon, useUpdateCoupon } from '@/hooks/use-coupon'
+import { useUserSearch } from '@/hooks/use-user-search'
+import { UserSearchSelect, type User } from '@/components/user-search-select'
 import { useCouponsContext } from './coupons-provider'
 import type { CouponRequest } from '@/types/api'
 import { toast } from 'sonner'
@@ -112,6 +114,10 @@ export function CouponDialog({ mode }: CouponDialogProps) {
       targetUserIds: [],
     },
   })
+
+  // State to hold selected users for the search component
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([])
+  const { searchUsers } = useUserSearch()
 
   // Populate form when editing
   useEffect(() => {
@@ -296,7 +302,7 @@ export function CouponDialog({ mode }: CouponDialogProps) {
                         value={field.value ?? ''}
                         onChange={(e) => {
                           const value = e.target.value
-                          field.onChange(value ? Number(value) : 0)
+                          field.onChange(value ? Number(value) : undefined)
                         }}
                       />
                     </FormControl>
@@ -322,7 +328,7 @@ export function CouponDialog({ mode }: CouponDialogProps) {
                         value={field.value ?? ''}
                         onChange={(e) => {
                           const value = e.target.value
-                          field.onChange(value ? Number(value) : 0)
+                          field.onChange(value ? Number(value) : undefined)
                         }}
                       />
                     </FormControl>
@@ -515,23 +521,19 @@ export function CouponDialog({ mode }: CouponDialogProps) {
                   <FormItem>
                     <FormLabel>Người dùng nhận thông báo</FormLabel>
                     <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="Nhập ID người dùng, cách nhau bằng dấu phẩy (vd: 1, 2, 3)"
-                        value={field.value.join(', ')}
-                        onChange={(e) => {
-                          const value = e.target.value
-                          const ids = value
-                            .split(',')
-                            .map((s) => Number(s.trim()))
-                            .filter((n) => !isNaN(n) && n > 0)
-                          field.onChange(ids)
+                      <UserSearchSelect
+                        selectedUsers={selectedUsers}
+                        onChange={(users) => {
+                          setSelectedUsers(users)
+                          field.onChange(users.map((u) => u.id))
                         }}
+                        searchUsers={searchUsers}
+                        placeholder="Tìm kiếm theo email..."
                         disabled={form.watch('notificationType') !== 'TARGETED'}
                       />
                     </FormControl>
                     <FormDescription>
-                      Nhập ID của người dùng sẽ nhận thông báo coupon
+                      Tìm kiếm và chọn người dùng sẽ nhận thông báo coupon
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

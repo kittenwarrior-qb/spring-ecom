@@ -22,7 +22,6 @@ public class UserGrpcClient {
     
     public Optional<UserProto.User> getUser(Long userId) {
         try {
-            log.info("Calling gRPC GetUserById for userId: {}", userId);
             GetUserByIdRequest request = GetUserByIdRequest.newBuilder().setUserId(userId).build();
             GetUserByIdResponse response = userServiceStub.getUserById(request);
             return response.getSuccess() ? Optional.of(response.getUser()) : Optional.empty();

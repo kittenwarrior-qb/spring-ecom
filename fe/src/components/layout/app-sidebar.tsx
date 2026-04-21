@@ -43,20 +43,9 @@ export function AppSidebar() {
 
   // Use profile data if available, otherwise fall back to auth store user
   const user = userProfile || currentUser
-  
-  // Get user permissions for filtering sidebar items
-  const userPermissions = user?.permissions ?? []
-  
-  // Filter sidebar items based on user permissions
-  const filteredNavGroups = sidebarData.navGroups.map(group => ({
-    ...group,
-    items: group.items.filter((item: { title: string; url: string; icon: React.ComponentType<{ className?: string }>; permission?: string }) => {
-      // If item has no permission requirement, show it
-      if (!item.permission) return true
-      // If item has permission requirement, check if user has it
-      return userPermissions.includes(item.permission)
-    })
-  })).filter(group => group.items.length > 0)
+
+  // Show all nav groups without filtering - permission check is done in each page
+  const navGroups = sidebarData.navGroups
   
 
   // Show loading state if profile is being fetched and no current user
@@ -79,7 +68,7 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
-          {filteredNavGroups.map((props) => (
+          {navGroups.map((props) => (
             <NavGroup key={props.title} {...props} />
           ))}
         </SidebarContent>
@@ -111,7 +100,7 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {filteredNavGroups.map((props) => (
+        {navGroups.map((props) => (
           <NavGroup key={props.title} {...props} />
         ))}
       </SidebarContent>

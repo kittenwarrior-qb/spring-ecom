@@ -25,26 +25,15 @@ public class RedisConfig {
             RedisTemplate<String, Object> template = new RedisTemplate<>();
             template.setConnectionFactory(connectionFactory);
             
-            // Use String serializer for both keys and values for simplicity
+            // Dùng String serializer cho key-value
             template.setKeySerializer(new StringRedisSerializer());
             template.setHashKeySerializer(new StringRedisSerializer());
             template.setValueSerializer(new StringRedisSerializer());
             template.setHashValueSerializer(new StringRedisSerializer());
             
             template.afterPropertiesSet();
-            
-            // Log Redis connection info
-            logger.info("----------------------------------------------------------------------");
-            logger.info("Redis connection established and running on port: {}", redisPort);
-            logger.info("Redis configuration loaded successfully");
-            logger.info("----------------------------------------------------------------------");
-            
             return template;
         } catch (Exception e) {
-            logger.error("----------------------------------------------------------------------");
-            logger.error("Failed to establish Redis connection on port: {}", redisPort);
-            logger.error("Redis connection error: {}", e.getMessage());
-            logger.error("----------------------------------------------------------------------");
             throw new RuntimeException("Redis configuration failed", e);
         }
     }

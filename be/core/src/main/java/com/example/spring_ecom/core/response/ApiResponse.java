@@ -84,5 +84,12 @@ public class ApiResponse<T> {
                     .data(null)
                     .build();
         }
+        public static <T> ApiResponse<T> of(ResponseCode responseCode, String customMessage, T data) {
+            return ApiResponse.<T>builder()
+                    .code(responseCode.getCode())
+                    .message(customMessage)
+                    .data(data)
+                    .build();
+        }
     }
 }

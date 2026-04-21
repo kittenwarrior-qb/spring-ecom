@@ -4,13 +4,13 @@ import com.example.spring_ecom.core.exception.BaseException;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.core.util.SlugUtil;
 import com.example.spring_ecom.domain.cart.CartItem;
+import com.example.spring_ecom.domain.category.Category;
 import com.example.spring_ecom.domain.product.Product;
 import com.example.spring_ecom.domain.product.ProductFormat;
-import com.example.spring_ecom.repository.database.category.CategoryEntity;
-import com.example.spring_ecom.repository.database.category.CategoryRepository;
 import com.example.spring_ecom.repository.database.product.ProductEntity;
 import com.example.spring_ecom.repository.database.product.ProductEntityMapper;
 import com.example.spring_ecom.repository.database.product.ProductRepository;
+import com.example.spring_ecom.service.category.CategoryUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,7 +25,7 @@ import java.util.Optional;
 public class ProductCommandService {
     
     private final ProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
+    private final CategoryUseCase categoryUseCase;
     private final ProductEntityMapper mapper;
     
     // ========================== MAIN METHODS ================================
@@ -71,7 +71,7 @@ public class ProductCommandService {
                 .toList();
 
         for (CartItem cartItem : sortedItems) {
-            ProductEntity product = productRepository.findByIdWithLock(cartItem.productId())
+            ProductEntity product = productRepository.findById(cartItem.productId())
                     .orElse(null);
 
             if (Objects.isNull(product)) {
@@ -96,7 +96,7 @@ public class ProductCommandService {
             throw new BaseException(ResponseCode.BAD_REQUEST, errorMessage);
         }
 
-        log.info("Stock validation passed for {} cart items (with lock)", cartItems.size());
+        log.info("Stock validation passed for {} cart items", cartItems.size());
     }
 
 
@@ -119,11 +119,10 @@ public class ProductCommandService {
     private void validateCategory(Long categoryId) {
         if (Objects.isNull(categoryId)) return;
         
-        CategoryEntity category = categoryRepository.findById(categoryId)
-                .filter(c -> Objects.isNull(c.getDeletedAt()))
+        Category category = categoryUseCase.findById(categoryId)
                 .orElseThrow(() -> new BaseException(ResponseCode.BAD_REQUEST, "Category not found"));
         
-        if (!category.getIsActive()) {
+        if (!category.isActive()) {
             throw new BaseException(ResponseCode.BAD_REQUEST, "Category is not active");
         }
     }

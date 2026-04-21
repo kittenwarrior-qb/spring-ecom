@@ -12,22 +12,12 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserEvent {
-
-    private String eventId;
-    private String eventType;   // REGISTERED | UPDATED | DELETED
-    private Instant timestamp;
-    private String source;      // "server"
-
-    // User payload
-    private Long userId;
-    private String username;
-    private String email;
-    private String firstName;
-    private String lastName;
-    private Boolean isActive;
-
-    // Event type constants
+    // Event constants
     public static final String REGISTERED = "USER_REGISTERED";
-    public static final String UPDATED    = "USER_UPDATED";
-    public static final String DELETED    = "USER_DELETED";
+    
+    private String eventId;
+    private Long userId;
+    private String email;
+    private String eventType;
+    private Instant timestamp;
 }

@@ -53,7 +53,12 @@ const queryClient = new QueryClient({
     onError: (error) => {
       if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
-          toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+          // Skip redirect if already on auth pages to avoid loop
+          const currentPath = router.history.location.pathname
+          if (currentPath === '/sign-in' || currentPath === '/sign-up' || currentPath === '/forgot-password') {
+            return
+          }
+          toast.error('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.')
           useAuthStore.getState().auth.reset()
           const redirect = `${router.history.location.href}`
           router.navigate({ to: '/sign-in', search: { redirect } })

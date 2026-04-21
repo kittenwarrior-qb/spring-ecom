@@ -5,6 +5,7 @@ import com.example.spring_ecom.core.response.ApiResponse;
 import com.example.spring_ecom.core.response.ResponseCode;
 import com.example.spring_ecom.core.util.SecurityUtil;
 import com.example.spring_ecom.domain.inventory.*;
+import com.example.spring_ecom.repository.database.inventory.dao.InventoryMovementWithProductDao;
 import com.example.spring_ecom.repository.database.inventory.dao.PurchaseOrderWithSupplierDao;
 import com.example.spring_ecom.service.inventory.InventoryUseCase;
 import lombok.RequiredArgsConstructor;
@@ -143,7 +144,7 @@ public class AdminInventoryController implements AdminInventoryAPI {
     public ResponseEntity<ApiResponse<Page<InventoryMovementResponse>>> getMovements(
             Pageable pageable, Long productId, MovementType movementType) {
         log.info("Admin getting inventory movements, productId={}, type={}", productId, movementType);
-        Page<InventoryMovementResponse> response = inventoryUseCase.findMovements(productId, movementType, pageable)
+        Page<InventoryMovementResponse> response = inventoryUseCase.findMovementsWithProduct(productId, movementType, pageable)
                 .map(responseMapper::toResponse);
         return ResponseEntity.ok(ApiResponse.Success.of(response));
     }

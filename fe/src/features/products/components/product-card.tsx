@@ -164,6 +164,13 @@ export function ProductCard({
             {product.author || 'Không rõ'}
           </p>
 
+          {/* Category */}
+          {product.categoryName && (
+            <p className="text-xs text-primary/70 mb-1">
+              {product.categoryName}
+            </p>
+          )}
+
           {/* Price */}
           {showPrice && (
             <div className="flex items-center gap-2 mt-3">

@@ -6,8 +6,7 @@ import com.example.spring_ecom.domain.cart.Cart;
 import com.example.spring_ecom.repository.database.cart.CartEntity;
 import com.example.spring_ecom.repository.database.cart.CartEntityMapper;
 import com.example.spring_ecom.repository.database.cart.CartRepository;
-import com.example.spring_ecom.repository.database.user.UserEntity;
-import com.example.spring_ecom.repository.database.user.UserRepository;
+import com.example.spring_ecom.service.user.UserUseCase;
 import com.example.spring_ecom.service.cart.cartItem.CartItemUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +18,7 @@ import org.springframework.stereotype.Service;
 public class CartCommandService {
     
     private final CartRepository cartRepository;
-    private final UserRepository userRepository;
+    private final UserUseCase userUseCase;
     private final CartEntityMapper cartMapper;
     private final CartItemUseCase cartItemUseCase;
     
@@ -54,7 +53,7 @@ public class CartCommandService {
     }
     
     private void validateUser(Long userId) {
-        userRepository.findById(userId)
+        userUseCase.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(ResponseCode.NOT_FOUND, "User not found"));
     }
 }

@@ -1,63 +1,21 @@
-import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { 
   TrendingUp, 
-  TrendingDown, 
   Package, 
   DollarSign, 
-  Clock, 
-  CheckCircle,
-  Users,
   ShoppingCart
 } from 'lucide-react'
-import type { OrderResponse } from '@/types/api'
+import type { DashboardSummary } from '@/types/api'
 
 type AnalyticsCardsProps = {
-  orders: OrderResponse[]
-  previousOrders?: OrderResponse[]
+  dashboard?: DashboardSummary
+  isLoading?: boolean
 }
 
-export function AnalyticsCards({ orders, previousOrders = [] }: AnalyticsCardsProps) {
-  const analytics = useMemo(() => {
-    const totalOrders = orders.length
-    const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0)
-    const pendingOrders = orders.filter(order => order.status === 'PENDING').length
-    const completedOrders = orders.filter(order => order.status === 'DELIVERED').length
-    const cancelledOrders = orders.filter(order => order.status === 'CANCELLED').length
-    const uniqueCustomers = new Set(orders.map(order => order.userId)).size
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
-
-    // Previous period comparison
-    const prevTotalOrders = previousOrders.length
-    const prevTotalRevenue = previousOrders.reduce((sum, order) => sum + (order.total || 0), 0)
-    const prevUniqueCustomers = new Set(previousOrders.map(order => order.userId)).size
-
-    const orderGrowth = prevTotalOrders > 0 
-      ? ((totalOrders - prevTotalOrders) / prevTotalOrders) * 100 
-      : 0
-    const revenueGrowth = prevTotalRevenue > 0 
-      ? ((totalRevenue - prevTotalRevenue) / prevTotalRevenue) * 100 
-      : 0
-    const customerGrowth = prevUniqueCustomers > 0 
-      ? ((uniqueCustomers - prevUniqueCustomers) / prevUniqueCustomers) * 100 
-      : 0
-
-    return {
-      totalOrders,
-      totalRevenue,
-      pendingOrders,
-      completedOrders,
-      cancelledOrders,
-      uniqueCustomers,
-      averageOrderValue,
-      orderGrowth,
-      revenueGrowth,
-      customerGrowth,
-    }
-  }, [orders, previousOrders])
-
-  const formatCurrency = (value: number) => {
+export function AnalyticsCards({ dashboard, isLoading }: AnalyticsCardsProps) {
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined || value === null) return '-'
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
@@ -65,91 +23,68 @@ export function AnalyticsCards({ orders, previousOrders = [] }: AnalyticsCardsPr
     }).format(value)
   }
 
-  const formatGrowth = (growth: number) => {
-    const isPositive = growth >= 0
-    const Icon = isPositive ? TrendingUp : TrendingDown
-    const color = isPositive ? 'text-green-600' : 'text-red-600'
-    
+  if (isLoading) {
     return (
-      <div className={`flex items-center gap-1 text-xs ${color}`}>
-        <Icon className="h-3 w-3" />
-        {Math.abs(growth).toFixed(1)}%
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-32 mb-1" />
+              <Skeleton className="h-3 w-20" />
+            </CardContent>
+          </Card>
+        ))}
       </div>
     )
   }
 
+  if (!dashboard) {
+    return null
+  }
+
   const cards = [
     {
-      title: 'Tổng Đơn Hàng',
-      value: analytics.totalOrders.toLocaleString(),
+      title: 'Đơn Hoàn Thành',
+      value: dashboard.deliveredOrders?.toLocaleString() || '0',
       icon: Package,
-      growth: analytics.orderGrowth,
-      description: 'Tổng số đơn hàng'
+      description: `Tổng ${dashboard.totalOrders} đơn trong kỳ`
     },
     {
-      title: 'Doanh Thu',
-      value: formatCurrency(analytics.totalRevenue),
+      title: 'Tổng Doanh Thu',
+      value: formatCurrency(dashboard.totalRevenue),
       icon: DollarSign,
-      growth: analytics.revenueGrowth,
-      description: 'Tổng doanh thu'
+      description: 'Doanh thu đơn hoàn thành'
     },
     {
-      title: 'Khách Hàng',
-      value: analytics.uniqueCustomers.toLocaleString(),
-      icon: Users,
-      growth: analytics.customerGrowth,
-      description: 'Khách hàng duy nhất'
+      title: 'Lợi Nhuận',
+      value: formatCurrency(dashboard.totalProfit),
+      icon: TrendingUp,
+      description: `Biên: ${(dashboard.profitMargin ?? 0).toFixed(1)}%`,
+      highlight: true
     },
     {
-      title: 'Giá Trị TB',
-      value: formatCurrency(analytics.averageOrderValue),
+      title: 'Giá Trị Đơn TB',
+      value: formatCurrency(dashboard.averageOrderValue),
       icon: ShoppingCart,
-      growth: 0, // Could calculate if needed
-      description: 'Giá trị đơn hàng trung bình'
-    },
-    {
-      title: 'Chờ Xử Lý',
-      value: analytics.pendingOrders.toLocaleString(),
-      icon: Clock,
-      description: 'Đơn hàng chờ xử lý',
-      badge: analytics.pendingOrders > 0 ? 'warning' : 'default'
-    },
-    {
-      title: 'Đã Giao',
-      value: analytics.completedOrders.toLocaleString(),
-      icon: CheckCircle,
-      description: 'Đơn hàng đã giao thành công',
-      badge: 'success'
+      description: 'Trung bình đơn hoàn thành'
     }
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {cards.map((card, index) => (
-        <Card key={index}>
+        <Card key={index} className={card.highlight ? 'border-green-200 bg-green-50/50' : ''}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-            <card.icon className="h-4 w-4 text-muted-foreground" />
+            <card.icon className={`h-4 w-4 ${card.highlight ? 'text-green-600' : 'text-muted-foreground'}`} />
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">{card.value}</div>
-              {card.growth !== undefined && card.growth !== 0 && (
-                <div>{formatGrowth(card.growth)}</div>
-              )}
-              {card.badge && (
-                <Badge 
-                  variant={
-                    card.badge === 'success' ? 'default' : 
-                    card.badge === 'success' ? 'destructive' : 
-                    'secondary'
-                  }
-                >
-                  {card.badge === 'success' ? 'Đã xử lý' : 
-                   card.badge === 'success' ? 'Cần xử lý' : 
-                   'Cần xử lý'}
-                </Badge>
-              )}
+            <div className={`text-2xl font-bold ${card.highlight ? 'text-green-700' : ''}`}>
+              {card.value}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {card.description}

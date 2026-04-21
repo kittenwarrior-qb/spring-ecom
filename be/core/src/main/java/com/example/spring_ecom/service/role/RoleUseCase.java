@@ -4,6 +4,7 @@ import com.example.spring_ecom.domain.role.PermissionDto;
 import com.example.spring_ecom.domain.role.RoleDto;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RoleUseCase {
 
@@ -25,4 +26,16 @@ public interface RoleUseCase {
     void removeRoleFromUser(Long userId, Long roleId);
     
     void setUserRoles(Long userId, List<Long> roleIds);
+
+    // ========== Auth-related ==========
+
+    /**
+     * Find role ID by name (e.g., "USER", "ADMIN").
+     */
+    Optional<Long> findRoleIdByName(String name);
+
+    /**
+     * Build comma-separated authorities string for a user: "ROLE_ADMIN,PRODUCT_CREATE,..."
+     */
+    String buildAuthoritiesString(Long userId);
 }
